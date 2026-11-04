@@ -1,0 +1,48 @@
+const express = require("express");
+const cors = require("cors");
+const { RtcTokenBuilder, RtcRole } = require("agora-token");
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const APP_ID = process.env.AGORA_APP_ID;
+const APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE;
+
+app.get("/", (req, res) => {
+  res.send("18 LIVE WORLD Server is running");
+});
+
+app.get("/token", (req, res) => {
+  try {
+    const channel = String(req.query.channel || "").trim();
+    const uid = Number(req.query.uid);
+
+    if (!APP_ID || !APP_CERTIFICATE) {
+      return res.status(500).json({ error: "Server settings missing" });
+    }
+
+    if (!channel || channel.length > 64 || !Number.isInteger(uid) || uid < 1) {
+      return res.status(400).json({ error: "Invalid channel or uid" });
+    }
+
+    const expireAt = Math.floor(Date.now() / 1000) + 3600;
+
+    const token = RtcTokenBuilder.buildTokenWithUid(
+      APP_ID,
+      APP_CERTIFICATE,
+      channel,
+      uid,
+      RtcRole.PUBLISHER,
+      expireAt,
+      expireAt
+    );
+
+    res.json({ token, appId: APP_ID });
+  } catch (error) {
+    res.status(500).json({ error: "Token generation failed" });
+  }
+});
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log("Server started"));
