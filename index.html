@@ -121,9 +121,9 @@ await client.join(APP_ID, channel, data.token, uid);
     await client.publish([localAudio, localVideo]);
     document.getElementById("status").innerText = "بە سەرکەوتوویی چوویتە ناو چەناڵ";
   } catch (e) {
-    document.getElementById("status").innerText = "هەڵە: " + e.message;
     console.error(e);
-    await leaveCall();
+await leaveCall();
+document.getElementById("status").innerText = "هەڵە: " + e.message;
   }
 }
 
