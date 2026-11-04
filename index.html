@@ -109,8 +109,7 @@ async function joinCall() {
 
     // This demo uses a null token. It works only if the Agora project
     // allows App-ID-only authentication. Production apps need a secure token server.
-    const uid = Math.floor(Math.random() * 100000) + 1;
-https://18-live-world.vercel.app
+    const uid = Math.floor
 const data = await response.json();
 if (!response.ok) throw new Error(data.error || "Token error");
 await client.join(APP_ID, channel, data.token, uid);
