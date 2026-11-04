@@ -1,4 +1,3 @@
-
 const APP_ID = "3b947b82132840c6942bbfa2045eac18";
 
 let client = null;
@@ -13,7 +12,7 @@ async function joinCall() {
   const status = document.getElementById("status");
 
   if (!age || !channelInput || !status) {
-    alert("هەڵە: بەشەکانی پەڕە نەدۆزرایەوە.");
+    alert("هەڵە لە پەڕەکەدا هەیە.");
     return;
   }
 
@@ -96,9 +95,7 @@ async function joinCall() {
 
   } catch (e) {
     console.error("Join error:", e);
-
     await leaveCall();
-
     status.innerText = "هەڵە: " + e.message;
     alert("هەڵە: " + e.message);
   }
