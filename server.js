@@ -5,7 +5,7 @@ const { RtcTokenBuilder, RtcRole } = require("agora-token");
 const app = express();
 
 app.use(cors({
-  origin: "https://samankurdi717.github.io"
+  origin: "*"
 }));
 
 app.get("/", (req, res) => {
