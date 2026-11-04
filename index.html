@@ -71,7 +71,10 @@ const data = await response.json();
 if (!response.ok) throw new Error(data.error || "Token error");
 
 
-  await client.join(APP_ID, channel, data.token, uid);
+  await client.join(APP\_ID, channel, data.token, uid);
+&#91;localAudio, localVideo&#93; = await AgoraRTC.createMicrophoneAndCameraTracks();
+localVideo.play("local");
+await client.publish(&#91;localAudio, localVideo&#93;);
 [localAudio, localVideo] = await AgoraRTC.createMicrophoneAndCameraTracks();
 localVideo.play("local");
 await client.publish([localAudio, localVideo]);
