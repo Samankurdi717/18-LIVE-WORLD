@@ -1,3 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18+ LIVE WORLD</title>
+
+<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.24.8.js"></script>
+
+<style>
+body {
+  margin: 0;
+  padding: 20px;
+  background: #101020;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+.container {
+  max-width: 600px;
+  margin: auto;
+  background: #202039;
+  padding: 20px;
+  border-radius: 18px;
+}
+h1 { color: #ff477e; }
+input {
+  width: 90%;
+  padding: 13px;
+  margin: 10px 0;
+  border-radius: 9px;
+  border: none;
+  box-sizing: border-box;
+}
+button {
+  padding: 12px 18px;
+  margin: 6px;
+  border: none;
+  border-radius: 9px;
+  background: #ff477e;
+  color: white;
+  font-size: 16px;
+}
+.video {
+  width: 100%;
+  min-height: 180px;
+  margin-top: 12px;
+  background: #080810;
+  border-radius: 12px;
+  overflow: hidden;
+}
+#status { margin: 15px; color: #70ffb0; }
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>🌍 18+ LIVE WORLD</h1>
+<p>بەخێربێیت بۆ جیهانی لایڤ</p>
+
+<label>
+<input type="checkbox" id="age" style="width:auto">
+من 18 ساڵ یان زیاترەم
+</label>
+
+<br>
+
+<input id="channel" placeholder="ناوی چەناڵ بنووسە">
+
+<br>
+
+<button onclick="joinCall()">بەشداری لایڤ</button>
+<button onclick="leaveCall()">دەرچوون</button>
+
+<p id="status">ئامادەی پەیوەندی</p>
+
+<h3>ڤیدیۆی تۆ</h3>
+<div id="local" class="video"></div>
+
+<h3>بەشداربووان</h3>
+<div id="remote"></div>
+
+<button onclick="toggleCamera()">کامێرا</button>
+<button onclick="toggleMic()">مایکرۆفۆن</button>
+
+</div>
+
+<script>
 const APP_ID = "3b947b82132840c6942bbfa2045eac18";
 
 let client = null;
@@ -10,11 +100,6 @@ async function joinCall() {
   const age = document.getElementById("age");
   const channelInput = document.getElementById("channel");
   const status = document.getElementById("status");
-
-  if (!age || !channelInput || !status) {
-    alert("هەڵە لە پەڕەکەدا هەیە.");
-    return;
-  }
 
   if (!age.checked) {
     alert("پێویستە 18 ساڵ یان زیاتر بیت.");
@@ -54,6 +139,7 @@ async function joinCall() {
         if (!div) {
           div = document.createElement("div");
           div.id = "remote-" + user.uid;
+          div.className = "video";
           document.getElementById("remote").appendChild(div);
         }
 
@@ -94,10 +180,10 @@ async function joinCall() {
     status.innerText = "بە سەرکەوتوویی چوویتە ناو چەناڵ";
 
   } catch (e) {
-    console.error("Join error:", e);
-    await leaveCall();
+    console.error(e);
     status.innerText = "هەڵە: " + e.message;
     alert("هەڵە: " + e.message);
+    await leaveCall();
   }
 }
 
@@ -123,7 +209,7 @@ async function leaveCall() {
     document.getElementById("status").innerText = "دەرچوویت";
 
   } catch (e) {
-    console.error("Leave error:", e);
+    console.error(e);
   }
 }
 
@@ -140,3 +226,6 @@ async function toggleMic() {
     await localAudio.setEnabled(micOn);
   }
 }
+</script>
+</body>
+</html>
