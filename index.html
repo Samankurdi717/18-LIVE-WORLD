@@ -1,3 +1,4 @@
+
 const APP_ID = "3b947b82132840c6942bbfa2045eac18";
 
 let client = null;
@@ -7,7 +8,16 @@ let cameraOn = true;
 let micOn = true;
 
 async function joinCall() {
-  if (!document.getElementById("age").checked) {
+  const age = document.getElementById("age");
+  const channelInput = document.getElementById("channel");
+  const status = document.getElementById("status");
+
+  if (!age || !channelInput || !status) {
+    alert("هەڵە: بەشەکانی پەڕە نەدۆزرایەوە.");
+    return;
+  }
+
+  if (!age.checked) {
     alert("پێویستە 18 ساڵ یان زیاتر بیت.");
     return;
   }
@@ -17,7 +27,7 @@ async function joinCall() {
     return;
   }
 
-  const channel = document.getElementById("channel").value.trim();
+  const channel = channelInput.value.trim();
 
   if (!channel) {
     alert("ناوی چەناڵ بنووسە.");
@@ -25,9 +35,16 @@ async function joinCall() {
   }
 
   try {
-    document.getElementById("status").innerText = "چاوەڕوان بە...";
+    status.innerText = "چاوەڕوان بە...";
 
-    client = AgoraRTC.createClient({mode:"rtc", codec:"vp8"});
+    if (typeof AgoraRTC === "undefined") {
+      throw new Error("Agora SDK بار نەبوو.");
+    }
+
+    client = AgoraRTC.createClient({
+      mode: "rtc",
+      codec: "vp8"
+    });
 
     client.on("user-published", async (user, mediaType) => {
       await client.subscribe(user, mediaType);
@@ -75,13 +92,15 @@ async function joinCall() {
 
     await client.publish([localAudio, localVideo]);
 
-    document.getElementById("status").innerText =
-      "بە سەرکەوتوویی چوویتە ناو چەناڵ";
+    status.innerText = "بە سەرکەوتوویی چوویتە ناو چەناڵ";
 
   } catch (e) {
-    console.error(e);
+    console.error("Join error:", e);
+
     await leaveCall();
-    document.getElementById("status").innerText = "هەڵە: " + e.message;
+
+    status.innerText = "هەڵە: " + e.message;
+    alert("هەڵە: " + e.message);
   }
 }
 
@@ -107,7 +126,7 @@ async function leaveCall() {
     document.getElementById("status").innerText = "دەرچوویت";
 
   } catch (e) {
-    console.error(e);
+    console.error("Leave error:", e);
   }
 }
 
