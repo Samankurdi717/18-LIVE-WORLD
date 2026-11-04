@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ku" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101426">
+<title>18+ LIVE WORLD</title>
+<style>
+:root{--bg:#0c1020;--panel:#171d33;--panel2:#202944;--text:#f5f7ff;--muted:#aab4d0;--accent:#8b5cf6;--accent2:#22d3ee;--danger:#ef4444}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#222b4b 0,#0c1020 55%);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+header{padding:22px 16px;text-align:center}h1{margin:0;font-size:clamp(26px,7vw,40px);letter-spacing:1px}header p{color:var(--muted);margin:8px 0 0}
+main{max-width:850px;margin:auto;padding:0 14px 30px}.notice{background:#332819;border:1px solid #80602b;color:#ffe6b3;border-radius:14px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.7}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:14px 0}.tabs button{background:var(--panel);border:1px solid #303b5b;color:var(--text);padding:12px 3px;border-radius:12px;font-size:13px}
+.tabs button.active{background:linear-gradient(135deg,var(--accent),#5541c8);border-color:transparent}
+.panel{background:rgba(23,29,51,.96);border:1px solid #303b5b;border-radius:20px;padding:16px;box-shadow:0 12px 35px #0005}
+h2{margin:0 0 12px;font-size:21px}.muted{color:var(--muted);font-size:14px;line-height:1.7}
+label{display:block;color:var(--muted);font-size:13px;margin:12px 0 6px}select,input{width:100%;padding:12px;border-radius:11px;border:1px solid #394563;background:#0e1529;color:white;font-size:15px}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:13px}button.action{border:0;border-radius:12px;padding:12px 16px;color:white;background:linear-gradient(135deg,var(--accent),#5846cb);font-weight:650;font-size:14px}button.secondary{background:#303b5b}button.danger{background:#9f3038}
+.video{width:100%;aspect-ratio:16/10;background:#070b15;border:1px solid #303b5b;border-radius:15px;display:grid;place-items:center;overflow:hidden;margin-top:12px;color:#8995b4;text-align:center}
+video{width:100%;height:100%;object-fit:cover;display:none}.placeholder{padding:15px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-top:14px}.mini{background:var(--panel2);padding:14px;border-radius:14px;text-align:center}.mini b{display:block;margin-bottom:5px}
+footer{text-align:center;color:#7783a4;font-size:12px;padding:20px}
+@media(max-width:420px){.tabs button{font-size:11px;padding:10px 1px}.panel{padding:13px}}
+</style>
+</head>
+<body>
+<header><h1>🌍 18+ LIVE WORLD</h1><p>پەیوەندی و گفتوگۆی ڤیدیۆیی بۆ گەورەساڵان</p></header>
+<main>
+<div class="notice">⚠️ تەنها بۆ تەمەنی ١٨ ساڵ و سەرەوە. ڕێزگرتن لە ڕەزامەندی، تایبەتمەندی و یاساکان پێویستە. ناوەڕۆکی نایاسایی یان بێ‌ڕەزامەندی ڕێگەپێدراو نییە.</div>
+<nav class="tabs">
+<button class="active" data-tab="home">🏠 سەرەکی</button><button data-tab="random">🎥 ڤیدیۆ</button><button data-tab="group">👥 گرووپ</button><button data-tab="live">🔴 لایڤ</button><button data-tab="profile">👤 پرۆفایل</button>
+</nav>
+<section class="panel" id="home">
+<h2>بەخێربێیت بۆ 18+ LIVE WORLD</h2><p class="muted">لەگەڵ گەورەساڵانی وڵاتانی جیهان گفتوگۆ بکە. ئەم وەشانە تەنها نموونەی دیزاینە.</p>
+<div class="cards"><div class="mini">🌐<b>جیهانی</b><span class="muted">وڵاتە جیاوازەکان</span></div><div class="mini">🔒<b>پاراستن</b><span class="muted">ڕاپۆرت و بلۆک</span></div><div class="mini">🤝<b>ڕەزامەندی</b><span class="muted">گفتوگۆی بەڕێز</span></div></div>
+<div class="actions"><button class="action" onclick="showTab('random')">دەستپێکردن</button></div>
+</section>
+<section class="panel" id="random" hidden>
+<h2>🎥 چاتی ڤیدیۆیی هەڕەمەکی</h2><p class="muted">وڵات و جۆری هاوبەش هەڵبژێرە. پەیوەندی ڕاستەقینە لەم دیمۆیەدا بەردەست نییە.</p>
+<label>وڵات</label><select><option>هەموو جیهان</option><option>عێراق</option><option>فەرەنسا</option><option>ئەڵمانیا</option><option>تورکیا</option><option>ئەمریکا</option></select>
+<label>پێشەنگی هاوبەش</label><select><option>هەمووان</option><option>ژن</option><option>پیاو</option></select>
+<div class="video"><video id="camera" autoplay playsinline muted></video><div class="placeholder" id="placeholder">📷<br>وێنەی کامێرا لێرە دەردەکەوێت</div></div>
+<div class="actions"><button class="action" onclick="startCamera()">چالاککردنی کامێرا</button><button class="action secondary" onclick="stopCamera()">وەستاندن</button><button class="action" onclick="alert('ئەمە دیمۆیە؛ بۆ دۆزینەوەی کەسی ڕاستەقینە پێویستە سێرڤەر و Agora زیاد بکرێت.')">دۆزینەوەی کەس</button></div>
+</section>
+<section class="panel" id="group" hidden><h2>👥 پەیوەندی گرووپی</h2><p class="muted">شوێنی پەیوەندی گرووپی. بۆ کارکردنی ڕاستەقینە پێویستە خزمەتگوزاری پەیوەندی و سێرڤەر زیاد بکرێت.</p><button class="action" onclick="alert('ئەم بەشە هێشتا دیمۆیە.')">دروستکردنی ژووری گرووپ</button></section>
+<section class="panel" id="live" hidden><h2>🔴 لایڤ ستریمینگ</h2><p class="muted">پەڕەی پەخشکردنی ڕاستەوخۆ. پێویستە سیستەمی ستریمینگ، مۆڵەت و چاودێری ناوەڕۆک زیاد بکرێت.</p><button class="action" onclick="alert('ئەم بەشە هێشتا دیمۆیە.')">دەستپێکردنی لایڤ</button></section>
+<section class="panel" id="profile" hidden><h2>👤 پرۆفایل</h2><label>ناوی بەکارهێنەر</label><input placeholder="ناوت بنووسە"><label>تەمەن</label><input type="number" min="18" placeholder="١٨+"><p class="muted">پێش بەکارهێنان، تەمەنی ١٨ ساڵ یان زیاتر پشتڕاست بکەرەوە.</p><button class="action" onclick="alert('ئەم دیمۆیە زانیارییەکان تۆمار ناکات.')">پاشەکەوتکردن</button></section>
+</main><footer>18+ LIVE WORLD · Demo version</footer>
+<script>
+let stream=null;
+function showTab(id){document.querySelectorAll('main > section').forEach(s=>s.hidden=s.id!==id);document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));}
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+async function startCamera(){try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});const v=document.getElementById('camera');v.srcObject=stream;v.style.display='block';document.getElementById('placeholder').style.display='none';}catch(e){alert('کامێرا نەکراوە. ماڵپەڕەکە دەبێت لە HTTPS بکرێتەوە و مۆڵەتی کامێرا بدرێت.');}}
+function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}document.getElementById('camera').style.display='none';document.getElementById('placeholder').style.display='block';}
+</script>
+</body></html>
