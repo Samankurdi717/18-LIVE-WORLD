@@ -197,7 +197,7 @@ async function joinCall() {
     cameraOn = true;
     micOn = true;
 
-    status.innerText = "بە سەرکەوتوویی چوویتە ناو چەناڵ";
+    status.innerText = "کامێرا: " + (localVideo ? "کار دەکات" : "کار ناکات") + " | مایکرۆفۆن: " + (localAudio ? "کار دەکات" : "کار ناکات");
 
   } catch (e) {
     console.error(e);
