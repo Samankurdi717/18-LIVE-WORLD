@@ -1,40 +1,107 @@
-
 <!DOCTYPE html>
 <html lang="ku" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>18+ LIVE WORLD</title>
+<title>KURD STAR</title>
 <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.24.8.js"></script>
+
 <style>
-body{margin:0;padding:20px;background:#101020;color:white;font-family:Arial;text-align:center}
-.container{max-width:600px;margin:auto;background:#202039;padding:20px;border-radius:18px}
-h1{color:#ff477e}
-input{width:90%;padding:13px;margin:10px 0;border-radius:9px;border:0;box-sizing:border-box}
-button{padding:12px 18px;margin:6px;border:0;border-radius:9px;background:#ff477e;color:white;font-size:16px}
-.video{width:100%;height:240px;margin-top:12px;background:#080810;border-radius:12px;overflow:hidden;position:relative}
-.video video{width:100%!important;height:100%!important;object-fit:cover!important}
-#status{margin:15px;color:#70ffb0;overflow-wrap:anywhere}
+*{box-sizing:border-box}
+body{
+ margin:0;padding:16px;
+ background:#080808;color:white;
+ font-family:Arial,sans-serif;text-align:center
+}
+.container{max-width:650px;margin:auto}
+header{
+ background:linear-gradient(145deg,#202020,#090909);
+ border:1px solid #b58a28;border-radius:18px;
+ padding:22px 12px;margin-bottom:16px
+}
+.flag{font-size:35px}
+h1{color:#e8bd50;font-size:32px;margin:8px}
+.tagline{color:#ddd;font-size:14px}
+.live-badge{
+ display:inline-block;background:#d71920;
+ padding:5px 18px;border-radius:20px;
+ font-weight:bold;margin-top:10px
+}
+.panel{
+ background:#171717;border:1px solid #70551d;
+ border-radius:16px;padding:18px;margin-bottom:15px
+}
+input[type=text]{
+ width:100%;padding:14px;border-radius:10px;
+ border:1px solid #b58a28;background:#080808;
+ color:white;font-size:16px;margin:12px 0
+}
+button{
+ padding:12px 16px;margin:5px;
+ border:1px solid #c69b35;border-radius:10px;
+ background:#b58a28;color:#080808;
+ font-size:15px;font-weight:bold;cursor:pointer
+}
+button.dark{background:#252525;color:#f3ce69}
+button.red{background:#a71922;color:white;border-color:#a71922}
+button:active{opacity:.75}
+#status{color:#f3ce69;overflow-wrap:anywhere}
+.video{
+ width:100%;height:240px;margin-top:12px;
+ background:#050505;border:1px solid #70551d;
+ border-radius:12px;overflow:hidden;position:relative
+}
+.video video{
+ width:100%!important;height:100%!important;
+ object-fit:cover!important
+}
+h2,h3{color:#e8bd50}
+.footer{color:#999;font-size:12px;padding:12px}
 </style>
 </head>
+
 <body>
 <div class="container">
-<h1>🌍 18+ LIVE WORLD</h1>
-<p>بەخێربێیت بۆ جیهانی لایڤ</p>
-<label><input type="checkbox" id="age" style="width:auto"> من 18 ساڵ یان زیاترەم</label>
-<br>
-<input id="channel" placeholder="ناوی چەناڵ بنووسە">
-<br>
-<button onclick="joinCall()">بەشداری لایڤ</button>
-<button onclick="leaveCall()">دەرچوون</button>
-<p id="status">ئامادەی پەیوەندی</p>
-<h3>ڤیدیۆی تۆ</h3>
-<div id="local" class="video"></div>
-<h3>بەشداربووان</h3>
-<div id="remote"></div>
-<button onclick="switchCamera()">گۆڕینی کامێرا 🔄</button>
-<button onclick="toggleCamera()">کوژاندنەوە / کردنەوەی کامێرا</button>
-<button onclick="toggleMic()">مایکرۆفۆن</button>
+
+<header>
+ <div class="flag">🇹🇯</div>
+ <h1>⭐ KURD STAR ⭐</h1>
+ <div class="tagline">لە کوردستانەوە بۆ هەموو جیهان</div>
+ <div class="live-badge">● LIVE</div>
+</header>
+
+<div class="panel">
+ <h2>بەخێربێیت بۆ KURD STAR</h2>
+ <p>جیهانی لایڤ و پەیوەندی لەگەڵ خەڵکی جیهان</p>
+
+ <label>
+  <input type="checkbox" id="age" style="width:auto">
+  من 18 ساڵ یان زیاترەم
+ </label>
+
+ <input type="text" id="channel" placeholder="ناوی ژووری لایڤ بنووسە">
+
+ <button onclick="joinCall()">▶ بەشداری لایڤ</button>
+ <button class="red" onclick="leaveCall()">دەرچوون</button>
+
+ <p id="status">ئامادەی پەیوەندی</p>
+</div>
+
+<div class="panel">
+ <h3>📹 ڤیدیۆی تۆ</h3>
+ <div id="local" class="video"></div>
+
+ <h3>🌍 بەشداربووانی لایڤ</h3>
+ <div id="remote"></div>
+
+ <button class="dark" onclick="switchCamera()">🔄 گۆڕینی کامێرا</button>
+ <button class="dark" onclick="toggleCamera()">📷 کامێرا</button>
+ <button class="dark" onclick="toggleMic()">🎤 مایکرۆفۆن</button>
+</div>
+
+<div class="footer">
+ KURD STAR © 2026
+</div>
 </div>
 
 <script>
@@ -61,7 +128,7 @@ async function joinCall(){
   return;
  }
  if(!channel){
-  alert("ناوی چەناڵ بنووسە.");
+  alert("ناوی ژووری لایڤ بنووسە.");
   return;
  }
 
@@ -121,8 +188,7 @@ async function joinCall(){
   status.innerText="مایکرۆفۆن دروست دەکرێت...";
   localAudio=await AgoraRTC.createMicrophoneAudioTrack();
 
-  status.innerText="کامێرای دواوە دەدۆزرێتەوە...";
-
+  status.innerText="کامێرا دەدۆزرێتەوە...";
   cameras=await AgoraRTC.getCameras();
 
   if(!cameras.length){
@@ -135,7 +201,6 @@ async function joinCall(){
 
   if(rearIndex===-1){
    rearIndex=cameras.length-1;
-   status.innerText="ناوی کامێرای دواوە نەدۆزرایەوە؛ کامێرای بەردەست تاقی دەکرێتەوە...";
   }
 
   currentCameraIndex=rearIndex;
@@ -150,13 +215,12 @@ async function joinCall(){
   localVideo.play("local");
 
   status.innerText="ڤیدیۆ و دەنگ بڵاودەکرێنەوە...";
-
   await client.publish([localAudio,localVideo]);
 
   cameraOn=true;
   micOn=true;
 
-  status.innerText="پەیوەندی سەرکەوتوو بوو";
+  status.innerText="⭐ بە سەرکەوتوویی چوویتە ناو لایڤ";
 
  }catch(e){
   console.error("JOIN ERROR:",e);
@@ -179,7 +243,7 @@ async function joinCall(){
 async function switchCamera(){
  try{
   if(!localVideo){
-   alert("سەرەتا بچۆ ناو چەناڵ.");
+   alert("سەرەتا بچۆ ناو ژووری لایڤ.");
    return;
   }
 
@@ -196,8 +260,7 @@ async function switchCamera(){
 
   currentCameraIndex=nextIndex;
 
-  document.getElementById("status").innerText=
-   "کامێرا گۆڕدرا: "+(cameras[nextIndex].label||"کامێرای "+(nextIndex+1));
+  document.getElementById("status").innerText="کامێرا گۆڕدرا.";
 
  }catch(e){
   alert("نەتوانرا کامێرا بگۆڕدرێت: "+e.message);
@@ -218,7 +281,7 @@ async function leaveCall(){
 
  document.getElementById("local").innerHTML="";
  document.getElementById("remote").innerHTML="";
- document.getElementById("status").innerText="دەرچوویت";
+ document.getElementById("status").innerText="دەرچوویت لە لایڤ.";
 }
 
 async function toggleCamera(){
@@ -226,6 +289,8 @@ async function toggleCamera(){
   if(localVideo){
    cameraOn=!cameraOn;
    await localVideo.setEnabled(cameraOn);
+  }else{
+   alert("سەرەتا بچۆ ناو ژووری لایڤ.");
   }
  }catch(e){
   alert("هەڵەی کامێرا: "+e.message);
@@ -237,6 +302,8 @@ async function toggleMic(){
   if(localAudio){
    micOn=!micOn;
    await localAudio.setEnabled(micOn);
+  }else{
+   alert("سەرەتا بچۆ ناو ژووری لایڤ.");
   }
  }catch(e){
   alert("هەڵەی مایکرۆفۆن: "+e.message);
