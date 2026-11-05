@@ -1,62 +1,43 @@
+
 <!DOCTYPE html>
 <html lang="ku" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KURD STAR</title>
+
 <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.24.8.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;padding:16px;
- background:#080808;color:white;
- font-family:Arial,sans-serif;text-align:center
-}
+body{margin:0;padding:16px;background:#080808;color:white;font-family:Arial,sans-serif;text-align:center}
 .container{max-width:650px;margin:auto}
-header{
- background:linear-gradient(145deg,#202020,#090909);
- border:1px solid #b58a28;border-radius:18px;
- padding:22px 12px;margin-bottom:16px
-}
-.flag{font-size:35px}
-h1{color:#e8bd50;font-size:32px;margin:8px}
+header,.panel{background:#171717;border:1px solid #b58a28;border-radius:16px;padding:18px;margin-bottom:15px}
+header{background:linear-gradient(145deg,#202020,#090909);padding:22px 12px}
+.flag{width:65px;height:42px;margin:auto;background:linear-gradient(to bottom,#ed1c24 0 33.33%,white 33.33% 66.66%,#159447 66.66%);position:relative;border-radius:4px}
+.flag:after{content:"☀";position:absolute;top:7px;left:24px;color:#f5d22e;font-size:25px}
+h1,h2,h3{color:#e8bd50}
+h1{font-size:32px;margin:8px}
 .tagline{color:#ddd;font-size:14px}
-.live-badge{
- display:inline-block;background:#d71920;
- padding:5px 18px;border-radius:20px;
- font-weight:bold;margin-top:10px
+.live-badge{display:inline-block;background:#d71920;padding:5px 18px;border-radius:20px;font-weight:bold;margin-top:10px}
+input[type=text],input[type=email],input[type=password],textarea{
+width:100%;padding:13px;border-radius:10px;border:1px solid #b58a28;background:#080808;color:white;font-size:16px;margin:8px 0
 }
-.panel{
- background:#171717;border:1px solid #70551d;
- border-radius:16px;padding:18px;margin-bottom:15px
-}
-input[type=text]{
- width:100%;padding:14px;border-radius:10px;
- border:1px solid #b58a28;background:#080808;
- color:white;font-size:16px;margin:12px 0
-}
-button{
- padding:12px 16px;margin:5px;
- border:1px solid #c69b35;border-radius:10px;
- background:#b58a28;color:#080808;
- font-size:15px;font-weight:bold;cursor:pointer
-}
+input[type=file]{width:100%;padding:12px;background:#080808;color:white;border:1px solid #70551d;border-radius:10px;margin:8px 0}
+button{padding:12px 16px;margin:5px;border:1px solid #c69b35;border-radius:10px;background:#b58a28;color:#080808;font-size:15px;font-weight:bold;cursor:pointer}
 button.dark{background:#252525;color:#f3ce69}
 button.red{background:#a71922;color:white;border-color:#a71922}
-button:active{opacity:.75}
-#status{color:#f3ce69;overflow-wrap:anywhere}
-.video{
- width:100%;height:240px;margin-top:12px;
- background:#050505;border:1px solid #70551d;
- border-radius:12px;overflow:hidden;position:relative
-}
-.video video{
- width:100%!important;height:100%!important;
- object-fit:cover!important
-}
-h2,h3{color:#e8bd50}
+button:disabled{opacity:.5}
+#status,#authStatus,#uploadStatus{color:#f3ce69;overflow-wrap:anywhere}
+.video{width:100%;height:240px;margin-top:12px;background:#050505;border:1px solid #70551d;border-radius:12px;overflow:hidden;position:relative}
+.video video{width:100%!important;height:100%!important;object-fit:cover!important}
+.feed-card{background:#090909;border:1px solid #70551d;border-radius:12px;padding:12px;margin:14px 0;text-align:right}
+.feed-card video{width:100%;max-height:450px;background:black;border-radius:10px}
+.feed-caption{color:white;overflow-wrap:anywhere;margin:8px 0}
+.small{font-size:12px;color:#aaa}
 .footer{color:#999;font-size:12px;padding:12px}
+.hidden{display:none!important}
 </style>
 </head>
 
@@ -64,14 +45,49 @@ h2,h3{color:#e8bd50}
 <div class="container">
 
 <header>
- <div class="flag">🇹🇯</div>
+ <div class="flag"></div>
  <h1>⭐ KURD STAR ⭐</h1>
  <div class="tagline">لە کوردستانەوە بۆ هەموو جیهان</div>
  <div class="live-badge">● LIVE</div>
 </header>
 
+<!-- ACCOUNT -->
 <div class="panel">
- <h2>بەخێربێیت بۆ KURD STAR</h2>
+ <h2>👤 هەژماری بەکارهێنەر</h2>
+ <input type="email" id="email" placeholder="ئیمەیڵ">
+ <input type="password" id="password" placeholder="وشەی نهێنی">
+
+ <button onclick="signUp()">دروستکردنی هەژمار</button>
+ <button class="dark" onclick="signIn()">چوونەژوورەوە</button>
+ <button class="red hidden" id="logoutBtn" onclick="signOut()">دەرچوون لە هەژمار</button>
+
+ <p id="authStatus">بۆ بەکارهێنانی KURD STAR هەژمار دروست بکە.</p>
+ <p id="userInfo" class="small"></p>
+</div>
+
+<!-- VIDEO UPLOAD -->
+<div class="panel">
+ <h2>📹 بڵاوکردنەوەی ڤیدیۆ</h2>
+ <p>ڤیدیۆیەک لە گەلەری مۆبایلەکەت هەڵبژێرە</p>
+
+ <input type="file" id="videoFile" accept="video/*">
+ <textarea id="caption" rows="2" placeholder="دەربارەی ڤیدیۆکەت بنووسە..."></textarea>
+
+ <button onclick="uploadVideo()">⬆️ بارکردنی ڤیدیۆ</button>
+ <p id="uploadStatus"></p>
+ <p class="small">قەبارەی ڤیدیۆ نابێت لە 50MB زیاتر بێت.</p>
+</div>
+
+<!-- VIDEO FEED -->
+<div class="panel">
+ <h2>🌍 ڤیدیۆکانی KURD STAR</h2>
+ <button class="dark" onclick="loadVideos()">🔄 نوێکردنەوە</button>
+ <div id="feed"><p class="small">چاوەڕێ بکە...</p></div>
+</div>
+
+<!-- LIVE -->
+<div class="panel">
+ <h2>🔴 بەشداری لایڤ</h2>
  <p>جیهانی لایڤ و پەیوەندی لەگەڵ خەڵکی جیهان</p>
 
  <label>
@@ -99,12 +115,190 @@ h2,h3{color:#e8bd50}
  <button class="dark" onclick="toggleMic()">🎤 مایکرۆفۆن</button>
 </div>
 
-<div class="footer">
- KURD STAR © 2026
-</div>
+<div class="footer">KURD STAR © 2026</div>
 </div>
 
 <script>
+// SUPABASE
+const SUPABASE_URL="https://eofqtrncbswbujzgrvra.supabase.co";
+const SUPABASE_KEY="sb_publishable_Gm0Pl8FRsX5OdWovJBph5Q__ayYEIF-";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let currentUser=null;
+
+function authMessage(message){
+ document.getElementById("authStatus").innerText=message;
+}
+
+async function signUp(){
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+
+ if(!email||!password){alert("ئیمەیڵ و وشەی نهێنی بنووسە.");return;}
+ if(password.length<6){alert("وشەی نهێنی دەبێت لانیکەم 6 پیت بێت.");return;}
+
+ try{
+  authMessage("هەژمار دروست دەکرێت...");
+  const {data,error}=await db.auth.signUp({email,password});
+  if(error)throw error;
+
+  if(data.session){
+   authMessage("هەژمارەکەت بە سەرکەوتوویی دروست بوو.");
+  }else{
+   authMessage("ئیمەیڵەکەت بپشکنە و لینکی پشتڕاستکردنەوە بکەرەوە.");
+  }
+ }catch(e){authMessage("هەڵە: "+e.message);}
+}
+
+async function signIn(){
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+
+ if(!email||!password){alert("ئیمەیڵ و وشەی نهێنی بنووسە.");return;}
+
+ try{
+  authMessage("چوونەژوورەوە...");
+  const {error}=await db.auth.signInWithPassword({email,password});
+  if(error)throw error;
+  authMessage("بە سەرکەوتوویی چوویتەژوورەوە.");
+ }catch(e){authMessage("هەڵە: "+e.message);}
+}
+
+async function signOut(){
+ const {error}=await db.auth.signOut();
+ if(error)authMessage("هەڵە: "+error.message);
+}
+
+function showUser(user){
+ currentUser=user;
+ const logout=document.getElementById("logoutBtn");
+ const info=document.getElementById("userInfo");
+
+ if(user){
+  logout.classList.remove("hidden");
+  info.innerText="هەژمار: "+user.email;
+  authMessage("بەخێربێیت!");
+ }else{
+  logout.classList.add("hidden");
+  info.innerText="";
+ }
+}
+
+db.auth.onAuthStateChange((_event,session)=>{
+ showUser(session?.user||null);
+});
+
+async function uploadVideo(){
+ const status=document.getElementById("uploadStatus");
+ const file=document.getElementById("videoFile").files[0];
+ const caption=document.getElementById("caption").value.trim();
+
+ if(!currentUser){
+  status.innerText="سەرەتا بچۆ ژوورەوە.";
+  return;
+ }
+ if(!file){
+  status.innerText="تکایە ڤیدیۆیەک هەڵبژێرە.";
+  return;
+ }
+ if(!file.type.startsWith("video/")){
+  status.innerText="تەنها فایلێکی ڤیدیۆ هەڵبژێرە.";
+  return;
+ }
+ if(file.size>50*1024*1024){
+  status.innerText="قەبارەی ڤیدیۆ نابێت لە 50MB زیاتر بێت.";
+  return;
+ }
+
+ try{
+  status.innerText="ڤیدیۆکە بار دەکرێت...";
+
+  const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+  const unique=Date.now()+"-"+Math.random().toString(36).slice(2);
+  const path=currentUser.id+"/"+unique+"-"+safeName;
+
+  const {error:uploadError}=await db.storage
+   .from("videos")
+   .upload(path,file,{
+    cacheControl:"3600",
+    upsert:false,
+    contentType:file.type
+   });
+
+  if(uploadError)throw uploadError;
+
+  const {error:insertError}=await db.from("videos").insert({
+   user_id:currentUser.id,
+   storage_path:path,
+   caption:caption
+  });
+
+  if(insertError){
+   await db.storage.from("videos").remove([path]);
+   throw insertError;
+  }
+
+  status.innerText="ڤیدیۆکەت بە سەرکەوتوویی بڵاوکرایەوە ⭐";
+  document.getElementById("videoFile").value="";
+  document.getElementById("caption").value="";
+  await loadVideos();
+
+ }catch(e){
+  status.innerText="هەڵە: "+e.message;
+ }
+}
+
+async function loadVideos(){
+ const feed=document.getElementById("feed");
+ feed.innerHTML="<p>ڤیدیۆکان بار دەکرێن...</p>";
+
+ try{
+  const {data,error}=await db.from("videos")
+   .select("id,user_id,storage_path,caption,created_at")
+   .order("created_at",{ascending:false})
+   .limit(30);
+
+  if(error)throw error;
+
+  feed.innerHTML="";
+
+  if(!data.length){
+   feed.innerHTML="<p>هێشتا هیچ ڤیدیۆیەک بڵاونەکراوەتەوە.</p>";
+   return;
+  }
+
+  data.forEach(item=>{
+   const {data:urlData}=db.storage.from("videos").getPublicUrl(item.storage_path);
+
+   const card=document.createElement("div");
+   card.className="feed-card";
+
+   const video=document.createElement("video");
+   video.src=urlData.publicUrl;
+   video.controls=true;
+   video.playsInline=true;
+   video.preload="metadata";
+
+   const text=document.createElement("p");
+   text.className="feed-caption";
+   text.textContent=item.caption||"ڤیدیۆی KURD STAR";
+
+   const date=document.createElement("div");
+   date.className="small";
+   date.textContent=new Date(item.created_at).toLocaleString();
+
+   card.appendChild(video);
+   card.appendChild(text);
+   card.appendChild(date);
+   feed.appendChild(card);
+  });
+
+ }catch(e){
+  feed.innerText="هەڵە لە وەرگرتنی ڤیدیۆکان: "+e.message;
+ }
+}
+
+// AGORA LIVE - ORIGINAL LIVE SYSTEM
 const APP_ID="3b947b82132840c6942bbfa2045eac18";
 
 let client=null;
@@ -120,31 +314,21 @@ async function joinCall(){
  const channel=document.getElementById("channel").value.trim();
 
  if(!document.getElementById("age").checked){
-  alert("پێویستە 18 ساڵ یان زیاتر بیت.");
-  return;
+  alert("پێویستە 18 ساڵ یان زیاتر بیت.");return;
  }
- if(client){
-  alert("پێشتر بەشداری چەناڵت کردووە.");
-  return;
- }
- if(!channel){
-  alert("ناوی ژووری لایڤ بنووسە.");
-  return;
- }
+ if(client){alert("پێشتر بەشداری چەناڵت کردووە.");return;}
+ if(!channel){alert("ناوی ژووری لایڤ بنووسە.");return;}
 
  try{
   status.innerText="پەیوەندی دروست دەکرێت...";
 
-  if(typeof AgoraRTC==="undefined"){
-   throw new Error("Agora SDK بار نەبوو.");
-  }
+  if(typeof AgoraRTC==="undefined")throw new Error("Agora SDK بار نەبوو.");
 
   client=AgoraRTC.createClient({mode:"rtc",codec:"vp8"});
 
   client.on("user-published",async(user,type)=>{
    try{
     await client.subscribe(user,type);
-
     if(type==="video"){
      let div=document.getElementById("remote-"+user.uid);
      if(!div){
@@ -155,13 +339,8 @@ async function joinCall(){
      }
      user.videoTrack.play(div);
     }
-
-    if(type==="audio"){
-     user.audioTrack.play();
-    }
-   }catch(e){
-    console.error("Remote error:",e);
-   }
+    if(type==="audio")user.audioTrack.play();
+   }catch(e){console.error("Remote error:",e);}
   });
 
   client.on("user-left",user=>{
@@ -170,7 +349,6 @@ async function joinCall(){
   });
 
   const uid=Math.floor(Math.random()*100000)+1;
-
   status.innerText="Token وەردەگیرێت...";
 
   const response=await fetch(
@@ -178,10 +356,7 @@ async function joinCall(){
   );
 
   const data=await response.json();
-
-  if(!response.ok||!data.token){
-   throw new Error(data.error||"Token error");
-  }
+  if(!response.ok||!data.token)throw new Error(data.error||"Token error");
 
   await client.join(APP_ID,channel,data.token,uid);
 
@@ -190,19 +365,10 @@ async function joinCall(){
 
   status.innerText="کامێرا دەدۆزرێتەوە...";
   cameras=await AgoraRTC.getCameras();
+  if(!cameras.length)throw new Error("هیچ کامێرایەک نەدۆزرایەوە.");
 
-  if(!cameras.length){
-   throw new Error("هیچ کامێرایەک نەدۆزرایەوە.");
-  }
-
-  let rearIndex=cameras.findIndex(d=>
-   /back|rear|environment|دواوە/i.test(d.label)
-  );
-
-  if(rearIndex===-1){
-   rearIndex=cameras.length-1;
-  }
-
+  let rearIndex=cameras.findIndex(d=>/back|rear|environment|دواوە/i.test(d.label));
+  if(rearIndex===-1)rearIndex=cameras.length-1;
   currentCameraIndex=rearIndex;
 
   localVideo=await AgoraRTC.createCameraVideoTrack({
@@ -217,9 +383,7 @@ async function joinCall(){
   status.innerText="ڤیدیۆ و دەنگ بڵاودەکرێنەوە...";
   await client.publish([localAudio,localVideo]);
 
-  cameraOn=true;
-  micOn=true;
-
+  cameraOn=true;micOn=true;
   status.innerText="⭐ بە سەرکەوتوویی چوویتە ناو لایڤ";
 
  }catch(e){
@@ -228,11 +392,7 @@ async function joinCall(){
 
   if(localAudio){localAudio.close();localAudio=null;}
   if(localVideo){localVideo.close();localVideo=null;}
-
-  if(client){
-   try{await client.leave();}catch(x){}
-   client=null;
-  }
+  if(client){try{await client.leave();}catch(x){}client=null;}
 
   document.getElementById("local").innerHTML="";
   status.innerText="هەڵە: "+msg;
@@ -242,43 +402,23 @@ async function joinCall(){
 
 async function switchCamera(){
  try{
-  if(!localVideo){
-   alert("سەرەتا بچۆ ناو ژووری لایڤ.");
-   return;
-  }
-
-  if(cameras.length<2){
-   alert("تەنها یەک کامێرا دۆزرایەوە.");
-   return;
-  }
+  if(!localVideo){alert("سەرەتا بچۆ ناو ژووری لایڤ.");return;}
+  if(cameras.length<2){alert("تەنها یەک کامێرا دۆزرایەوە.");return;}
 
   const nextIndex=(currentCameraIndex+1)%cameras.length;
-
   document.getElementById("status").innerText="کامێرا دەگۆڕدرێت...";
-
   await localVideo.setDevice(cameras[nextIndex].deviceId);
-
   currentCameraIndex=nextIndex;
-
   document.getElementById("status").innerText="کامێرا گۆڕدرا.";
-
- }catch(e){
-  alert("نەتوانرا کامێرا بگۆڕدرێت: "+e.message);
- }
+ }catch(e){alert("نەتوانرا کامێرا بگۆڕدرێت: "+e.message);}
 }
 
 async function leaveCall(){
  if(localAudio){localAudio.close();localAudio=null;}
  if(localVideo){localVideo.close();localVideo=null;}
+ if(client){try{await client.leave();}catch(e){}client=null;}
 
- if(client){
-  try{await client.leave();}catch(e){}
-  client=null;
- }
-
- cameras=[];
- currentCameraIndex=0;
-
+ cameras=[];currentCameraIndex=0;
  document.getElementById("local").innerHTML="";
  document.getElementById("remote").innerHTML="";
  document.getElementById("status").innerText="دەرچوویت لە لایڤ.";
@@ -289,12 +429,8 @@ async function toggleCamera(){
   if(localVideo){
    cameraOn=!cameraOn;
    await localVideo.setEnabled(cameraOn);
-  }else{
-   alert("سەرەتا بچۆ ناو ژووری لایڤ.");
-  }
- }catch(e){
-  alert("هەڵەی کامێرا: "+e.message);
- }
+  }else{alert("سەرەتا بچۆ ناو ژووری لایڤ.");}
+ }catch(e){alert("هەڵەی کامێرا: "+e.message);}
 }
 
 async function toggleMic(){
@@ -302,13 +438,12 @@ async function toggleMic(){
   if(localAudio){
    micOn=!micOn;
    await localAudio.setEnabled(micOn);
-  }else{
-   alert("سەرەتا بچۆ ناو ژووری لایڤ.");
-  }
- }catch(e){
-  alert("هەڵەی مایکرۆفۆن: "+e.message);
- }
+  }else{alert("سەرەتا بچۆ ناو ژووری لایڤ.");}
+ }catch(e){alert("هەڵەی مایکرۆفۆن: "+e.message);}
 }
+
+// START
+loadVideos();
 </script>
 </body>
 </html>
