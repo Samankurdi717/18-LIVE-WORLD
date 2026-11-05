@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>18+ LIVE WORLD</title>
+
 <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.24.8.js"></script>
 
 <style>
@@ -16,6 +17,7 @@ body {
   font-family: Arial, sans-serif;
   text-align: center;
 }
+
 .container {
   max-width: 600px;
   margin: auto;
@@ -23,7 +25,9 @@ body {
   padding: 20px;
   border-radius: 18px;
 }
+
 h1 { color: #ff477e; }
+
 input {
   width: 90%;
   padding: 13px;
@@ -32,6 +36,7 @@ input {
   border: none;
   box-sizing: border-box;
 }
+
 button {
   padding: 12px 18px;
   margin: 6px;
@@ -41,7 +46,8 @@ button {
   color: white;
   font-size: 16px;
 }
-..video {
+
+.video {
   width: 100%;
   height: 240px;
   margin-top: 12px;
@@ -56,9 +62,11 @@ button {
   height: 100%;
   object-fit: cover;
 }
+
 #status {
   margin: 15px;
   color: #70ffb0;
+  overflow-wrap: anywhere;
 }
 </style>
 </head>
@@ -126,7 +134,7 @@ async function joinCall() {
   }
 
   try {
-    status.innerText = "چاوەڕوان بە...";
+    status.innerText = "پەیوەندی دروست دەکرێت...";
 
     if (typeof AgoraRTC === "undefined") {
       throw new Error("Agora SDK بار نەبوو.");
@@ -138,23 +146,27 @@ async function joinCall() {
     });
 
     client.on("user-published", async (user, mediaType) => {
-      await client.subscribe(user, mediaType);
+      try {
+        await client.subscribe(user, mediaType);
 
-      if (mediaType === "video") {
-        let div = document.getElementById("remote-" + user.uid);
+        if (mediaType === "video") {
+          let div = document.getElementById("remote-" + user.uid);
 
-        if (!div) {
-          div = document.createElement("div");
-          div.id = "remote-" + user.uid;
-          div.className = "video";
-          document.getElementById("remote").appendChild(div);
+          if (!div) {
+            div = document.createElement("div");
+            div.id = "remote-" + user.uid;
+            div.className = "video";
+            document.getElementById("remote").appendChild(div);
+          }
+
+          user.videoTrack.play(div);
         }
 
-        user.videoTrack.play(div);
-      }
-
-      if (mediaType === "audio") {
-        user.audioTrack.play();
+        if (mediaType === "audio") {
+          user.audioTrack.play();
+        }
+      } catch (e) {
+        console.error("Remote media error:", e);
       }
     });
 
@@ -164,6 +176,8 @@ async function joinCall() {
     });
 
     const uid = Math.floor(Math.random() * 100000) + 1;
+
+    status.innerText = "Token وەردەگیرێت...";
 
     const response = await fetch(
       `https://18-live-world.vercel.app/token?channel=${encodeURIComponent(channel)}&uid=${uid}`
@@ -177,33 +191,61 @@ async function joinCall() {
 
     await client.join(APP_ID, channel, data.token, uid);
 
-    status.innerText = "پەیوەندی سەرکەوتووە، کامێرا دەکرێتەوە...";
+    status.innerText = "مایکرۆفۆن دروست دەکرێت...";
 
     localAudio = await AgoraRTC.createMicrophoneAudioTrack();
 
-    try {
-      localVideo = await AgoraRTC.createCameraVideoTrack({
-        facingMode: "user"
-      });
-    } catch (cameraError) {
-      console.log("Front camera failed, trying default camera", cameraError);
-      localVideo = await AgoraRTC.createCameraVideoTrack();
-    }
+    status.innerText = "کامێرا دروست دەکرێت...";
 
-    localVideo.play("local");
+    localVideo = await AgoraRTC.createCameraVideoTrack({
+      encoderConfig: "480p_1",
+      optimizationMode: "motion"
+    });
+
+    document.getElementById("local").innerHTML = "";
+
+    localVideo.play("local", {
+      fit: "cover"
+    });
+
+    status.innerText = "ڤیدیۆ و دەنگ بڵاودەکرێنەوە...";
 
     await client.publish([localAudio, localVideo]);
 
     cameraOn = true;
     micOn = true;
 
-    status.innerText = "کامێرا: " + (localVideo ? "کار دەکات" : "کار ناکات") + " | مایکرۆفۆن: " + (localAudio ? "کار دەکات" : "کار ناکات");
+    status.innerText = "کامێرا و مایکرۆفۆن بە سەرکەوتوویی پەیوەست بوون";
 
   } catch (e) {
-    console.error(e);
-    status.innerText = "هەڵە: " + e.message;
-    alert("هەڵە: " + e.message);
-    await leaveCall();
+    console.error("JOIN ERROR:", e);
+
+    const errorMessage = e.message || String(e);
+
+    if (localAudio) {
+      localAudio.close();
+      localAudio = null;
+    }
+
+    if (localVideo) {
+      localVideo.close();
+      localVideo = null;
+    }
+
+    if (client) {
+      try {
+        await client.leave();
+      } catch (leaveError) {
+        console.error(leaveError);
+      }
+      client = null;
+    }
+
+    document.getElementById("local").innerHTML = "";
+    document.getElementById("remote").innerHTML = "";
+
+    status.innerText = "هەڵە: " + errorMessage;
+    alert("هەڵە: " + errorMessage);
   }
 }
 
@@ -229,21 +271,29 @@ async function leaveCall() {
     document.getElementById("status").innerText = "دەرچوویت";
 
   } catch (e) {
-    console.error(e);
+    console.error("Leave error:", e);
   }
 }
 
 async function toggleCamera() {
-  if (localVideo) {
-    cameraOn = !cameraOn;
-    await localVideo.setEnabled(cameraOn);
+  try {
+    if (localVideo) {
+      cameraOn = !cameraOn;
+      await localVideo.setEnabled(cameraOn);
+    }
+  } catch (e) {
+    alert("هەڵەی کامێرا: " + e.message);
   }
 }
 
 async function toggleMic() {
-  if (localAudio) {
-    micOn = !micOn;
-    await localAudio.setEnabled(micOn);
+  try {
+    if (localAudio) {
+      micOn = !micOn;
+      await localAudio.setEnabled(micOn);
+    }
+  } catch (e) {
+    alert("هەڵەی مایکرۆفۆن: " + e.message);
   }
 }
 </script>
