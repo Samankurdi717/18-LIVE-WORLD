@@ -5,298 +5,157 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>18+ LIVE WORLD</title>
-
 <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.24.8.js"></script>
-
 <style>
-body {
-  margin: 0;
-  padding: 20px;
-  background: #101020;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
-}
-
-.container {
-  max-width: 600px;
-  margin: auto;
-  background: #202039;
-  padding: 20px;
-  border-radius: 18px;
-}
-
-h1 { color: #ff477e; }
-
-input {
-  width: 90%;
-  padding: 13px;
-  margin: 10px 0;
-  border-radius: 9px;
-  border: none;
-  box-sizing: border-box;
-}
-
-button {
-  padding: 12px 18px;
-  margin: 6px;
-  border: none;
-  border-radius: 9px;
-  background: #ff477e;
-  color: white;
-  font-size: 16px;
-}
-
-.video {
-  width: 100%;
-  height: 240px;
-  margin-top: 12px;
-  background: #080810;
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-}
-
-.video video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-#status {
-  margin: 15px;
-  color: #70ffb0;
-  overflow-wrap: anywhere;
-}
+body{margin:0;padding:20px;background:#101020;color:white;font-family:Arial;text-align:center}
+.container{max-width:600px;margin:auto;background:#202039;padding:20px;border-radius:18px}
+h1{color:#ff477e}
+input{width:90%;padding:13px;margin:10px 0;border-radius:9px;border:0;box-sizing:border-box}
+button{padding:12px 18px;margin:6px;border:0;border-radius:9px;background:#ff477e;color:white;font-size:16px}
+.video{width:100%;height:240px;margin-top:12px;background:#080810;border-radius:12px;overflow:hidden;position:relative}
+.video video{width:100%!important;height:100%!important;object-fit:cover!important}
+#status{margin:15px;color:#70ffb0;overflow-wrap:anywhere}
 </style>
 </head>
-
 <body>
 <div class="container">
-
 <h1>🌍 18+ LIVE WORLD</h1>
 <p>بەخێربێیت بۆ جیهانی لایڤ</p>
-
-<label>
-<input type="checkbox" id="age" style="width:auto">
-من 18 ساڵ یان زیاترەم
-</label>
-
+<label><input type="checkbox" id="age" style="width:auto"> من 18 ساڵ یان زیاترەم</label>
 <br>
 <input id="channel" placeholder="ناوی چەناڵ بنووسە">
 <br>
-
 <button onclick="joinCall()">بەشداری لایڤ</button>
 <button onclick="leaveCall()">دەرچوون</button>
-
 <p id="status">ئامادەی پەیوەندی</p>
-
 <h3>ڤیدیۆی تۆ</h3>
 <div id="local" class="video"></div>
-
 <h3>بەشداربووان</h3>
 <div id="remote"></div>
-
 <button onclick="toggleCamera()">کامێرا</button>
 <button onclick="toggleMic()">مایکرۆفۆن</button>
-
 </div>
 
 <script>
-const APP_ID = "3b947b82132840c6942bbfa2045eac18";
+const APP_ID="3b947b82132840c6942bbfa2045eac18";
+let client=null,localAudio=null,localVideo=null;
+let cameraOn=true,micOn=true;
 
-let client = null;
-let localAudio = null;
-let localVideo = null;
-let cameraOn = true;
-let micOn = true;
+async function joinCall(){
+ const status=document.getElementById("status");
+ const channel=document.getElementById("channel").value.trim();
 
-async function joinCall() {
-  const age = document.getElementById("age");
-  const channelInput = document.getElementById("channel");
-  const status = document.getElementById("status");
+ if(!document.getElementById("age").checked){
+  alert("پێویستە 18 ساڵ یان زیاتر بیت.");return;
+ }
+ if(client){alert("پێشتر بەشداری چەناڵت کردووە.");return;}
+ if(!channel){alert("ناوی چەناڵ بنووسە.");return;}
 
-  if (!age.checked) {
-    alert("پێویستە 18 ساڵ یان زیاتر بیت.");
-    return;
+ try{
+  status.innerText="پەیوەندی دروست دەکرێت...";
+  if(typeof AgoraRTC==="undefined") throw new Error("Agora SDK بار نەبوو.");
+
+  client=AgoraRTC.createClient({mode:"rtc",codec:"vp8"});
+
+  client.on("user-published",async(user,type)=>{
+   try{
+    await client.subscribe(user,type);
+    if(type==="video"){
+     let div=document.getElementById("remote-"+user.uid);
+     if(!div){
+      div=document.createElement("div");
+      div.id="remote-"+user.uid;
+      div.className="video";
+      document.getElementById("remote").appendChild(div);
+     }
+     user.videoTrack.play(div);
+    }
+    if(type==="audio") user.audioTrack.play();
+   }catch(e){console.error(e);}
+  });
+
+  client.on("user-left",user=>{
+   const div=document.getElementById("remote-"+user.uid);
+   if(div)div.remove();
+  });
+
+  const uid=Math.floor(Math.random()*100000)+1;
+  status.innerText="Token وەردەگیرێت...";
+
+  const response=await fetch(
+   `https://18-live-world.vercel.app/token?channel=${encodeURIComponent(channel)}&uid=${uid}`
+  );
+  const data=await response.json();
+  if(!response.ok||!data.token)throw new Error(data.error||"Token error");
+
+  await client.join(APP_ID,channel,data.token,uid);
+
+  status.innerText="مایکرۆفۆن دروست دەکرێت...";
+  localAudio=await AgoraRTC.createMicrophoneAudioTrack();
+
+  status.innerText="کامێرا دەستپێدەکات...";
+  const devices=await AgoraRTC.getCameras();
+  if(!devices.length)throw new Error("هیچ کامێرایەک نەدۆزرایەوە.");
+
+  const front=devices.find(d=>
+   /front|user|پێشەوە/i.test(d.label)
+  );
+  localVideo=await AgoraRTC.createCameraVideoTrack({
+   cameraId:front?front.deviceId:devices[0].deviceId,
+   encoderConfig:"480p_1",
+   optimizationMode:"motion"
+  });
+
+  document.getElementById("local").innerHTML="";
+  localVideo.play("local");
+
+  await client.publish([localAudio,localVideo]);
+
+  cameraOn=true;micOn=true;
+  status.innerText="کامێرا و مایکرۆفۆن بە سەرکەوتوویی پەیوەست بوون";
+
+ }catch(e){
+  console.error("JOIN ERROR:",e);
+  const msg=e.message||String(e);
+
+  if(localAudio){localAudio.close();localAudio=null;}
+  if(localVideo){localVideo.close();localVideo=null;}
+  if(client){
+   try{await client.leave();}catch(x){}
+   client=null;
   }
-
-  if (client) {
-    alert("پێشتر بەشداری چەناڵت کردووە.");
-    return;
-  }
-
-  const channel = channelInput.value.trim();
-
-  if (!channel) {
-    alert("ناوی چەناڵ بنووسە.");
-    return;
-  }
-
-  try {
-    status.innerText = "پەیوەندی دروست دەکرێت...";
-
-    if (typeof AgoraRTC === "undefined") {
-      throw new Error("Agora SDK بار نەبوو.");
-    }
-
-    client = AgoraRTC.createClient({
-      mode: "rtc",
-      codec: "vp8"
-    });
-
-    client.on("user-published", async (user, mediaType) => {
-      try {
-        await client.subscribe(user, mediaType);
-
-        if (mediaType === "video") {
-          let div = document.getElementById("remote-" + user.uid);
-
-          if (!div) {
-            div = document.createElement("div");
-            div.id = "remote-" + user.uid;
-            div.className = "video";
-            document.getElementById("remote").appendChild(div);
-          }
-
-          user.videoTrack.play(div);
-        }
-
-        if (mediaType === "audio") {
-          user.audioTrack.play();
-        }
-      } catch (e) {
-        console.error("Remote media error:", e);
-      }
-    });
-
-    client.on("user-left", (user) => {
-      const div = document.getElementById("remote-" + user.uid);
-      if (div) div.remove();
-    });
-
-    const uid = Math.floor(Math.random() * 100000) + 1;
-
-    status.innerText = "Token وەردەگیرێت...";
-
-    const response = await fetch(
-      `https://18-live-world.vercel.app/token?channel=${encodeURIComponent(channel)}&uid=${uid}`
-    );
-
-    const data = await response.json();
-
-    if (!response.ok || !data.token) {
-      throw new Error(data.error || "Token error");
-    }
-
-    await client.join(APP_ID, channel, data.token, uid);
-
-    status.innerText = "مایکرۆفۆن دروست دەکرێت...";
-
-    localAudio = await AgoraRTC.createMicrophoneAudioTrack();
-
-    status.innerText = "کامێرا دروست دەکرێت...";
-
-    localVideo = await AgoraRTC.createCameraVideoTrack({
-      encoderConfig: "480p_1",
-      optimizationMode: "motion"
-    });
-
-    document.getElementById("local").innerHTML = "";
-
-    localVideo.play("local", {
-      fit: "cover"
-    });
-
-    status.innerText = "ڤیدیۆ و دەنگ بڵاودەکرێنەوە...";
-
-    await client.publish([localAudio, localVideo]);
-
-    cameraOn = true;
-    micOn = true;
-
-    status.innerText = "کامێرا و مایکرۆفۆن بە سەرکەوتوویی پەیوەست بوون";
-
-  } catch (e) {
-    console.error("JOIN ERROR:", e);
-
-    const errorMessage = e.message || String(e);
-
-    if (localAudio) {
-      localAudio.close();
-      localAudio = null;
-    }
-
-    if (localVideo) {
-      localVideo.close();
-      localVideo = null;
-    }
-
-    if (client) {
-      try {
-        await client.leave();
-      } catch (leaveError) {
-        console.error(leaveError);
-      }
-      client = null;
-    }
-
-    document.getElementById("local").innerHTML = "";
-    document.getElementById("remote").innerHTML = "";
-
-    status.innerText = "هەڵە: " + errorMessage;
-    alert("هەڵە: " + errorMessage);
-  }
+  document.getElementById("local").innerHTML="";
+  status.innerText="هەڵە: "+msg;
+  alert("هەڵە: "+msg);
+ }
 }
 
-async function leaveCall() {
-  try {
-    if (localAudio) {
-      localAudio.close();
-      localAudio = null;
-    }
-
-    if (localVideo) {
-      localVideo.close();
-      localVideo = null;
-    }
-
-    if (client) {
-      await client.leave();
-      client = null;
-    }
-
-    document.getElementById("local").innerHTML = "";
-    document.getElementById("remote").innerHTML = "";
-    document.getElementById("status").innerText = "دەرچوویت";
-
-  } catch (e) {
-    console.error("Leave error:", e);
-  }
+async function leaveCall(){
+ if(localAudio){localAudio.close();localAudio=null;}
+ if(localVideo){localVideo.close();localVideo=null;}
+ if(client){try{await client.leave();}catch(e){}client=null;}
+ document.getElementById("local").innerHTML="";
+ document.getElementById("remote").innerHTML="";
+ document.getElementById("status").innerText="دەرچوویت";
 }
 
-async function toggleCamera() {
-  try {
-    if (localVideo) {
-      cameraOn = !cameraOn;
-      await localVideo.setEnabled(cameraOn);
-    }
-  } catch (e) {
-    alert("هەڵەی کامێرا: " + e.message);
+async function toggleCamera(){
+ try{
+  if(localVideo){
+   cameraOn=!cameraOn;
+   await localVideo.setEnabled(cameraOn);
   }
+ }catch(e){alert("هەڵەی کامێرا: "+e.message);}
 }
 
-async function toggleMic() {
-  try {
-    if (localAudio) {
-      micOn = !micOn;
-      await localAudio.setEnabled(micOn);
-    }
-  } catch (e) {
-    alert("هەڵەی مایکرۆفۆن: " + e.message);
+async function toggleMic(){
+ try{
+  if(localAudio){
+   micOn=!micOn;
+   await localAudio.setEnabled(micOn);
   }
+ }catch(e){alert("هەڵەی مایکرۆفۆن: "+e.message);}
 }
 </script>
-
 </body>
 </html>
