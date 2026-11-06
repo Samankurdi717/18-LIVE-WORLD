@@ -139,7 +139,9 @@ async function signUp(){
 
  try{
   authMessage("هەژمار دروست دەکرێت...");
-  const {data,error}=await db.auth.signUp({email,password});
+  
+const {data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:"https://samankurdi717.github.io/18-LIVE-WORLD/"}});
+
   if(error)throw error;
 
   if(data.session){
