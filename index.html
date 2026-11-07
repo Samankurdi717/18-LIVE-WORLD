@@ -1,14 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="ku" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KURD STAR</title>
-
 <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.24.8.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 *{box-sizing:border-box}
 body{margin:0;padding:16px;background:#080808;color:white;font-family:Arial,sans-serif;text-align:center}
@@ -40,7 +37,6 @@ button:disabled{opacity:.5}
 .hidden{display:none!important}
 </style>
 </head>
-
 <body>
 <div class="container">
 
@@ -54,25 +50,34 @@ button:disabled{opacity:.5}
 <!-- ACCOUNT -->
 <div class="panel">
  <h2>👤 هەژماری بەکارهێنەر</h2>
+
+ <input type="text" id="fullName" placeholder="ناوی تەواوی تۆ">
  <input type="email" id="email" placeholder="ئیمەیڵ">
  <input type="password" id="password" placeholder="وشەی نهێنی">
 
- <button onclick="signUp()">دروستکردنی هەژمار</button>
+ <button onclick="signUp()">📝 خۆتۆمارکردن</button>
  <button class="dark" onclick="signIn()">چوونەژوورەوە</button>
+ <button class="dark" onclick="resetPassword()">وشەی نهێنیم لەبیرچووە؟</button>
  <button class="red hidden" id="logoutBtn" onclick="signOut()">دەرچوون لە هەژمار</button>
 
- <p id="authStatus">بۆ بەکارهێنانی KURD STAR هەژمار دروست بکە.</p>
+ <p id="authStatus">بۆ بەکارهێنانی KURD STAR خۆتۆمار بکە.</p>
  <p id="userInfo" class="small"></p>
+
+ <div id="newPasswordBox" class="hidden">
+  <hr style="border-color:#70551d">
+  <h3>🔐 وشەی نهێنی نوێ</h3>
+  <input type="password" id="newPassword" placeholder="وشەی نهێنی نوێ">
+  <input type="password" id="confirmPassword" placeholder="دووبارە وشەی نهێنی نوێ">
+  <button onclick="updatePassword()">گۆڕینی وشەی نهێنی</button>
+ </div>
 </div>
 
 <!-- VIDEO UPLOAD -->
 <div class="panel">
  <h2>📹 بڵاوکردنەوەی ڤیدیۆ</h2>
  <p>ڤیدیۆیەک لە گەلەری مۆبایلەکەت هەڵبژێرە</p>
-
  <input type="file" id="videoFile" accept="video/*">
  <textarea id="caption" rows="2" placeholder="دەربارەی ڤیدیۆکەت بنووسە..."></textarea>
-
  <button onclick="uploadVideo()">⬆️ بارکردنی ڤیدیۆ</button>
  <p id="uploadStatus"></p>
  <p class="small">قەبارەی ڤیدیۆ نابێت لە 50MB زیاتر بێت.</p>
@@ -89,27 +94,21 @@ button:disabled{opacity:.5}
 <div class="panel">
  <h2>🔴 بەشداری لایڤ</h2>
  <p>جیهانی لایڤ و پەیوەندی لەگەڵ خەڵکی جیهان</p>
-
  <label>
   <input type="checkbox" id="age" style="width:auto">
   من 18 ساڵ یان زیاترەم
  </label>
-
  <input type="text" id="channel" placeholder="ناوی ژووری لایڤ بنووسە">
-
  <button onclick="joinCall()">▶ بەشداری لایڤ</button>
  <button class="red" onclick="leaveCall()">دەرچوون</button>
-
  <p id="status">ئامادەی پەیوەندی</p>
 </div>
 
 <div class="panel">
  <h3>📹 ڤیدیۆی تۆ</h3>
  <div id="local" class="video"></div>
-
  <h3>🌍 بەشداربووانی لایڤ</h3>
  <div id="remote"></div>
-
  <button class="dark" onclick="switchCamera()">🔄 گۆڕینی کامێرا</button>
  <button class="dark" onclick="toggleCamera()">📷 کامێرا</button>
  <button class="dark" onclick="toggleMic()">🎤 مایکرۆفۆن</button>
@@ -122,6 +121,7 @@ button:disabled{opacity:.5}
 // SUPABASE
 const SUPABASE_URL="https://eofqtrncbswbujzgrvra.supabase.co";
 const SUPABASE_KEY="sb_publishable_Gm0Pl8FRsX5OdWovJBph5Q__ayYEIF-";
+const APP_URL="https://samankurdi717.github.io/18-LIVE-WORLD/";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let currentUser=null;
@@ -130,47 +130,125 @@ function authMessage(message){
  document.getElementById("authStatus").innerText=message;
 }
 
+// SIGN UP
 async function signUp(){
+ const fullName=document.getElementById("fullName").value.trim();
  const email=document.getElementById("email").value.trim();
  const password=document.getElementById("password").value;
 
- if(!email||!password){alert("ئیمەیڵ و وشەی نهێنی بنووسە.");return;}
- if(password.length<6){alert("وشەی نهێنی دەبێت لانیکەم 6 پیت بێت.");return;}
+ if(!fullName||!email||!password){
+  alert("ناو و ئیمەیڵ و وشەی نهێنی بنووسە.");
+  return;
+ }
+ if(password.length<6){
+  alert("وشەی نهێنی دەبێت لانیکەم 6 پیت بێت.");
+  return;
+ }
 
  try{
   authMessage("هەژمار دروست دەکرێت...");
-  
-const {data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:"https://samankurdi717.github.io/18-LIVE-WORLD/"}});
+  const {data,error}=await db.auth.signUp({
+   email:email,
+   password:password,
+   options:{
+    emailRedirectTo:APP_URL,
+    data:{full_name:fullName}
+   }
+  });
 
   if(error)throw error;
 
   if(data.session){
-   authMessage("هەژمارەکەت بە سەرکەوتوویی دروست بوو.");
+   authMessage("هەژمارەکەت بە سەرکەوتوویی دروست بوو. ⭐");
   }else{
-   authMessage("ئیمەیڵەکەت بپشکنە و لینکی پشتڕاستکردنەوە بکەرەوە.");
+   authMessage("خۆتۆمارکردن تەواو بوو. ئیمەیڵەکەت بپشکنە و لینکی پشتڕاستکردنەوە بکەرەوە.");
   }
- }catch(e){authMessage("هەڵە: "+e.message);}
+ }catch(e){
+  authMessage("هەڵە: "+e.message);
+ }
 }
 
+// SIGN IN
 async function signIn(){
  const email=document.getElementById("email").value.trim();
  const password=document.getElementById("password").value;
 
- if(!email||!password){alert("ئیمەیڵ و وشەی نهێنی بنووسە.");return;}
+ if(!email||!password){
+  alert("ئیمەیڵ و وشەی نهێنی بنووسە.");
+  return;
+ }
 
  try{
   authMessage("چوونەژوورەوە...");
   const {error}=await db.auth.signInWithPassword({email,password});
   if(error)throw error;
   authMessage("بە سەرکەوتوویی چوویتەژوورەوە.");
- }catch(e){authMessage("هەڵە: "+e.message);}
+ }catch(e){
+  authMessage("هەڵە: "+e.message);
+ }
 }
 
+// FORGOT PASSWORD
+async function resetPassword(){
+ const email=document.getElementById("email").value.trim();
+
+ if(!email){
+  alert("سەرەتا ئیمەیڵەکەت بنووسە.");
+  return;
+ }
+
+ try{
+  authMessage("لینکی گۆڕینی وشەی نهێنی دەنێردرێت...");
+  const {error}=await db.auth.resetPasswordForEmail(email,{
+   redirectTo:APP_URL
+  });
+  if(error)throw error;
+
+  authMessage("ئەگەر ئەم ئیمەیڵە هەژماری هەبێت، لینکی گۆڕینی وشەی نهێنی بۆ دەنێردرێت. Inbox و Spam بپشکنە.");
+ }catch(e){
+  authMessage("هەڵە: "+e.message);
+ }
+}
+
+// UPDATE PASSWORD
+async function updatePassword(){
+ const password=document.getElementById("newPassword").value;
+ const confirm=document.getElementById("confirmPassword").value;
+
+ if(!password||!confirm){
+  alert("هەردوو خانەکە پڕ بکەرەوە.");
+  return;
+ }
+ if(password.length<6){
+  alert("وشەی نهێنی دەبێت لانیکەم 6 پیت بێت.");
+  return;
+ }
+ if(password!==confirm){
+  alert("وشە نهێنییەکان یەک ناگرنەوە.");
+  return;
+ }
+
+ try{
+  authMessage("وشەی نهێنی دەگۆڕدرێت...");
+  const {error}=await db.auth.updateUser({password:password});
+  if(error)throw error;
+
+  document.getElementById("newPasswordBox").classList.add("hidden");
+  document.getElementById("newPassword").value="";
+  document.getElementById("confirmPassword").value="";
+  authMessage("وشەی نهێنی نوێ بە سەرکەوتوویی دانرا. ⭐");
+ }catch(e){
+  authMessage("هەڵە: "+e.message);
+ }
+}
+
+// SIGN OUT
 async function signOut(){
  const {error}=await db.auth.signOut();
  if(error)authMessage("هەڵە: "+error.message);
 }
 
+// SHOW USER
 function showUser(user){
  currentUser=user;
  const logout=document.getElementById("logoutBtn");
@@ -178,18 +256,25 @@ function showUser(user){
 
  if(user){
   logout.classList.remove("hidden");
-  info.innerText="هەژمار: "+user.email;
-  authMessage("بەخێربێیت!");
+  const name=user.user_metadata?.full_name;
+  info.innerText="بەخێربێیت "+(name||user.email);
  }else{
   logout.classList.add("hidden");
   info.innerText="";
  }
 }
 
-db.auth.onAuthStateChange((_event,session)=>{
+// AUTH EVENTS
+db.auth.onAuthStateChange((event,session)=>{
  showUser(session?.user||null);
+
+ if(event==="PASSWORD_RECOVERY"){
+  document.getElementById("newPasswordBox").classList.remove("hidden");
+  authMessage("لینکی گۆڕینی وشەی نهێنی کراوەتەوە. وشەی نهێنی نوێ دابنێ.");
+ }
 });
 
+// VIDEO UPLOAD
 async function uploadVideo(){
  const status=document.getElementById("uploadStatus");
  const file=document.getElementById("videoFile").files[0];
@@ -214,19 +299,15 @@ async function uploadVideo(){
 
  try{
   status.innerText="ڤیدیۆکە بار دەکرێت...";
-
   const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
   const unique=Date.now()+"-"+Math.random().toString(36).slice(2);
   const path=currentUser.id+"/"+unique+"-"+safeName;
 
-  const {error:uploadError}=await db.storage
-   .from("videos")
-   .upload(path,file,{
-    cacheControl:"3600",
-    upsert:false,
-    contentType:file.type
-   });
-
+  const {error:uploadError}=await db.storage.from("videos").upload(path,file,{
+   cacheControl:"3600",
+   upsert:false,
+   contentType:file.type
+  });
   if(uploadError)throw uploadError;
 
   const {error:insertError}=await db.from("videos").insert({
@@ -244,12 +325,12 @@ async function uploadVideo(){
   document.getElementById("videoFile").value="";
   document.getElementById("caption").value="";
   await loadVideos();
-
  }catch(e){
   status.innerText="هەڵە: "+e.message;
  }
 }
 
+// LOAD VIDEOS
 async function loadVideos(){
  const feed=document.getElementById("feed");
  feed.innerHTML="<p>ڤیدیۆکان بار دەکرێن...</p>";
@@ -261,7 +342,6 @@ async function loadVideos(){
    .limit(30);
 
   if(error)throw error;
-
   feed.innerHTML="";
 
   if(!data.length){
@@ -271,7 +351,6 @@ async function loadVideos(){
 
   data.forEach(item=>{
    const {data:urlData}=db.storage.from("videos").getPublicUrl(item.storage_path);
-
    const card=document.createElement("div");
    card.className="feed-card";
 
@@ -294,15 +373,13 @@ async function loadVideos(){
    card.appendChild(date);
    feed.appendChild(card);
   });
-
  }catch(e){
   feed.innerText="هەڵە لە وەرگرتنی ڤیدیۆکان: "+e.message;
  }
 }
 
-// AGORA LIVE - ORIGINAL LIVE SYSTEM
+// AGORA LIVE
 const APP_ID="3b947b82132840c6942bbfa2045eac18";
-
 let client=null;
 let localAudio=null;
 let localVideo=null;
@@ -316,14 +393,20 @@ async function joinCall(){
  const channel=document.getElementById("channel").value.trim();
 
  if(!document.getElementById("age").checked){
-  alert("پێویستە 18 ساڵ یان زیاتر بیت.");return;
+  alert("پێویستە 18 ساڵ یان زیاتر بیت.");
+  return;
  }
- if(client){alert("پێشتر بەشداری چەناڵت کردووە.");return;}
- if(!channel){alert("ناوی ژووری لایڤ بنووسە.");return;}
+ if(client){
+  alert("پێشتر بەشداری چەناڵت کردووە.");
+  return;
+ }
+ if(!channel){
+  alert("ناوی ژووری لایڤ بنووسە.");
+  return;
+ }
 
  try{
   status.innerText="پەیوەندی دروست دەکرێت...";
-
   if(typeof AgoraRTC==="undefined")throw new Error("Agora SDK بار نەبوو.");
 
   client=AgoraRTC.createClient({mode:"rtc",codec:"vp8"});
@@ -356,7 +439,6 @@ async function joinCall(){
   const response=await fetch(
    `https://18-live-world.vercel.app/token?channel=${encodeURIComponent(channel)}&uid=${uid}`
   );
-
   const data=await response.json();
   if(!response.ok||!data.token)throw new Error(data.error||"Token error");
 
@@ -385,7 +467,8 @@ async function joinCall(){
   status.innerText="ڤیدیۆ و دەنگ بڵاودەکرێنەوە...";
   await client.publish([localAudio,localVideo]);
 
-  cameraOn=true;micOn=true;
+  cameraOn=true;
+  micOn=true;
   status.innerText="⭐ بە سەرکەوتوویی چوویتە ناو لایڤ";
 
  }catch(e){
@@ -412,7 +495,9 @@ async function switchCamera(){
   await localVideo.setDevice(cameras[nextIndex].deviceId);
   currentCameraIndex=nextIndex;
   document.getElementById("status").innerText="کامێرا گۆڕدرا.";
- }catch(e){alert("نەتوانرا کامێرا بگۆڕدرێت: "+e.message);}
+ }catch(e){
+  alert("نەتوانرا کامێرا بگۆڕدرێت: "+e.message);
+ }
 }
 
 async function leaveCall(){
@@ -420,7 +505,8 @@ async function leaveCall(){
  if(localVideo){localVideo.close();localVideo=null;}
  if(client){try{await client.leave();}catch(e){}client=null;}
 
- cameras=[];currentCameraIndex=0;
+ cameras=[];
+ currentCameraIndex=0;
  document.getElementById("local").innerHTML="";
  document.getElementById("remote").innerHTML="";
  document.getElementById("status").innerText="دەرچوویت لە لایڤ.";
@@ -431,8 +517,12 @@ async function toggleCamera(){
   if(localVideo){
    cameraOn=!cameraOn;
    await localVideo.setEnabled(cameraOn);
-  }else{alert("سەرەتا بچۆ ناو ژووری لایڤ.");}
- }catch(e){alert("هەڵەی کامێرا: "+e.message);}
+  }else{
+   alert("سەرەتا بچۆ ناو ژووری لایڤ.");
+  }
+ }catch(e){
+  alert("هەڵەی کامێرا: "+e.message);
+ }
 }
 
 async function toggleMic(){
@@ -440,8 +530,12 @@ async function toggleMic(){
   if(localAudio){
    micOn=!micOn;
    await localAudio.setEnabled(micOn);
-  }else{alert("سەرەتا بچۆ ناو ژووری لایڤ.");}
- }catch(e){alert("هەڵەی مایکرۆفۆن: "+e.message);}
+  }else{
+   alert("سەرەتا بچۆ ناو ژووری لایڤ.");
+  }
+ }catch(e){
+  alert("هەڵەی مایکرۆفۆن: "+e.message);
+ }
 }
 
 // START
