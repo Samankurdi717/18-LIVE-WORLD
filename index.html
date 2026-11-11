@@ -1180,7 +1180,224 @@ async function switchCamera(){
 }
 
 // SESSION AND AUTH EVENTS
-switchAppTab("home");
+// ===============================
+// KURD HALO PUBLIC SOUND LIBRARY
+// ===============================
+
+let soundLibraryCache = [];
+
+function soundPublicUrl(path) {
+  return db.storage.from('sounds').getPublicUrl(path).data.publicUrl;
+}
+
+function escapeSoundText(value) {
+  return String(value || '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[c]));
+}
+
+async function loadSounds(showStatus = false) {
+  const list = document.getElementById('soundLibraryList');
+  if (!list) return;
+
+  if (showStatus) {
+    list.innerHTML = '<p>دەنگەکان نوێ دەکرێنەوە...</p>';
+  }
+
+  try {
+    const { data: sounds, error } = await db
+      .from('sounds')
+      .select('id,user_id,title,storage_path,created_at')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+
+    const ids = [...new Set((sounds || []).map(x => x.user_id))];
+    let profiles = [];
+
+    if (ids.length) {
+      const result = await db
+        .from('profiles')
+        .select('id,display_name,avatar_url')
+        .in('id', ids);
+
+      if (result.error) throw result.error;
+      profiles = result.data || [];
+    }
+
+    const profileMap = new Map(
+      profiles.map(p => [p.id, p])
+    );
+
+    soundLibraryCache = (sounds || []).map(x => ({
+      ...x,
+      display_name:
+        profileMap.get(x.user_id)?.display_name ||
+        'ئەندام'
+    }));
+
+    renderSoundLibrary(soundLibraryCache);
+
+    const select = document.getElementById('librarySoundSelect');
+
+    if (select) {
+      const chosen = select.value;
+      select.innerHTML =
+        '<option value="">بێ دەنگی کتێبخانە</option>';
+
+      soundLibraryCache.forEach(x => {
+        const option = document.createElement('option');
+        option.value = x.storage_path;
+        option.textContent =
+          x.title + ' — ' + x.display_name;
+        select.append(option);
+      });
+
+      if ([...select.options].some(o => o.value === chosen)) {
+        select.value = chosen;
+      }
+    }
+
+  } catch (e) {
+    list.innerHTML =
+      '<p>هەڵە لە بارکردنی دەنگەکان: ' +
+      escapeSoundText(e.message) + '</p>';
+  }
+}
+
+function renderSoundLibrary(rows) {
+  const list = document.getElementById('soundLibraryList');
+  if (!list) return;
+
+  if (!rows.length) {
+    list.innerHTML = '<p>هێشتا هیچ دەنگێک نییە 🎵</p>';
+    return;
+  }
+
+  list.innerHTML = '';
+
+  rows.forEach(sound => {
+    const item = document.createElement('div');
+    item.className = 'sound-item';
+
+    const title = document.createElement('strong');
+    title.textContent = sound.title;
+
+    const uploader = document.createElement('p');
+    uploader.textContent = 'بڵاوکەرەوە: ' + sound.display_name;
+
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.preload = 'none';
+    audio.src = soundPublicUrl(sound.storage_path);
+    audio.style.width = '100%';
+
+    item.append(title, uploader, audio);
+
+    if (currentUser && currentUser.id === sound.user_id) {
+      const remove = document.createElement('button');
+      remove.textContent = 'سڕینەوە';
+      remove.onclick = () => deleteSound(sound);
+      item.append(remove);
+    }
+
+    list.append(item);
+  });
+}
+
+function filterSoundLibrary() {
+  const q = (
+    document.getElementById('soundSearchInput')?.value || ''
+  ).trim().toLocaleLowerCase();
+
+  const rows = soundLibraryCache.filter(x =>
+    (x.title || '').toLocaleLowerCase().includes(q) ||
+    (x.display_name || '').toLocaleLowerCase().includes(q)
+  );
+
+  renderSoundLibrary(rows);
+}
+
+async function uploadLibrarySound() {
+  if (!currentUser) {
+    openAccount();
+    return;
+  }
+
+  const titleInput = document.getElementById('newSoundTitle');
+  const fileInput = document.getElementById('newSoundFile');
+
+  const title = titleInput?.value.trim();
+  const file = fileInput?.files?.[0];
+
+  if (!title || !file) {
+    alert('ناوی دەنگ و فایلەکە هەڵبژێرە');
+    return;
+  }
+
+  if (file.size > 20 * 1024 * 1024) {
+    alert('قەبارەی دەنگ نابێت لە 20MB زیاتر بێت');
+    return;
+  }
+
+  const ext = (file.name.split('.').pop() || 'mp3').toLowerCase();
+  const path =
+    currentUser.id + '/' + Date.now() + '-' +
+    Math.random().toString(36).slice(2) + '.' + ext;
+
+  try {
+    const { error: uploadError } = await db.storage
+      .from('sounds')
+      .upload(path, file, { contentType: file.type });
+
+    if (uploadError) throw uploadError;
+
+    const { error } = await db.from('sounds').insert({
+      user_id: currentUser.id,
+      title: title,
+      storage_path: path
+    });
+
+    if (error) {
+      await db.storage.from('sounds').remove([path]);
+      throw error;
+    }
+
+    titleInput.value = '';
+    fileInput.value = '';
+
+    alert('دەنگەکە بە سەرکەوتوویی بڵاوکرایەوە 🎵');
+    await loadSounds(true);
+
+  } catch (e) {
+    alert('هەڵە: ' + e.message);
+  }
+}
+
+async function deleteSound(sound) {
+  if (!confirm('دڵنیایت لە سڕینەوەی ئەم دەنگە؟')) return;
+
+  try {
+    const { error } = await db.from('sounds')
+      .delete()
+      .eq('id', sound.id)
+      .eq('user_id', currentUser.id);
+
+    if (error) throw error;
+
+    await db.storage.from('sounds').remove([sound.storage_path]);
+    await loadSounds(true);
+
+  } catch (e) {
+    alert('هەڵە: ' + e.message);
+  }
+}
+ switchAppTab("home");
 document.body.classList.add("auth-required");
 document.getElementById("accountModal").classList.remove("hidden");
 db.auth.getSession().then(({data})=>{if(data.session)showUser(data.session.user);});
