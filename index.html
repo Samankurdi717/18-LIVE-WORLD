@@ -1397,6 +1397,217 @@ async function deleteSound(sound) {
     alert('هەڵە: ' + e.message);
   }
 }
+ 
+/* KURD HALO - SOUND LIBRARY */
+(function () {
+  const style = document.createElement('style');
+  style.textContent = `
+    #soundHub { padding:16px; margin:12px 0 90px; }
+    #soundHub input, #soundHub button, #soundHub select {
+      width:100%; box-sizing:border-box; margin:6px 0;
+      padding:12px; border-radius:10px;
+    }
+    #soundLibraryList .sound-item {
+      background:#171717; border:1px solid #b58b25;
+      border-radius:12px; padding:12px; margin:10px 0;
+    }
+    #soundLibraryList audio { width:100%; margin-top:8px; }
+    #soundLibraryList .sound-use {
+      background:#b58b25; color:#111; font-weight:bold;
+    }
+    #soundHub h3 { color:#e8bd45; }
+    .bottom-nav { grid-template-columns:repeat(6,minmax(0,1fr)) !important; }
+  `;
+  document.head.appendChild(style);
+
+  const nav = document.getElementById('mainBottomNav');
+  if (nav && !document.getElementById('navSound')) {
+    const btn = document.createElement('button');
+    btn.id = 'navSound';
+    btn.type = 'button';
+    btn.innerHTML = '<span class="nav-icon">🎵</span><span>Sound</span>';
+    btn.onclick = () => switchAppTab('sound');
+    const profileBtn = document.getElementById('navProfile');
+    nav.insertBefore(btn, profileBtn || null);
+  }
+
+  if (!document.getElementById('soundHub') && nav) {
+    const hub = document.createElement('section');
+    hub.id = 'soundHub';
+    hub.className = 'hidden';
+    hub.innerHTML = `
+      <h2>🎵 کتێبخانەی دەنگی KURD HALO</h2>
+      <p>دەنگەکان بگەڕێ، گوێیان لێ بگرە و بۆ ڤیدیۆکانت بەکاریان بهێنە.</p>
+      <h3>🔎 گەڕان بەدوای ناوی دەنگ یان بەکارهێنەر</h3>
+      <input id="soundSearchInput" type="search"
+        placeholder="ناوی گۆرانی یان ناوی بەکارهێنەر..."
+        oninput="filterSoundLibrary()">
+      <hr>
+      <h3>⬆️ بڵاوکردنەوەی دەنگی نوێ</h3>
+      <input id="newSoundTitle" type="text" placeholder="ناوی دەنگ بنووسە">
+      <input id="newSoundFile" type="file" accept="audio/*">
+      <button type="button" onclick="uploadLibrarySound()">⬆️ بڵاوکردنەوەی دەنگ</button>
+      <hr>
+      <h3>🎧 هەموو دەنگەکان</h3>
+      <div id="soundLibraryList"><p>دەنگەکان بار دەکرێن...</p></div>
+    `;
+    nav.parentNode.insertBefore(hub, nav);
+  }
+
+  const localPreview = document.getElementById('soundPreview');
+  if (localPreview && !document.getElementById('librarySoundSelect')) {
+    const select = document.createElement('select');
+    select.id = 'librarySoundSelect';
+    select.innerHTML = '<option value="">🎵 دەنگێک لە کتێبخانە هەڵبژێرە (ئارەزوومەندانە)</option>';
+    localPreview.parentNode.insertBefore(select, localPreview.nextSibling);
+
+    const preview = document.createElement('audio');
+    preview.id = 'librarySoundPreview';
+    preview.controls = true;
+    preview.style.cssText = 'display:none;width:100%;margin:8px 0';
+    select.parentNode.insertBefore(preview, select.nextSibling);
+
+    select.addEventListener('change', async function () {
+      const path = select.value;
+      const audio = document.getElementById('librarySoundPreview');
+      if (!path) {
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.style.display = 'none';
+        return;
+      }
+      audio.src = soundPublicUrl(path);
+      audio.style.display = 'block';
+      audio.load();
+    });
+  }
+
+  const oldSwitchAppTab = window.switchAppTab;
+  window.switchAppTab = function (tab) {
+    const hub = document.getElementById('soundHub');
+    if (hub) hub.classList.toggle('hidden', tab !== 'sound');
+
+    if (tab === 'sound') {
+      document.getElementById('profilePage')?.classList.add('hidden');
+      document.getElementById('unifiedHub')?.classList.add('hidden');
+      document.getElementById('inboxHub')?.classList.remove('active');
+      document.querySelectorAll('#mainBottomNav button').forEach(b => b.classList.remove('active'));
+      document.getElementById('navSound')?.classList.add('active');
+      if (typeof loadSounds === 'function') loadSounds(true);
+      return;
+    }
+
+    if (typeof oldSwitchAppTab === 'function') {
+      return oldSwitchAppTab(tab);
+    }
+  };
+
+  const oldOpenMyProfile = window.openMyProfile;
+  if (typeof oldOpenMyProfile === 'function') {
+    window.openMyProfile = function () {
+      document.getElementById('soundHub')?.classList.add('hidden');
+      return oldOpenMyProfile.apply(this, arguments);
+    };
+  }
+
+  const oldOpenUpload = window.openUpload;
+  if (typeof oldOpenUpload === 'function') {
+    window.openUpload = function () {
+      document.getElementById('soundHub')?.classList.add('hidden');
+      return oldOpenUpload.apply(this, arguments);
+    };
+  }
+
+  const originalRenderSoundLibrary = window.renderSoundLibrary;
+  window.renderSoundLibrary = function (rows) {
+    const list = document.getElementById('soundLibraryList');
+    if (!list) {
+      if (typeof originalRenderSoundLibrary === 'function') {
+        return originalRenderSoundLibrary(rows);
+      }
+      return;
+    }
+
+    if (!rows || !rows.length) {
+      list.innerHTML = '<p>هێشتا هیچ دەنگێک نییە 🎵</p>';
+      return;
+    }
+
+    list.innerHTML = '';
+    rows.forEach(sound => {
+      const item = document.createElement('div');
+      item.className = 'sound-item';
+
+      const title = document.createElement('strong');
+      title.textContent = sound.title || 'دەنگ';
+
+      const uploader = document.createElement('p');
+      uploader.textContent = 'بڵاوکەرەوە: ' + (sound.display_name || 'ئەندام');
+
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.preload = 'none';
+      audio.src = soundPublicUrl(sound.storage_path);
+
+      const use = document.createElement('button');
+      use.className = 'sound-use';
+      use.type = 'button';
+      use.textContent = '🎬 بەکارهێنانی ئەم دەنگە بۆ ڤیدیۆ';
+      use.onclick = () => {
+        const select = document.getElementById('librarySoundSelect');
+        if (select) {
+          select.value = sound.storage_path;
+          select.dispatchEvent(new Event('change'));
+          document.getElementById('soundHub')?.classList.add('hidden');
+          document.getElementById('uploadDrawer')?.setAttribute('open', '');
+          document.getElementById('uploadDrawer')?.scrollIntoView({behavior:'smooth'});
+          alert('دەنگەکە هەڵبژێردرا. ئێستا ڤیدیۆکەت هەڵبژێرە.');
+        }
+      };
+
+      item.append(title, uploader, audio, use);
+
+      if (currentUser && currentUser.id === sound.user_id) {
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = '🗑️ سڕینەوەی دەنگ';
+        remove.onclick = () => deleteSound(sound);
+        item.append(remove);
+      }
+
+      list.append(item);
+    });
+  };
+
+  const oldUploadVideo = window.uploadVideo;
+  if (typeof oldUploadVideo === 'function') {
+    window.uploadVideo = async function () {
+      const select = document.getElementById('librarySoundSelect');
+      const soundInput = document.getElementById('soundFile');
+
+      if (select?.value && soundInput && !soundInput.files?.length) {
+        try {
+          const response = await fetch(soundPublicUrl(select.value));
+          if (!response.ok) throw new Error('نەتوانرا دەنگەکە دابەزێندرێت');
+          const blob = await response.blob();
+          const ext = (select.value.split('.').pop() || 'mp3').split('?')[0];
+          const file = new File([blob], 'KURD-HALO-SOUND.' + ext, {
+            type: blob.type || 'audio/mpeg'
+          });
+          const transfer = new DataTransfer();
+          transfer.items.add(file);
+          soundInput.files = transfer.files;
+        } catch (e) {
+          alert('هەڵە لە ئامادەکردنی دەنگ: ' + e.message);
+          return;
+        }
+      }
+
+      return oldUploadVideo.apply(this, arguments);
+    };
+  }
+})();
+
  switchAppTab("home");
 document.body.classList.add("auth-required");
 document.getElementById("accountModal").classList.remove("hidden");
