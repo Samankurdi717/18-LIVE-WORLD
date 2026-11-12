@@ -1607,6 +1607,203 @@ async function deleteSound(sound) {
     };
   }
 })();
+ 
+
+/* KURD HALO - ORIGINAL KURDISH SOUND */
+window.createKurdHaloOriginalSound = async function () {
+  const btn = document.getElementById('createKurdHaloSound');
+  const titleInput = document.getElementById('newSoundTitle');
+  const fileInput = document.getElementById('newSoundFile');
+
+  if (!btn || !titleInput || !fileInput) {
+    alert('خانەکانی کتێبخانەی دەنگ نەدۆزرایەوە.');
+    return;
+  }
+
+  if (!currentUser) {
+    alert('سەرەتا بچۆ ژوورەوە.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '🎼 دەنگی کوردی دروست دەکرێت...';
+
+  try {
+    const sampleRate = 44100;
+    const duration = 10;
+    const Offline = window.OfflineAudioContext ||
+                    window.webkitOfflineAudioContext;
+
+    if (!Offline) throw new Error('ئەم مۆبایلە پشتگیری دروستکردنی دەنگ ناکات.');
+
+    const ctx = new Offline(
+      1,
+      sampleRate * duration,
+      sampleRate
+    );
+
+    // نۆتە کوردییەکان: D - E نیمەبێمۆڵ - F - G - A
+    const melody = [
+      293.66, 311.13, 349.23, 392.00,
+      440.00, 392.00, 349.23, 311.13,
+      293.66, 349.23, 392.00, 440.00,
+      523.25, 466.16, 440.00, 392.00,
+      349.23, 311.13, 293.66
+    ];
+
+    // دەنگی بنەڕەتی وەک ساز
+    function pluck(freq, time, volume) {
+      [1, 2, 3].forEach((harmonic, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = index === 0 ? 'triangle' : 'sine';
+        osc.frequency.value = freq * harmonic;
+
+        const level = volume / (harmonic * harmonic);
+        gain.gain.setValueAtTime(0.0001, time);
+        gain.gain.exponentialRampToValueAtTime(
+          Math.max(0.0002, level),
+          time + 0.012
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          time + 0.48
+        );
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(time);
+        osc.stop(time + 0.5);
+      });
+    }
+
+    // دەنگی ژێرەوەی نەرم
+    function drone(freq, volume) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, 0);
+      gain.gain.linearRampToValueAtTime(volume, 1);
+      gain.gain.setValueAtTime(volume, 8.5);
+      gain.gain.linearRampToValueAtTime(0.0001, 9.8);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(0);
+      osc.stop(10);
+    }
+
+    // ڕیتمی دەهۆڵی نەرم
+    function drum(time) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(105, time);
+      osc.frequency.exponentialRampToValueAtTime(48, time + 0.13);
+
+      gain.gain.setValueAtTime(0.0001, time);
+      gain.gain.exponentialRampToValueAtTime(0.13, time + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.18);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(time);
+      osc.stop(time + 0.2);
+    }
+
+    drone(146.83, 0.035);
+    drone(220.00, 0.018);
+
+    melody.forEach((freq, i) => {
+      const time = 0.25 + i * 0.43;
+      pluck(freq, time, 0.22);
+      if (i % 2 === 0) drum(time);
+    });
+
+    const audioBuffer = await ctx.startRendering();
+
+    // گۆڕینی دەنگ بۆ فایلی WAV
+    const samples = audioBuffer.getChannelData(0);
+    const wav = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(wav);
+
+    function writeText(offset, value) {
+      for (let i = 0; i < value.length; i++) {
+        view.setUint8(offset + i, value.charCodeAt(i));
+      }
+    }
+
+    writeText(0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeText(8, 'WAVE');
+    writeText(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeText(36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+
+    for (let i = 0; i < samples.length; i++) {
+      const value = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(
+        44 + i * 2,
+        value < 0 ? value * 32768 : value * 32767,
+        true
+      );
+    }
+
+    const blob = new Blob([wav], { type: 'audio/wav' });
+    const file = new File(
+      [blob],
+      'KURD-HALO-Kurdish-Sound.wav',
+      { type: 'audio/wav' }
+    );
+
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+
+    titleInput.value = 'KURD HALO - دەنگی کوردەواری';
+    fileInput.files = transfer.files;
+
+    await uploadLibrarySound();
+
+  } catch (error) {
+    alert('هەڵە: ' + error.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🦅 دروستکردنی دەنگی کوردەواری';
+  }
+};
+
+// زیادکردنی دوگمەی دروستکردنی دەنگ
+(function () {
+  const hub = document.getElementById('soundHub');
+  const list = document.getElementById('soundLibraryList');
+
+  if (!hub || !list || document.getElementById('createKurdHaloSound')) {
+    return;
+  }
+
+  const button = document.createElement('button');
+  button.id = 'createKurdHaloSound';
+  button.type = 'button';
+  button.textContent = '🦅 دروستکردنی دەنگی کوردەواری';
+  button.style.cssText =
+    'width:100%;padding:14px;margin:12px 0;' +
+    'background:#b58b25;color:#111;border-radius:12px;' +
+    'font-weight:bold;';
+
+  button.onclick = window.createKurdHaloOriginalSound;
+  list.parentNode.insertBefore(button, list);
+})();
 
  switchAppTab("home");
 document.body.classList.add("auth-required");
