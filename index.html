@@ -645,6 +645,7 @@ body.auth-required .bottom-nav{display:none!important}
  </div>
  <div class="feed-toolbar">
   <h3 data-i18n="feedTitle">🌍 ڤیدیۆکانی کورد هەڵۆ</h3>
+  <button class="dark" type="button" onclick="openLive()">🔴 Live</button>
   <button class="dark" id="globalFeedSoundButton" type="button" onclick="toggleAllFeedSound()">🔇 سەوتی هەموو ڤیدیۆکان</button>
   <button class="dark" onclick="loadVideos()" data-i18n="refresh">🔄 نوێکردنەوە</button>
  </div>
@@ -2015,7 +2016,7 @@ function openUpload(){
 function openLive(){
  switchAppTab('home');
  const live=document.getElementById('liveHub');
- if(live)live.open=!live.open;
+ if(live){live.open=true;live.scrollIntoView({behavior:'smooth',block:'center'});}
 }
 
 </script>
