@@ -551,21 +551,6 @@ body.auth-required .bottom-nav{display:none!important}
  </div>
  <div class="feed-tabs"><button type="button" class="selected" id="forYouTab" onclick="setFeedMode('forYou')" data-i18n="forYou">بۆ تۆ</button><button type="button" id="followingTab" onclick="setFeedMode('following')" data-i18n="following">شوێنکەوتووان</button><button type="button" id="savedTab" onclick="setFeedMode('saved')">🔖 پاشەکەوتکراوەکانم</button><span>🔴 LIVE</span></div>
  <div class="user-search-panel"><input id="userSearchInput" type="search" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
- <button type="button" id="haloChannelToggle" class="halo-channel-toggle" aria-expanded="false" onclick="toggleHaloChannelPanel()">📡 قەناڵەکان <span id="haloChannelToggleIcon">＋</span></button>
- <div id="haloChannelArea" class="halo-channel-area hidden">
-  <div class="halo-channel-head">
-   <strong>📡 قەناڵەکان</strong>
-   <button type="button" class="dark" onclick="loadHaloChannels()">↻</button>
-  </div>
-  <div id="haloChannelStrip" class="halo-channel-strip"><span class="small">قەناڵەکان بار دەکرێن...</span></div>
-  <details class="halo-create-channel">
-   <summary>＋ دروستکردنی قەناڵی خۆت</summary>
-   <input id="newHaloChannelName" type="text" maxlength="70" placeholder="ناوی قەناڵ">
-   <textarea id="newHaloChannelDescription" rows="2" maxlength="240" placeholder="باسێکی کورت دەربارەی قەناڵ"></textarea>
-   <button type="button" onclick="createHaloChannel()">دروستکردنی قەناڵ</button>
-   <p id="haloChannelStatus" class="small"></p>
-  </details>
- </div>
  <div class="feed-toolbar">
   <h3 data-i18n="feedTitle">🌍 ڤیدیۆکانی کورد هەڵۆ</h3>
   <button class="dark" onclick="loadVideos()" data-i18n="refresh">🔄 نوێکردنەوە</button>
@@ -1102,118 +1087,6 @@ function toggleHaloChannelPanel(){
  if(opening)loadHaloChannels();
 }
 
-// KURD HALO CHANNELS — channels stay inside the main feed
-let haloChannelsCache = [];
-let haloChannelFollowing = new Set();
- 
-async function loadHaloChannels(){
- const strip=document.getElementById("haloChannelStrip");
- if(!strip)return;
- if(!currentUser){strip.innerHTML='<span class="small">بۆ فۆڵۆکردنی قەناڵەکان بچۆ ژوورەوە.</span>';return;}
- strip.innerHTML='<span class="small">قەناڵەکان بار دەکرێن...</span>';
- try{
-  const [channelsResult,followsResult]=await Promise.all([
-   db.from("halo_channels").select("id,name,description,is_external,is_verified,channel_url,website_url").order("is_external",{ascending:false}).limit(100),
-   db.from("halo_channel_follows").select("channel_id").eq("user_id",currentUser.id)
-  ]);
-  if(channelsResult.error)throw channelsResult.error;
-  if(followsResult.error)throw followsResult.error;
-  haloChannelsCache=channelsResult.data||[];
-  haloChannelFollowing=new Set((followsResult.data||[]).map(x=>x.channel_id));
-  strip.replaceChildren();
-  if(!haloChannelsCache.length){strip.innerHTML='<span class="small">هێشتا قەناڵێک نییە.</span>';return;}
-  haloChannelsCache.forEach(ch=>{
-   const btn=document.createElement("button");
-   btn.type="button";
-   btn.className="halo-channel-chip"+(haloChannelFollowing.has(ch.id)?" following":"");
-   btn.textContent=(ch.is_verified?"✓ ":"📺 ")+ch.name+(haloChannelFollowing.has(ch.id)?" · فۆڵۆکراوە":" · فۆڵۆ");
-   btn.title=ch.description||ch.name;
-   btn.addEventListener("click",()=>toggleHaloChannelFollow(ch.id,btn));
-   strip.append(btn);
-  });
- }catch(e){
-  strip.innerHTML='<span class="small">نەتوانرا قەناڵەکان باربکرێن: '+escapeHaloText(e.message||e)+'</span>';
- }
-}
-function escapeHaloText(value){
- const el=document.createElement("span");el.textContent=String(value||"");return el.innerHTML;
-}
-async function toggleHaloChannelFollow(channelId,button){
- if(!currentUser){openAccount();return;}
- const wasFollowing=haloChannelFollowing.has(channelId);
- button.disabled=true;
- try{
-  if(wasFollowing){
-   const {error}=await db.from("halo_channel_follows").delete().eq("channel_id",channelId).eq("user_id",currentUser.id);
-   if(error)throw error;
-   haloChannelFollowing.delete(channelId);
-  }else{
-   const {error}=await db.from("halo_channel_follows").insert({channel_id:channelId,user_id:currentUser.id});
-   if(error)throw error;
-   haloChannelFollowing.add(channelId);
-  }
-  await loadHaloChannels();
-  await loadVideos();
- }catch(e){alert("فۆڵۆکردنی قەناڵ سەرکەوتوو نەبوو: "+(e.message||e));}
- finally{button.disabled=false;}
-}
-async function createHaloChannel(){
- if(!currentUser){openAccount();return;}
- const name=document.getElementById("newHaloChannelName").value.trim();
- const description=document.getElementById("newHaloChannelDescription").value.trim();
- const status=document.getElementById("haloChannelStatus");
- if(!name){status.textContent="تکایە ناوی قەناڵ بنووسە.";return;}
- status.textContent="قەناڵەکە دروست دەکرێت...";
- try{
-  const {data,error}=await db.from("halo_channels").insert({
-   owner_id:currentUser.id,name,description:description||null,
-   is_external:false,is_verified:false,category:"گشتی"
-  }).select("id").single();
-  if(error)throw error;
-  const {error:followError}=await db.from("halo_channel_follows").insert({user_id:currentUser.id,channel_id:data.id});
-  if(followError)throw followError;
-  document.getElementById("newHaloChannelName").value="";
-  document.getElementById("newHaloChannelDescription").value="";
-  status.textContent="قەناڵەکەت دروست کرا. دەتوانیت دواتر ڤیدیۆی قەناڵ زیاد بکەیت.";
-  await loadHaloChannels();
- }catch(e){status.textContent="هەڵە: "+(e.message||e);}
-}
-async function loadFollowedChannelVideos(){
- if(!currentUser)return [];
- const {data:follows,error:followsError}=await db.from("halo_channel_follows").select("channel_id").eq("user_id",currentUser.id);
- if(followsError)throw followsError;
- const ids=(follows||[]).map(x=>x.channel_id);
- if(!ids.length)return [];
- const {data:rows,error}=await db.from("halo_channel_videos").select("*").in("channel_id",ids).order("published_at",{ascending:false}).limit(60);
- if(error)throw error;
- const channelIds=[...new Set((rows||[]).map(x=>x.channel_id))];
- if(!channelIds.length)return [];
- const {data:channels,error:channelError}=await db.from("halo_channels").select("id,name,is_verified,channel_url,website_url").in("id",channelIds);
- if(channelError)throw channelError;
- const map=new Map((channels||[]).map(x=>[x.id,x]));
- return (rows||[]).filter(x=>x.embed_url||x.video_url).map(x=>({...x,_haloChannel:map.get(x.channel_id)||{},_haloSource:"channel"}));
-}
-function renderHaloChannelFeedItem(item,feed){
- const channel=item._haloChannel||{};
- const card=document.createElement("article");card.className="feed-card channel-feed-card";
- const source=item.embed_url||item.video_url||"";
- if(item.embed_url){
-  const frame=document.createElement("iframe");frame.className="channel-feed-frame";frame.src=item.embed_url;
-  frame.title=item.title||channel.name||"KURD HALO channel video";
-  frame.allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-  frame.allowFullscreen=true;frame.loading="lazy";card.append(frame);
- }else{
-  const video=document.createElement("video");video.className="channel-feed-frame";video.src=item.video_url;
-  video.controls=true;video.playsInline=true;video.preload="metadata";video.loop=true;card.append(video);
- }
- const author=document.createElement("div");author.className="feed-author";
- author.textContent=(channel.is_verified?"✓ ":"📺 ")+(channel.name||"قەناڵی KURD HALO");
- const caption=document.createElement("p");caption.className="feed-caption";caption.textContent=item.title||item.description||"ڤیدیۆی قەناڵ";
- const link=document.createElement("a");link.className="channel-source-link";link.href=channel.channel_url||channel.website_url||source;
- link.target="_blank";link.rel="noopener noreferrer";link.textContent="سەرچاوەی فەرمی ↗";
- card.append(author,caption,link);feed.append(card);
-}
- 
 // User gesture enables sound for the active feed video; browsers block audible autoplay.
 let haloFeedSoundEnabled=false;
 
@@ -1221,7 +1094,6 @@ let haloFeedSoundEnabled=false;
 async function loadVideos(){
  const feed=document.getElementById("feed");
  if(!currentUser){feed.innerHTML="<p class='small'>بۆ بینینی ڤیدیۆکان سەرەتا هەژمار دروست بکە یان بچۆ ژوورەوە.</p>";return;}
- loadHaloChannels();
  feed.innerHTML="<p>چاوەڕێ بکە...</p>";
  try{
   const {data:allVideos,error}=await db.from("videos").select("*").order("created_at",{ascending:false}).limit(100);
@@ -1239,12 +1111,7 @@ async function loadVideos(){
    if(followError)throw followError;followedIds=(followRows||[]).map(x=>x.following_id);
    data=data.filter(v=>followedIds.includes(v.user_id));
   }
-  let channelFeedItems=[];
-  if(feedMode!=="saved"){
-   channelFeedItems=await loadFollowedChannelVideos();
-   channelFeedItems.sort((a,b)=>new Date(b.published_at||b.created_at||0)-new Date(a.published_at||a.created_at||0));
-  }
-  if((!data||data.length===0)&&channelFeedItems.length===0){feed.innerHTML=feedMode==="following"?"<p class=\"small\">هێشتا هیچ کەسێکت شوێن نەکەوتووە، یان ئەوانە ڤیدیۆیان بڵاو نەکردووەتەوە.</p>":feedMode==="saved"?"<p class=\"small\">هێشتا هیچ ڤیدیۆیەکت پاشەکەوت نەکردووە.</p>":"<p class=\"small\">هێشتا ڤیدیۆیەک بڵاو نەکراوەتەوە. یەکەم ڤیدیۆت بڵاو بکەرەوە!</p>";return;}
+  if(!data||data.length===0){feed.innerHTML=feedMode==="following"?"<p class=\"small\">هێشتا هیچ کەسێکت شوێن نەکەوتووە، یان ئەوانە ڤیدیۆیان بڵاو نەکردووەتەوە.</p>":feedMode==="saved"?"<p class=\"small\">هێشتا هیچ ڤیدیۆیەکت پاشەکەوت نەکردووە.</p>":"<p class=\"small\">هێشتا ڤیدیۆیەک بڵاو نەکراوەتەوە. یەکەم ڤیدیۆت بڵاو بکەرەوە!</p>";return;}
   const videoIds=data.map(v=>v.id);
   const [likesResult,commentsResult]=videoIds.length?await Promise.all([
    db.from("video_likes").select("video_id,user_id").in("video_id",videoIds),
@@ -1266,12 +1133,10 @@ async function loadVideos(){
   (likesResult.data||[]).forEach(row=>{likeCounts[row.video_id]=(likeCounts[row.video_id]||0)+1;if(row.user_id===currentUser.id)likedByMe.add(row.video_id);});
   (commentsResult.data||[]).forEach(row=>{commentCounts[row.video_id]=(commentCounts[row.video_id]||0)+1;});
   feed.innerHTML="";
-  const memberItems=(data||[]).map(item=>({...item,_haloSource:"member"}));
-  const combinedItems=[...memberItems,...channelFeedItems].sort((a,b)=>
+  const memberItems=(data||[]).sort((a,b)=>
    new Date(b.published_at||b.created_at||0)-new Date(a.published_at||a.created_at||0)
   );
-  combinedItems.forEach(item=>{
-   if(item._haloSource==="channel"){renderHaloChannelFeedItem(item,feed);return;}
+  memberItems.forEach(item=>{
    const videoUrl=db.storage.from("videos").getPublicUrl(item.storage_path).data.publicUrl;
    const card=document.createElement("article");card.className="feed-card";
    const video=document.createElement("video");video.src=videoUrl;video.controls=false;video.playsInline=true;video.preload="metadata";video.loop=true;video.muted=!haloFeedSoundEnabled;video.addEventListener("click",()=>{if(video.paused)video.play().catch(()=>{});else video.pause();});
