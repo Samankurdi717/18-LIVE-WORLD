@@ -1622,6 +1622,46 @@ async function setupHaloLiveChat(channel,card,stage,status){
  const reactions=document.createElement("div");reactions.style.cssText="display:flex;justify-content:space-around;gap:5px;";
  ["❤️","😂","😍","🔥","👏"].forEach(emoji=>{const b=document.createElement("button");b.type="button";b.textContent=emoji;b.style.cssText="margin:0;padding:5px 9px;background:#ffffff12;box-shadow:none;font-size:20px;";b.addEventListener("click",async()=>{b.disabled=true;const {error}=await db.from("live_reactions").insert({live_session_id:session.id,user_id:currentUser.id,reaction:emoji});b.disabled=false;if(error)alert("ناردنی لایک سەرکەوتوو نەبوو: "+error.message);});reactions.append(b);});
  panel.append(head,list,replyNote,form,reactions);
+ const giftBox=document.createElement("div");giftBox.style.cssText="display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:10px;background:#f5c96a12;border:1px solid #f5c96a35;";
+ const giftWallet=document.createElement("div");giftWallet.style.cssText="font-size:12px;color:#f5c96a;font-weight:bold;";giftWallet.textContent="🪙 باڵانس: بار دەکرێت...";
+ const giftControls=document.createElement("div");giftControls.style.cssText="display:flex;gap:6px;align-items:center;";
+ const giftSelect=document.createElement("select");giftSelect.style.cssText="flex:1;min-width:0;padding:8px;border-radius:8px;background:#080914;color:white;border:1px solid #ffffff30;";
+ const giftSend=document.createElement("button");giftSend.type="button";giftSend.textContent="🎁 ناردن";giftSend.style.cssText="margin:0;padding:8px 10px;background:#8b6b24;color:white;white-space:nowrap;";
+ giftControls.append(giftSelect,giftSend);giftBox.append(giftWallet,giftControls);
+ if(currentUser.id===session.user_id){giftWallet.textContent="🎁 بۆ ناردنی دیاری، وەک بینەر بچۆ ژوورەوە.";giftSelect.disabled=true;giftSend.disabled=true;}
+ else{
+  let availableGifts=[];
+  const {data:wallet,error:walletError}=await db.from("halo_wallets").select("balance").eq("user_id",currentUser.id).maybeSingle();
+  if(walletError){giftWallet.textContent="هەڵە لە خوێندنەوەی باڵانس: "+walletError.message;giftSend.disabled=true;}
+  else giftWallet.textContent="🪙 باڵانس: "+Number(wallet?.balance||0).toLocaleString("en-US")+" درهەم";
+  const {data:catalog,error:catalogError}=await db.from("halo_gift_catalog").select("category,gift_emoji,gift_name,coin_price").eq("is_active",true).order("coin_price",{ascending:true});
+  if(catalogError){giftSelect.innerHTML='<option value="">هەڵە لە بارکردنی دیارییەکان</option>';giftSend.disabled=true;}
+  else{
+   availableGifts=catalog||[];
+   giftSelect.innerHTML='<option value="">دیاری هەڵبژێرە...</option>'+availableGifts.map((g,i)=>'<option value="'+i+'">'+g.gift_emoji+' '+g.gift_name+' — '+Number(g.coin_price).toLocaleString("en-US")+'</option>').join("");
+   if(!availableGifts.length){giftSelect.innerHTML='<option value="">هیچ دیارییەک نییە</option>';giftSend.disabled=true;}
+  }
+  giftSend.addEventListener("click",async()=>{
+   const gift=availableGifts[Number(giftSelect.value)];
+   if(!gift){alert("سەرەتا دیارییەک هەڵبژێرە.");return;}
+   if(!confirm("دڵنیایت لە ناردنی "+gift.gift_name+" بە "+Number(gift.coin_price).toLocaleString("en-US")+" درهەم؟"))return;
+   giftSend.disabled=true;giftSend.textContent="دەنێردرێت...";
+   try{
+    const {data,error}=await db.rpc("send_live_gift",{p_live_session_id:session.id,p_recipient_id:session.user_id,p_category:gift.category,p_gift_name:gift.gift_name});
+    if(error)throw error;
+    const result=Array.isArray(data)?data[0]:data;
+    if(!result?.success)throw new Error("ناردنی دیاری پشتڕاست نەکرایەوە.");
+    giftWallet.textContent="🪙 باڵانسی نوێ: "+Number(result.sender_balance).toLocaleString("en-US")+" درهەم";
+    const notice=document.createElement("div");notice.style.cssText="padding:7px;border-radius:8px;background:#f5c96a20;color:#f5c96a;font-size:12px;";
+    notice.textContent="🎁 "+gift.gift_emoji+" "+gift.gift_name+" بە سەرکەوتوویی نێردرا!";
+    list.append(notice);list.scrollTop=list.scrollHeight;
+    giftSelect.value="";
+   }catch(e){alert("ناردنی دیاری سەرکەوتوو نەبوو: "+(e.message||e));}
+   finally{giftSend.disabled=false;giftSend.textContent="🎁 ناردن";}
+  });
+ }
+ panel.append(giftBox);
+
  const statusParent=status.parentNode;
  statusParent.insertBefore(panel,status);
  function cancelReply(){haloLiveReplyTo=null;replyNote.style.display="none";input.placeholder="کۆمێنت بنووسە...";}
