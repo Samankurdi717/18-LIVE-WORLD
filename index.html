@@ -1244,9 +1244,6 @@ async function loadVideos(){
    });
    const sound=document.createElement("button");sound.type="button";sound.className="feed-action feed-sound-toggle";sound.innerHTML=haloFeedSoundEnabled?"<b>🔊</b><span>دەنگ چالاکە</span>":"<b>🔇</b><span>دەنگ داخراوە</span>";sound.title="دەنگی هەموو ڤیدیۆکان بەیەکەوە چالاک/داخە";sound.addEventListener("click",toggleAllFeedSound);
    actions.append(like,comment,share,save,sound);
-   if(item.user_id===currentUser.id){
-    const remove=document.createElement("button");remove.type="button";remove.className="feed-action";remove.innerHTML="<b>🗑️</b><span>سڕینەوە</span>";remove.addEventListener("click",()=>deleteOwnVideo(item,remove,card));actions.append(remove);
-   }
    card.appendChild(video);card.appendChild(actions);card.appendChild(author);card.appendChild(caption);feed.appendChild(card);
   });
   if(window.kurdStarFeedObserver)window.kurdStarFeedObserver.disconnect();
