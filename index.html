@@ -1120,7 +1120,7 @@ async function openProfileFeature(key){
   }else{
    const introOffline=document.createElement('p');introOffline.className='small';introOffline.textContent='لە سەر Saved ڤیدیۆ هەڵبژێرە و دوگمەی داگرتنی ئۆفلاین دابگرە. دوای تەواوبوونی داگرتن دەتوانیت بەبێ ئینتەرنێت بیبینیت.';content.append(introOffline);
    const offlineStatus=document.createElement('p');offlineStatus.className='small';offlineStatus.textContent='لیستی ڤیدیۆ پاشەکەوتکراوەکان بار دەکرێت...';content.append(offlineStatus);
-   const offlineList=document.createElement('div');offlineList.style.cssText='display:grid;gap:12px;margin-top:12px';content.append(offlineList);
+   const offlineList=document.createElement('div');offlineList.style.cssText='display:grid;gap:12px;margin-top:12px';content.append(offlineList);const cachedHeading=document.createElement('h4');cachedHeading.textContent='📱 ڤیدیۆ داگرتراوەکان';cachedHeading.style.cssText='color:var(--gold);margin:18px 2px 8px';content.append(cachedHeading);const cachedList=document.createElement('div');cachedList.style.cssText='display:grid;gap:12px;margin-top:12px';content.append(cachedList);
    const openOfflineDB=()=>new Promise((resolve,reject)=>{
     if(!('indexedDB' in window)){reject(new Error('ئەم وێبگەڕە پشتگیری پاشەکەوتی ئۆفلاین ناکات.'));return;}
     const request=indexedDB.open('kurdHaloOfflineVideos',1);
@@ -1134,17 +1134,17 @@ async function openProfileFeature(key){
     else{tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error);}
    });
    const renderOffline=async()=>{
-    offlineList.replaceChildren();
+    cachedList.replaceChildren();
     const localDB=await openOfflineDB();
     const cached=await offlineTransaction(localDB,'readonly',store=>store.getAll());
     cached.sort((a,b)=>new Date(b.savedAt||0)-new Date(a.savedAt||0));
-    if(!cached.length){const empty=document.createElement('p');empty.className='small';empty.textContent='هێشتا هیچ ڤیدیۆیەک بۆ ئۆفلاین دابەزێنراوە. لە خوارەوە ڤیدیۆ پاشەکەوت بکە.';offlineList.append(empty);}
+    if(!cached.length){const empty=document.createElement('p');empty.className='small';empty.textContent='هێشتا هیچ ڤیدیۆیەک بۆ ئۆفلاین دابەزێنراوە.';cachedList.append(empty);}
     cached.forEach(item=>{
      const card=document.createElement('div');card.style.cssText='padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035)';
      const video=document.createElement('video');video.controls=true;video.playsInline=true;video.preload='metadata';video.style.cssText='width:100%;max-height:230px;border-radius:10px;background:#000';video.src=URL.createObjectURL(item.blob);
      const caption=document.createElement('p');caption.className='small';caption.textContent=item.caption||'ڤیدیۆی KURD HALO';
      const remove=document.createElement('button');remove.type='button';remove.className='dark';remove.textContent='🗑️ لابردن لە ئۆفلاین';remove.addEventListener('click',async()=>{remove.disabled=true;try{await offlineTransaction(localDB,'readwrite',store=>store.delete(item.id));video.pause();URL.revokeObjectURL(video.src);await renderOffline();}catch(e){offlineStatus.textContent='هەڵە: '+e.message;remove.disabled=false;}});
-     card.append(video,caption,remove);offlineList.append(card);
+     card.append(video,caption,remove);cachedList.append(card);
     });
     localDB.close();
    };
