@@ -487,6 +487,8 @@ body.auth-required .bottom-nav{display:none!important}
 @keyframes haloGiftFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.08)}}
 @media(max-width:420px){.halo-gift-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.halo-gift-card{padding:7px 2px}}
 
+/* Always-visible Live shortcut for mobile and desktop */
+#haloLiveButton{position:fixed!important;top:112px!important;left:10px!important;z-index:190!important;display:flex!important;align-items:center!important;justify-content:center!important;min-height:40px!important;padding:8px 14px!important;border:1px solid #ff526e!important;border-radius:22px!important;background:rgba(125,12,38,.94)!important;color:#fff!important;font-size:13px!important;font-weight:800!important;box-shadow:0 4px 18px #0009!important;cursor:pointer!important}
 </style>
 </head>
 <body>
@@ -715,6 +717,8 @@ body.auth-required .bottom-nav{display:none!important}
  <button id="navInbox" type="button" onclick="switchAppTab('inbox')"><span class="nav-icon">✉</span><span>Inbox</span></button>
  <button id="navProfile" type="button" onclick="openMyProfile()"><span class="nav-icon">👤</span><span>Profile</span></button>
 </nav>
+ <button id="haloLiveButton" type="button" onclick="openLive()" aria-label="Open Live">🔴 Live</button>
+
  
 </div>
  
