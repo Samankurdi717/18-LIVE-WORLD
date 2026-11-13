@@ -338,6 +338,7 @@ body.auth-required .bottom-nav{display:none!important}
  #haloChannelToggle{position:fixed;z-index:132;top:105px;right:max(10px,calc((100vw - 600px)/2));width:auto;margin:0;padding:7px 10px;border-radius:20px;font-size:11px;background:rgba(20,18,35,.82);backdrop-filter:blur(12px)}
  #haloChannelArea:not(.hidden){position:fixed;z-index:150;top:145px;left:10px;right:10px;width:auto;max-width:600px;max-height:55svh;overflow:auto;margin:0 auto;background:rgba(12,14,30,.97);box-shadow:0 12px 40px #000b}
  #unifiedHub>.user-search-panel{display:none!important}
+ #unifiedHub>.user-search-panel[hidden]{display:none!important}
  body.halo-search-open #unifiedHub>.user-search-panel{display:block!important;position:fixed;z-index:155;top:104px;left:10px;right:10px;width:auto;max-width:600px;max-height:55svh;overflow:auto;margin:0 auto;background:rgba(12,14,30,.97);box-shadow:0 12px 40px #000b}
  #uploadDrawer[open],#liveHub[open]{position:fixed;z-index:160;left:10px;right:10px;bottom:76px;width:auto;max-width:600px;max-height:72svh;overflow:auto;margin:0 auto;padding:14px;background:rgba(14,15,31,.98);border:1px solid var(--line);border-radius:18px;box-shadow:0 15px 50px #000c}
  #uploadDrawer:not([open]),#liveHub:not([open]){display:none!important}
@@ -691,6 +692,8 @@ function setActiveNav(id){document.querySelectorAll('.bottom-nav button').forEac
 function switchAppTab(tab){
  const profile=document.getElementById('profilePage');const home=document.getElementById('unifiedHub');const inbox=document.getElementById('inboxHub');
  profile?.classList.add('hidden');
+ const searchPanel=home?.querySelector('.user-search-panel');
+ if(searchPanel)searchPanel.hidden=(tab!=='friends');
  if(tab==='friends'){document.body.classList.add('halo-search-open');}
  else{document.body.classList.remove('halo-search-open');}
 
@@ -949,6 +952,7 @@ async function signOut(){
 function openMyProfile(){
  if(!currentUser){openAccount();return;}
  document.body.classList.remove('halo-search-open');
+ const searchPanel=document.querySelector('#unifiedHub>.user-search-panel');if(searchPanel)searchPanel.hidden=true;
  setActiveNav('navProfile');document.getElementById('inboxHub').classList.remove('active');
  document.getElementById('unifiedHub').classList.add('hidden');
  document.getElementById('profilePage').classList.remove('hidden');
