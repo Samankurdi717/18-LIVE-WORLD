@@ -1522,6 +1522,11 @@ async function startHaloGuestRole(status){
   await haloViewerClient.publish(haloGuestTracks);
   const guestVideo=document.createElement("div");guestVideo.style.cssText="position:relative;width:100%;height:150px;background:#080808;margin-top:6px;";
   const stage=document.querySelector(".halo-live-viewer-stage");if(stage){stage.append(guestVideo);haloGuestTracks[1].play(guestVideo);}
+  const controls=document.createElement("div");controls.style.cssText="display:flex;gap:8px;padding:6px;flex-wrap:wrap;";
+  let guestMicOn=true,guestCamOn=true;
+  const micBtn=document.createElement("button");micBtn.type="button";micBtn.textContent="🎤 مایکرۆفۆن";micBtn.onclick=async()=>{guestMicOn=!guestMicOn;await haloGuestTracks[0].setEnabled(guestMicOn);micBtn.textContent=guestMicOn?"🎤 مایکرۆفۆن":"🔇 مایکرۆفۆن داخراو";};
+  const camBtn=document.createElement("button");camBtn.type="button";camBtn.textContent="📷 کامێرا";camBtn.onclick=async()=>{guestCamOn=!guestCamOn;await haloGuestTracks[1].setEnabled(guestCamOn);camBtn.textContent=guestCamOn?"📷 کامێرا":"🚫 کامێرا داخراو";};
+  controls.append(micBtn,camBtn);if(stage)stage.append(controls);
   status.textContent="🎤 داواکارییەکەت پەسەند کرا؛ ئێستا لەسەر سەکۆی میوانیت.";
  }catch(e){
   status.textContent="نەتوانرا بچیتە سەر سەکۆ: "+String(e.message||e);
