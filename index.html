@@ -1508,6 +1508,71 @@ async function sendDirectMessage(event){
 let haloLiveChatChannel=null;
 let haloLiveChatSessionId=null;
 let haloLiveReplyTo=null;
+let haloGuestRequestChannel=null,haloGuestRequestId=null,haloGuestTracks=[],haloHostGuestChannel=null;
+async function cleanupHaloGuestRole(){
+ if(haloGuestRequestChannel){try{await db.removeChannel(haloGuestRequestChannel);}catch(_){}haloGuestRequestChannel=null;}
+ if(haloViewerClient&&haloGuestTracks.length){try{await haloViewerClient.unpublish(haloGuestTracks);}catch(_){}haloGuestTracks.forEach(t=>{try{t.stop();t.close();}catch(_){}});haloGuestTracks=[];try{await haloViewerClient.setClientRole("audience");}catch(_){}}
+ haloGuestRequestId=null;
+}
+async function startHaloGuestRole(status){
+ if(!haloViewerClient||haloGuestTracks.length)return;
+ try{
+  await haloViewerClient.setClientRole("host");
+  haloGuestTracks=await AgoraRTC.createMicrophoneAndCameraTracks();
+  await haloViewerClient.publish(haloGuestTracks);
+  const guestVideo=document.createElement("div");guestVideo.style.cssText="position:relative;width:100%;height:150px;background:#080808;margin-top:6px;";
+  const stage=document.querySelector(".halo-live-viewer-stage");if(stage){stage.append(guestVideo);haloGuestTracks[1].play(guestVideo);}
+  status.textContent="🎤 داواکارییەکەت پەسەند کرا؛ ئێستا لەسەر سەکۆی میوانیت.";
+ }catch(e){
+  status.textContent="نەتوانرا بچیتە سەر سەکۆ: "+String(e.message||e);
+  if(haloGuestTracks.length){try{await haloViewerClient.unpublish(haloGuestTracks);}catch(_){}haloGuestTracks.forEach(t=>{try{t.stop();t.close();}catch(_){}});haloGuestTracks=[];}
+  try{await haloViewerClient.setClientRole("audience");}catch(_){}
+ }
+}
+async function requestHaloGuestSeat(status,button){
+ if(!haloLiveChatSessionId||!currentUser)return;
+ button.disabled=true;
+ const {data,error}=await db.from("live_guest_requests").insert({live_session_id:haloLiveChatSessionId,user_id:currentUser.id,status:"pending"}).select("id").single();
+ if(error){status.textContent=error.message.includes("duplicate")?"داواکارییەکی چاوەڕوانت هەیە.":"ناردنی داواکاری سەرکەوتوو نەبوو: "+error.message;button.disabled=false;return;}
+ haloGuestRequestId=data.id;status.textContent="داواکاریی چوونە سەر سەکۆ نێردرا؛ چاوەڕێی پەسەندکردنی خاوەنی لایڤ بە.";
+ haloGuestRequestChannel=db.channel("halo-guest-request-"+data.id).on("postgres_changes",{event:"UPDATE",schema:"public",table:"live_guest_requests",filter:"id=eq."+data.id},async payload=>{
+  const state=payload.new.status;
+  if(state==="approved"){button.textContent="✅ پەسەند کرا";await startHaloGuestRole(status);}
+  else if(state==="declined"){status.textContent="داواکارییەکەت ڕەتکرایەوە.";button.disabled=false;button.textContent="دووبارە داوا بکە";}
+  else if(state==="removed"){await cleanupHaloGuestRole();status.textContent="خاوەنی لایڤ لە سەکۆی میوان لایبردیت.";button.disabled=false;button.textContent="داوای چوونە سەر سەکۆ";}
+ }).subscribe();
+}
+async function setupHaloHostGuestManager(sessionId){
+ const status=document.getElementById("status");if(!sessionId||!status)return;
+ let panel=document.getElementById("haloHostGuestPanel");
+ if(!panel){panel=document.createElement("section");panel.id="haloHostGuestPanel";panel.style.cssText="margin:10px 0;padding:10px;background:#111321;color:white;border:1px solid #ffffff20;border-radius:12px;";panel.innerHTML="<strong>🎙️ داواکارییەکانی سەکۆی میوان (٦ شوێن)</strong><div id='haloHostGuestList' style='display:grid;gap:7px;margin-top:8px'></div>";status.insertAdjacentElement("afterend",panel);}
+ const list=panel.querySelector("#haloHostGuestList");
+ async function refresh(){
+  const {data,error}=await db.from("live_guest_requests").select("id,user_id,status,created_at").eq("live_session_id",sessionId).in("status",["pending","approved"]).order("created_at",{ascending:true});
+  if(error){list.textContent="هەڵە: "+error.message;return;}
+  list.innerHTML="";
+  const rows=data||[];const ids=[...new Set(rows.map(x=>x.user_id))];let names=new Map();
+  if(ids.length){const p=await db.from("profiles").select("id,display_name").in("id",ids);if(!p.error)names=new Map((p.data||[]).map(x=>[x.id,x.display_name||"ئەندام"]));}
+  if(!rows.length){list.textContent="هێشتا داواکارییەک نییە.";return;}
+  rows.forEach(row=>{
+   const item=document.createElement("div");item.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px;background:#ffffff0d;border-radius:8px;";
+   const name=document.createElement("span");name.textContent=(names.get(row.user_id)||"ئەندام")+" — "+(row.status==="pending"?"چاوەڕوان":"لەسەر سەکۆ");
+   item.append(name);
+   const actions=document.createElement("div");actions.style.cssText="display:flex;gap:5px;flex-wrap:wrap;";
+   const act=(label,next,color)=>{const b=document.createElement("button");b.type="button";b.textContent=label;b.style.cssText="margin:0;padding:6px 9px;background:"+color+";font-size:11px;";b.onclick=async()=>{b.disabled=true;const {error}=await db.from("live_guest_requests").update({status:next,updated_at:new Date().toISOString()}).eq("id",row.id);if(error){alert("گۆڕینی دۆخی میوان سەرکەوتوو نەبوو: "+error.message);b.disabled=false;}else await refresh();};actions.append(b);};
+   if(row.status==="pending"){act("پەسەند", "approved","#176b45");act("ڕەتکردنەوە","declined","#8b3030");}
+   else{act("لایبردن","removed","#8b3030");}
+   item.append(actions);list.append(item);
+  });
+ }
+ if(haloHostGuestChannel){try{await db.removeChannel(haloHostGuestChannel);}catch(_){}}
+ haloHostGuestChannel=db.channel("halo-host-guests-"+sessionId).on("postgres_changes",{event:"*",schema:"public",table:"live_guest_requests",filter:"live_session_id=eq."+sessionId},refresh).subscribe();
+ await refresh();
+}
+async function cleanupHaloHostGuestManager(){
+ if(haloHostGuestChannel){try{await db.removeChannel(haloHostGuestChannel);}catch(_){}haloHostGuestChannel=null;}
+ const panel=document.getElementById("haloHostGuestPanel");if(panel)panel.remove();
+}
 let haloLivePresenceChannel=null;
 async function setupHaloLivePresence(sessionId,display){
  if(!sessionId||!currentUser||!display)return;
@@ -1640,9 +1705,12 @@ async function joinLiveViewer(channel,title,inlineCard){
   });
   haloViewerClient.on("user-left",()=>{status.textContent="لایڤکەر لایڤی کۆتایی پێهێنا.";});
   await haloViewerClient.join(AGORA_APP_ID,channel,tokenData.token,uid);status.textContent="🔴 لە هەمان فیددا لایڤ دەبینیت";await setupHaloLiveChat(channel,inlineCard,stage,status);
+  const guestButton=document.createElement("button");guestButton.type="button";guestButton.textContent="🎙️ داوای چوونە سەر سەکۆ";guestButton.style.cssText="margin:6px 10px;padding:9px 12px;background:#8b6b24;color:white;";
+  guestButton.onclick=()=>requestHaloGuestSeat(status,guestButton);status.insertAdjacentElement("afterend",guestButton);
  }catch(e){status.textContent="هەڵە لە پەیوەندی: "+e.message;if(haloViewerClient){try{await haloViewerClient.leave();}catch(_){}haloViewerClient=null;}}
 }
 async function leaveLiveViewer(){
+ await cleanupHaloGuestRole();
  await cleanupHaloLiveChat();
  if(haloViewerClient){try{await haloViewerClient.leave();}catch(_){}haloViewerClient=null;}
  if(haloViewerInlineCard){
@@ -1684,6 +1752,7 @@ async function joinCall(){
   let hostViewerCount=document.getElementById("haloHostViewerCount");
   if(!hostViewerCount){hostViewerCount=document.createElement("span");hostViewerCount.id="haloHostViewerCount";hostViewerCount.style.cssText="display:inline-block;margin:0 8px;color:#f5c96a;font-weight:bold;";document.getElementById("status").insertAdjacentElement("afterend",hostViewerCount);}
   await setupHaloLivePresence(liveRow.id,hostViewerCount);
+  await setupHaloHostGuestManager(liveRow.id);
   document.getElementById("status").innerText="بە سەرکەوتوویی چوویتە ژووری لایڤ. 🔴";
  }catch(e){document.getElementById("status").innerText="هەڵەی لایڤ: "+e.message;}
 }
@@ -1691,6 +1760,7 @@ async function joinCall(){
 // LEAVE LIVE
 async function leaveCall(){
  try{
+  await cleanupHaloHostGuestManager();
   await cleanupHaloLivePresence();
   const hostViewerCount=document.getElementById("haloHostViewerCount");if(hostViewerCount)hostViewerCount.remove();
   if(haloLiveSessionId&&currentUser){const {error:liveEndError}=await db.from("live_sessions").update({status:"ended",ended_at:new Date().toISOString()}).eq("id",haloLiveSessionId).eq("user_id",currentUser.id);if(liveEndError)console.warn("Could not close live session:",liveEndError.message);haloLiveSessionId=null;}
