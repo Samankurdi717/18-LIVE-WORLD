@@ -1335,6 +1335,23 @@ async function loadVideos(){
   const memberItems=(data||[]).sort((a,b)=>
    new Date(b.published_at||b.created_at||0)-new Date(a.published_at||a.created_at||0)
   );
+  // Active live broadcasts appear before short videos in the same vertical feed.
+  const liveResult=await db.from("live_sessions").select("id,user_id,channel,title,started_at").eq("status","live").order("started_at",{ascending:false}).limit(30);
+  if(liveResult.error)throw liveResult.error;
+  for(const live of(liveResult.data||[])){
+   const host=profileMap.get(live.user_id)||{};
+   const liveCard=document.createElement("article");liveCard.className="feed-card halo-live-feed-card";
+   liveCard.style.cssText="display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 35%,#54234f,#101020 65%);";
+   const liveInfo=document.createElement("div");liveInfo.style.cssText="text-align:center;padding:28px;color:white;max-width:90%;";
+   const avatar=document.createElement("div");avatar.style.cssText="width:96px;height:96px;border-radius:50%;margin:0 auto 16px;background:#302044;overflow:hidden;display:grid;place-items:center;font-size:42px;border:3px solid #ff416e;";
+   if(host.avatar_url){const img=document.createElement("img");img.src=host.avatar_url;img.alt="";img.style.cssText="width:100%;height:100%;object-fit:cover";avatar.append(img);}else avatar.textContent="👤";
+   const tag=document.createElement("strong");tag.textContent="🔴 LIVE";
+   const hostName=document.createElement("h2");hostName.textContent=host.display_name||"بەکارهێنەرێک لایڤە";
+   const liveTitle=document.createElement("p");liveTitle.textContent=live.title||"بەشداری لایڤ بکە";
+   const watch=document.createElement("button");watch.type="button";watch.textContent="▶ سەیرکردنی لایڤ";watch.style.cssText="padding:12px 22px;border:0;border-radius:24px;background:#ff315f;color:white;font-weight:bold;margin-top:12px;";
+   watch.addEventListener("click",()=>joinLiveViewer(live.channel,host.display_name||"لایڤ"));
+   liveInfo.append(avatar,tag,hostName,liveTitle,watch);liveCard.append(liveInfo);feed.appendChild(liveCard);
+  }
   memberItems.forEach(item=>{
    const videoUrl=db.storage.from("videos").getPublicUrl(item.storage_path).data.publicUrl;
    const card=document.createElement("article");card.className="feed-card";
@@ -1372,6 +1389,11 @@ async function loadVideos(){
    });
    const comment=document.createElement("button");comment.type="button";comment.className="feed-action";comment.innerHTML="<b>💬</b><span>"+(commentCounts[item.id]||0)+"</span>";comment.setAttribute("aria-label","کۆمێنت");comment.addEventListener("click",()=>openVideoComments(item.id,()=>{commentCounts[item.id]=(commentCounts[item.id]||0)+1;comment.querySelector("span").textContent=commentCounts[item.id];}));
    const share=document.createElement("button");share.type="button";share.className="feed-action";share.innerHTML="<b>↗</b><span>هاوبەش</span>";share.addEventListener("click",()=>openShareVideo(item.id));
+   if(item.user_id!==currentUser.id){
+    const challenge=document.createElement("button");challenge.type="button";challenge.className="feed-action";challenge.innerHTML="<b>⚔️</b><span>تەحەدی</span>";
+    challenge.addEventListener("click",()=>{startDmWithUser(item.user_id);setTimeout(()=>{const input=document.getElementById("dmText");if(input){input.value="⚔️ تەحەدی! بانگهێشتت دەکەم بۆ یاری/ڕکابەری لە KURD HALO. ئامادەیت؟";input.focus();}},450);});
+    actions.append(challenge);
+   }
    const save=document.createElement("button");save.type="button";save.className="feed-action save-video-button"+(savedByMe.has(item.id)?" saved":"");save.innerHTML="<b>🔖</b><span>"+(savedByMe.has(item.id)?"پاشەکەوتکراوە":"Save")+"</span>";
    save.addEventListener("click",async()=>{
     save.disabled=true;const wasSaved=savedByMe.has(item.id);
@@ -1481,6 +1503,41 @@ async function sendDirectMessage(event){
 const AGORA_APP_ID="3b947b82132840c6942bbfa2045eac18";
 const TOKEN_API="https://18-live-world.vercel.app/token";
 let agoraClient=null,localTracks=[],cameraEnabled=true,micEnabled=true,currentCamera="user";
+let haloLiveSessionId=null;
+let haloViewerClient=null;
+function showLiveViewer(){
+ let panel=document.getElementById("haloLiveViewer");
+ if(!panel){panel=document.createElement("div");panel.id="haloLiveViewer";panel.style.cssText="position:fixed;inset:0;z-index:99999;background:#050509;color:white;display:flex;flex-direction:column;padding:12px;";
+  const top=document.createElement("div");top.style.cssText="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px;";
+  const label=document.createElement("strong");label.id="haloLiveViewerTitle";label.textContent="🔴 LIVE";
+  const close=document.createElement("button");close.type="button";close.textContent="✕ داخستن";close.onclick=leaveLiveViewer;top.append(label,close);
+  const stage=document.createElement("div");stage.id="haloLiveViewerStage";stage.style.cssText="flex:1;min-height:0;background:#111;border-radius:14px;overflow:hidden;";
+  const status=document.createElement("p");status.id="haloLiveViewerStatus";status.textContent="پەیوەندی...";
+  panel.append(top,stage,status);document.body.append(panel);
+ }
+ panel.style.display="flex";return panel;
+}
+async function joinLiveViewer(channel,title){
+ if(!currentUser){openAccount();return;}
+ if(haloViewerClient)await leaveLiveViewer();
+ const panel=showLiveViewer();document.getElementById("haloLiveViewerTitle").textContent="🔴 LIVE — "+title;
+ const status=document.getElementById("haloLiveViewerStatus");const stage=document.getElementById("haloLiveViewerStage");stage.innerHTML="";
+ try{
+  const uid=Math.floor(Math.random()*1000000000)+1;
+  const response=await fetch(TOKEN_API+"?channel="+encodeURIComponent(channel)+"&uid="+uid);
+  if(!response.ok)throw new Error("Token API وەڵامی دروستی نەدا.");
+  const tokenData=await response.json();if(!tokenData.token)throw new Error("Token نەدۆزرایەوە.");
+  haloViewerClient=AgoraRTC.createClient({mode:"rtc",codec:"vp8"});
+  haloViewerClient.on("user-published",async(user,mediaType)=>{await haloViewerClient.subscribe(user,mediaType);if(mediaType==="video"){const box=document.createElement("div");box.style.cssText="width:100%;height:100%;";stage.append(box);user.videoTrack.play(box);}if(mediaType==="audio")user.audioTrack.play();});
+  haloViewerClient.on("user-left",()=>{status.textContent="لایڤکەر لایڤی کۆتایی پێهێنا.";});
+  await haloViewerClient.join(AGORA_APP_ID,channel,tokenData.token,uid);status.textContent="بەشداری لایڤت کرد. 🔴";
+ }catch(e){status.textContent="هەڵە لە پەیوەندی: "+e.message; if(haloViewerClient){try{await haloViewerClient.leave();}catch(_){}haloViewerClient=null;}}
+}
+async function leaveLiveViewer(){
+ if(haloViewerClient){try{await haloViewerClient.leave();}catch(_){}haloViewerClient=null;}
+ const panel=document.getElementById("haloLiveViewer");if(panel)panel.style.display="none";
+}
+
  
 async function joinCall(){
  if(!currentUser){alert("سەرەتا بچۆ ژوورەوە.");return;}
@@ -1508,6 +1565,8 @@ async function joinCall(){
   await agoraClient.join(AGORA_APP_ID,channel,token,uid);
   localTracks=await AgoraRTC.createMicrophoneAndCameraTracks();
   await agoraClient.publish(localTracks);localTracks[1].play("local");
+  const {data:liveRow,error:liveError}=await db.from("live_sessions").insert({user_id:currentUser.id,channel:channel,title:channel,status:"live"}).select("id").single();
+  if(liveError)throw liveError;haloLiveSessionId=liveRow.id;
   document.getElementById("status").innerText="بە سەرکەوتوویی چوویتە ژووری لایڤ. 🔴";
  }catch(e){document.getElementById("status").innerText="هەڵەی لایڤ: "+e.message;}
 }
@@ -1515,6 +1574,7 @@ async function joinCall(){
 // LEAVE LIVE
 async function leaveCall(){
  try{
+  if(haloLiveSessionId&&currentUser){const {error:liveEndError}=await db.from("live_sessions").update({status:"ended",ended_at:new Date().toISOString()}).eq("id",haloLiveSessionId).eq("user_id",currentUser.id);if(liveEndError)console.warn("Could not close live session:",liveEndError.message);haloLiveSessionId=null;}
   if(localTracks.length){localTracks.forEach(track=>{track.stop();track.close();});localTracks=[];}
   if(agoraClient){await agoraClient.leave();agoraClient=null;}
   document.getElementById("local").innerHTML="";document.getElementById("remote").innerHTML="";
