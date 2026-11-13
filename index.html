@@ -1108,6 +1108,9 @@ function renderHaloChannelFeedItem(item,feed){
  card.append(author,caption,link);feed.append(card);
 }
  
+// User gesture enables sound for the active feed video; browsers block audible autoplay.
+let haloFeedSoundEnabled=false;
+
 // LOAD VIDEOS
 async function loadVideos(){
  const feed=document.getElementById("feed");
@@ -1165,7 +1168,7 @@ async function loadVideos(){
    if(item._haloSource==="channel"){renderHaloChannelFeedItem(item,feed);return;}
    const videoUrl=db.storage.from("videos").getPublicUrl(item.storage_path).data.publicUrl;
    const card=document.createElement("article");card.className="feed-card";
-   const video=document.createElement("video");video.src=videoUrl;video.controls=false;video.playsInline=true;video.preload="metadata";video.loop=true;video.muted=true;video.addEventListener("click",()=>{if(video.paused)video.play().catch(()=>{});else video.pause();});
+   const video=document.createElement("video");video.src=videoUrl;video.controls=false;video.playsInline=true;video.preload="metadata";video.loop=true;video.muted=!haloFeedSoundEnabled;video.addEventListener("click",()=>{if(video.paused)video.play().catch(()=>{});else video.pause();});
    const author=document.createElement("div");author.className="feed-author";
    const profile=profileMap.get(item.user_id);
    const authorName=document.createElement("span");authorName.className="feed-author-name";authorName.textContent="⭐ "+(profile?.display_name||("ئەندام "+item.user_id.slice(0,8)));author.append(authorName);
@@ -1202,12 +1205,13 @@ async function loadVideos(){
      if(feedMode==="saved"&&wasSaved)card.remove();
     }catch(e){alert("پاشەکەوتکردنی ڤیدیۆ سەرکەوتوو نەبوو: "+e.message);}finally{save.disabled=false;}
    });
-   actions.append(like,comment,share,save);
+   const sound=document.createElement("button");sound.type="button";sound.className="feed-action feed-sound-toggle";sound.innerHTML=haloFeedSoundEnabled?"<b>🔊</b><span>دەنگ</span>":"<b>🔇</b><span>دەنگ</span>";sound.title="چالاک/ناچالاککردنی دەنگ";sound.addEventListener("click",async()=>{haloFeedSoundEnabled=!haloFeedSoundEnabled;document.querySelectorAll("#feed video").forEach(v=>{v.muted=!haloFeedSoundEnabled;if(v!==video)v.pause();});sound.innerHTML=haloFeedSoundEnabled?"<b>🔊</b><span>دەنگ</span>":"<b>🔇</b><span>دەنگ</span>";if(haloFeedSoundEnabled){try{await video.play();}catch(e){haloFeedSoundEnabled=false;video.muted=true;sound.innerHTML="<b>🔇</b><span>دەنگ</span>";alert("بۆ دەنگ، جارێکی تر دوگمەی دەنگ دابگرە.");}}});
+   actions.append(like,comment,share,save,sound);
    card.appendChild(video);card.appendChild(actions);card.appendChild(author);card.appendChild(caption);feed.appendChild(card);
   });
   if(window.kurdStarFeedObserver)window.kurdStarFeedObserver.disconnect();
   window.kurdStarFeedObserver=new IntersectionObserver(entries=>{
-   entries.forEach(entry=>{const v=entry.target.querySelector("video");if(!v)return;if(entry.isIntersecting&&entry.intersectionRatio>=0.65){v.play().catch(()=>{});}else{v.pause();}});
+   entries.forEach(entry=>{const v=entry.target.querySelector("video");if(!v)return;if(entry.isIntersecting&&entry.intersectionRatio>=0.65){v.muted=!haloFeedSoundEnabled;v.play().catch(()=>{});}else{v.pause();}});
   },{root:feed,threshold:[0,0.65,1]});
   feed.querySelectorAll(".feed-card").forEach(card=>window.kurdStarFeedObserver.observe(card));
  }catch(e){feed.textContent="هەڵە لە بارکردنی ڤیدیۆکان: "+e.message;}
