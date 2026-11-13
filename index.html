@@ -694,12 +694,13 @@ function setActiveNav(id){document.querySelectorAll('.bottom-nav button').forEac
 function switchAppTab(tab){
  const profile=document.getElementById('profilePage');const home=document.getElementById('unifiedHub');const inbox=document.getElementById('inboxHub');
  profile?.classList.add('hidden');
+ document.body.classList.toggle('halo-search-open',tab==='friends');
  const isInbox=tab==='inbox';home?.classList.toggle('hidden',isInbox);inbox?.classList.toggle('active',isInbox);
  if(tab==='home'){setActiveNav('navHome');window.scrollTo({top:0,behavior:'smooth'});}
  else if(tab==='friends'){setActiveNav('navFriends');const input=document.getElementById('userSearchInput');input?.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input?.focus(),180);}
  else if(tab==='inbox'){setActiveNav('navInbox');if(currentUser)loadInbox();else openAccount();}
 }
-function openSearch(){switchAppTab('home');const input=document.getElementById('userSearchInput');input?.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input?.focus(),220);}
+function openSearch(){switchAppTab('friends');}
 function openLive(){switchAppTab('home');const live=document.getElementById('liveHub');if(live){live.open=true;live.scrollIntoView({behavior:'smooth',block:'start'});}}
 function openAccount(){setActiveNav('navProfile');document.getElementById('accountModal').classList.remove('hidden');}
 function closeAccount(){if(!currentUser)return;document.getElementById('accountModal').classList.add('hidden');}
@@ -948,6 +949,7 @@ async function signOut(){
 }// PROFILE PAGE, DRAWER AND FEATURE PANELS
 function openMyProfile(){
  if(!currentUser){openAccount();return;}
+ document.body.classList.remove('halo-search-open');
  setActiveNav('navProfile');document.getElementById('inboxHub').classList.remove('active');
  document.getElementById('unifiedHub').classList.add('hidden');
  document.getElementById('profilePage').classList.remove('hidden');
