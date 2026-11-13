@@ -773,6 +773,8 @@ function changeLanguage(lang){
  const t=translations[lang]||translations.ku;
  document.documentElement.lang=lang;
  document.documentElement.dir=["ku","fa","ar"].includes(lang)?"rtl":"ltr";
+ const headerLanguage=document.getElementById("language");if(headerLanguage)headerLanguage.value=lang;
+ document.querySelectorAll("select[data-halo-language]").forEach(el=>{if(el.value!==lang)el.value=lang;});
  document.querySelectorAll("[data-i18n]").forEach(el=>{
   const key=el.getAttribute("data-i18n");
   if(t[key])el.textContent=t[key];
@@ -788,6 +790,7 @@ function changeLanguage(lang){
  });
  document.title="KURD HALO — کورد هەڵۆ";
  localStorage.setItem("kurdora_language",lang);
+ localStorage.setItem("kurdHaloLanguage",lang);
 }
 (function(){const saved=localStorage.getItem("kurdora_language")||localStorage.getItem("kurdstar_language")||"ku";document.getElementById("language").value=saved;changeLanguage(saved);})();
  
@@ -1098,10 +1101,10 @@ async function openProfileFeature(key){
   note('ئیمەیڵ: '+(currentUser?.email||''));
   action('🔐 گۆڕینی وشەی نهێنی',()=>{document.getElementById('newPasswordBox').classList.remove('hidden');closeProfileFeature();document.getElementById('newPasswordBox').scrollIntoView({behavior:'smooth'});});
   heading('🌐 زمان');
-  const language=document.createElement('select');language.style.cssText='width:100%;padding:12px;border-radius:12px;background:#0b0d1b;color:white;border:1px solid var(--line)';
-  [['ku','کوردی'],['ar','العربية'],['en','English']].forEach(([value,label])=>{const o=document.createElement('option');o.value=value;o.textContent=label;language.append(o);});
-  language.value=localStorage.getItem('kurdHaloLanguage')||'ku';
-  language.addEventListener('change',()=>{localStorage.setItem('kurdHaloLanguage',language.value);if(typeof changeLanguage==='function')changeLanguage(language.value);});
+  const language=document.createElement('select');language.setAttribute('data-halo-language','');language.style.cssText='width:100%;padding:12px;border-radius:12px;background:#0b0d1b;color:white;border:1px solid var(--line)';
+  [['ku','کوردی'],['fa','فارسی'],['en','English'],['ar','العربية'],['tr','Türkçe'],['fr','Français'],['de','Deutsch']].forEach(([value,label])=>{const o=document.createElement('option');o.value=value;o.textContent=label;language.append(o);});
+  language.value=localStorage.getItem('kurdora_language')||localStorage.getItem('kurdHaloLanguage')||'ku';
+  language.addEventListener('change',()=>{if(typeof changeLanguage==='function')changeLanguage(language.value);});
   settings.append(language);
   heading('🔔 ئاگادارکردنەوەکان');
   const pref=(key,label)=>{const wrap=document.createElement('label');wrap.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;margin:7px 0;border:1px solid var(--line);border-radius:12px;color:#fff';const span=document.createElement('span');span.textContent=label;const input=document.createElement('input');input.type='checkbox';input.checked=localStorage.getItem('haloPref_'+key)!=='off';input.addEventListener('change',()=>localStorage.setItem('haloPref_'+key,input.checked?'on':'off'));wrap.append(span,input);settings.append(wrap);};
