@@ -1504,6 +1504,79 @@ async function sendDirectMessage(event){
  finally{button.disabled=false;if(attach)attach.disabled=false;}
 }
  
+// KURD HALO LIVE CHAT + REACTIONS
+let haloLiveChatChannel=null;
+let haloLiveChatSessionId=null;
+let haloLiveReplyTo=null;
+async function setupHaloLiveChat(channel,card,stage,status){
+ if(!card||!currentUser)return;
+ const {data:session,error:sessionError}=await db.from("live_sessions").select("id,user_id").eq("channel",channel).eq("status","live").order("started_at",{ascending:false}).limit(1).maybeSingle();
+ if(sessionError||!session){status.textContent=sessionError?"هەڵەی چاتی لایڤ: "+sessionError.message:"دانەی لایڤ نەدۆزرایەوە.";return;}
+ haloLiveChatSessionId=session.id;
+ stage.style.flex="1 1 45%";stage.style.minHeight="180px";
+ const panel=document.createElement("section");panel.className="halo-live-chat";
+ panel.style.cssText="flex:0 0 235px;min-height:0;display:flex;flex-direction:column;background:#10111f;color:white;padding:8px 10px;gap:7px;overflow:hidden;";
+ const head=document.createElement("div");head.style.cssText="display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:bold;";
+ const chatTitle=document.createElement("span");chatTitle.textContent="💬 گفتوگۆی لایڤ";
+ const count=document.createElement("span");count.textContent="❤️ 0";
+ head.append(chatTitle,count);
+ const list=document.createElement("div");list.style.cssText="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px;font-size:12px;";
+ const replyNote=document.createElement("div");replyNote.style.cssText="display:none;color:#f5c96a;font-size:11px;";
+ const form=document.createElement("form");form.style.cssText="display:flex;gap:6px;align-items:center;";
+ const input=document.createElement("input");input.type="text";input.maxLength=500;input.placeholder="کۆمێنت بنووسە...";input.style.cssText="flex:1;min-width:0;margin:0;padding:9px;border-radius:10px;background:#080914;color:white;border:1px solid #ffffff25;";
+ const send=document.createElement("button");send.type="submit";send.textContent="ناردن";send.style.cssText="margin:0;padding:9px 12px;";
+ form.append(input,send);
+ const reactions=document.createElement("div");reactions.style.cssText="display:flex;justify-content:space-around;gap:5px;";
+ ["❤️","😂","😍","🔥","👏"].forEach(emoji=>{const b=document.createElement("button");b.type="button";b.textContent=emoji;b.style.cssText="margin:0;padding:5px 9px;background:#ffffff12;box-shadow:none;font-size:20px;";b.addEventListener("click",async()=>{b.disabled=true;const {error}=await db.from("live_reactions").insert({live_session_id:session.id,user_id:currentUser.id,reaction:emoji});b.disabled=false;if(error)alert("ناردنی لایک سەرکەوتوو نەبوو: "+error.message);});reactions.append(b);});
+ panel.append(head,list,replyNote,form,reactions);
+ const statusParent=status.parentNode;
+ statusParent.insertBefore(panel,status);
+ function cancelReply(){haloLiveReplyTo=null;replyNote.style.display="none";input.placeholder="کۆمێنت بنووسە...";}
+ function renderRows(rows,profiles){
+  list.innerHTML="";
+  if(!rows.length){list.textContent="هێشتا کۆمێنت نییە. یەکەم کۆمێنت بنووسە!";return;}
+  rows.forEach(row=>{
+   const item=document.createElement("div");item.style.cssText="padding:6px 8px;border-radius:9px;background:#ffffff0c;overflow-wrap:anywhere;";
+   const meta=document.createElement("strong");meta.style.cssText="color:#f5c96a;font-size:11px;";
+   meta.textContent=(profiles.get(row.user_id)||"ئەندام")+(row.parent_id?" · وەڵام":"");
+   const body=document.createElement("span");body.textContent=": "+row.message;body.style.cssText="white-space:pre-wrap;line-height:1.6;";
+   const reply=document.createElement("button");reply.type="button";reply.textContent="وەڵام";reply.style.cssText="margin:2px 5px 0 0;padding:3px 7px;font-size:10px;background:#ffffff12;box-shadow:none;";
+   reply.addEventListener("click",()=>{haloLiveReplyTo=row.id;replyNote.textContent="وەڵام بۆ: "+(profiles.get(row.user_id)||"ئەندام");replyNote.style.display="block";input.placeholder="وەڵامەکەت بنووسە...";input.focus();});
+   item.append(meta,body,reply);list.append(item);
+  });
+  list.scrollTop=list.scrollHeight;
+ }
+ async function refreshMessages(){
+  const {data:rows,error}=await db.from("live_messages").select("id,user_id,parent_id,message,created_at").eq("live_session_id",session.id).order("created_at",{ascending:true}).limit(100);
+  if(error){list.textContent="هەڵە لە کۆمێنتەکان: "+error.message;return;}
+  const ids=[...new Set((rows||[]).map(x=>x.user_id))];let profiles=new Map();
+  if(ids.length){const p=await db.from("profiles").select("id,display_name").in("id",ids);if(!p.error)profiles=new Map((p.data||[]).map(x=>[x.id,x.display_name||"ئەندام"]));}
+  renderRows(rows||[],profiles);
+ }
+ async function refreshReactions(){
+  const {count:total,error}=await db.from("live_reactions").select("id",{count:"exact",head:true}).eq("live_session_id",session.id);
+  if(!error)count.textContent="❤️ "+(total||0);
+ }
+ form.addEventListener("submit",async e=>{
+  e.preventDefault();const message=input.value.trim();if(!message)return;
+  send.disabled=true;
+  const payload={live_session_id:session.id,user_id:currentUser.id,message,parent_id:haloLiveReplyTo||null};
+  const {error}=await db.from("live_messages").insert(payload);
+  send.disabled=false;
+  if(error){alert("کۆمێنت نەنووسرا: "+error.message);return;}
+  input.value="";cancelReply();await refreshMessages();
+ });
+ haloLiveChatChannel=db.channel("halo-live-chat-"+session.id)
+  .on("postgres_changes",{event:"*",schema:"public",table:"live_messages",filter:"live_session_id=eq."+session.id},()=>refreshMessages())
+  .on("postgres_changes",{event:"INSERT",schema:"public",table:"live_reactions",filter:"live_session_id=eq."+session.id},()=>refreshReactions())
+  .subscribe();
+ await Promise.all([refreshMessages(),refreshReactions()]);
+}
+async function cleanupHaloLiveChat(){
+ if(haloLiveChatChannel){try{await db.removeChannel(haloLiveChatChannel);}catch(_){}haloLiveChatChannel=null;}
+ haloLiveChatSessionId=null;haloLiveReplyTo=null;
+}
+
 // AGORA LIVE
 const AGORA_APP_ID="3b947b82132840c6942bbfa2045eac18";
 const TOKEN_API="https://18-live-world.vercel.app/token";
@@ -1542,10 +1615,11 @@ async function joinLiveViewer(channel,title,inlineCard){
    if(mediaType==="audio")user.audioTrack.play();
   });
   haloViewerClient.on("user-left",()=>{status.textContent="لایڤکەر لایڤی کۆتایی پێهێنا.";});
-  await haloViewerClient.join(AGORA_APP_ID,channel,tokenData.token,uid);status.textContent="🔴 لە هەمان فیددا لایڤ دەبینیت";
+  await haloViewerClient.join(AGORA_APP_ID,channel,tokenData.token,uid);status.textContent="🔴 لە هەمان فیددا لایڤ دەبینیت";await setupHaloLiveChat(channel,inlineCard,stage,status);
  }catch(e){status.textContent="هەڵە لە پەیوەندی: "+e.message;if(haloViewerClient){try{await haloViewerClient.leave();}catch(_){}haloViewerClient=null;}}
 }
 async function leaveLiveViewer(){
+ await cleanupHaloLiveChat();
  if(haloViewerClient){try{await haloViewerClient.leave();}catch(_){}haloViewerClient=null;}
  if(haloViewerInlineCard){
   const card=haloViewerInlineCard;haloViewerInlineCard=null;
