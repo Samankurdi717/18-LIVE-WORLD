@@ -1307,7 +1307,7 @@ async function loadVideos(){
    if(followError)throw followError;followedIds=(followRows||[]).map(x=>x.following_id);
    data=data.filter(v=>followedIds.includes(v.user_id));
   }
-  if(!data||data.length===0){feed.innerHTML=feedMode==="following"?"<p class=\"small\">هێشتا هیچ کەسێکت شوێن نەکەوتووە، یان ئەوانە ڤیدیۆیان بڵاو نەکردووەتەوە.</p>":feedMode==="saved"?"<p class=\"small\">هێشتا هیچ ڤیدیۆیەکت پاشەکەوت نەکردووە.</p>":"<p class=\"small\">هێشتا ڤیدیۆیەک بڵاو نەکراوەتەوە. یەکەم ڤیدیۆت بڵاو بکەرەوە!</p>";return;}
+  
   const videoIds=data.map(v=>v.id);
   const [likesResult,commentsResult]=videoIds.length?await Promise.all([
    db.from("video_likes").select("video_id,user_id").in("video_id",videoIds),
@@ -1338,7 +1338,11 @@ async function loadVideos(){
   // Active live broadcasts appear before short videos in the same vertical feed.
   const liveResult=await db.from("live_sessions").select("id,user_id,channel,title,started_at").eq("status","live").order("started_at",{ascending:false}).limit(30);
   if(liveResult.error)throw liveResult.error;
-  for(const live of(liveResult.data||[])){
+  const liveRows=liveResult.data||[];
+  if(!data.length&&!liveRows.length){feed.innerHTML=feedMode==="following"?"<p class=\"small\">هێشتا هیچ کەسێکت شوێن نەکەوتووە، یان ئەوانە ڤیدیۆیان بڵاو نەکردووەتەوە.</p>":feedMode==="saved"?"<p class=\"small\">هێشتا هیچ ڤیدیۆیەکت پاشەکەوت نەکردووە.</p>":"<p class=\"small\">هێشتا ڤیدیۆیەک بڵاو نەکراوەتەوە. یەکەم ڤیدیۆت بڵاو بکەرەوە!</p>";return;}
+  const liveHostIds=liveRows.map(x=>x.user_id).filter(id=>!profileMap.has(id));
+  if(liveHostIds.length){const liveProfiles=await db.from("profiles").select("id,display_name,avatar_url").in("id",liveHostIds);if(liveProfiles.error)throw liveProfiles.error;(liveProfiles.data||[]).forEach(p=>profileMap.set(p.id,p));}
+  for(const live of liveRows){
    const host=profileMap.get(live.user_id)||{};
    const liveCard=document.createElement("article");liveCard.className="feed-card halo-live-feed-card";
    liveCard.style.cssText="display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 35%,#54234f,#101020 65%);";
