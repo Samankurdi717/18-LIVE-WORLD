@@ -1508,18 +1508,41 @@ async function sendDirectMessage(event){
 let haloLiveChatChannel=null;
 let haloLiveChatSessionId=null;
 let haloLiveReplyTo=null;
+let haloLivePresenceChannel=null;
+async function setupHaloLivePresence(sessionId,display){
+ if(!sessionId||!currentUser||!display)return;
+ if(haloLivePresenceChannel){try{await db.removeChannel(haloLivePresenceChannel);}catch(_){}haloLivePresenceChannel=null;}
+ const channel=db.channel("halo-live-presence-"+sessionId,{config:{presence:{key:currentUser.id}}});
+ channel.on("presence",{event:"sync"},()=>{
+  const state=channel.presenceState();const ids=new Set();
+  Object.values(state).forEach(entries=>(entries||[]).forEach(entry=>{if(entry.user_id)ids.add(entry.user_id);}));
+  display.textContent="👁️ "+ids.size+" بینەر";
+ });
+ channel.subscribe(async status=>{
+  if(status==="SUBSCRIBED"){
+   const {error}=await channel.track({user_id:currentUser.id,joined_at:new Date().toISOString()});
+   if(error)console.warn("Live presence track failed:",error.message);
+  }
+ });
+ haloLivePresenceChannel=channel;
+}
+async function cleanupHaloLivePresence(){
+ if(haloLivePresenceChannel){try{await db.removeChannel(haloLivePresenceChannel);}catch(_){}haloLivePresenceChannel=null;}
+}
 async function setupHaloLiveChat(channel,card,stage,status){
  if(!card||!currentUser)return;
  const {data:session,error:sessionError}=await db.from("live_sessions").select("id,user_id").eq("channel",channel).eq("status","live").order("started_at",{ascending:false}).limit(1).maybeSingle();
  if(sessionError||!session){status.textContent=sessionError?"هەڵەی چاتی لایڤ: "+sessionError.message:"دانەی لایڤ نەدۆزرایەوە.";return;}
  haloLiveChatSessionId=session.id;
+ const viewerCount=document.createElement("span");viewerCount.textContent="👁️ 1 بینەر";viewerCount.style.cssText="font-size:11px;color:#f5c96a;";
+ await setupHaloLivePresence(session.id,viewerCount);
  stage.style.flex="1 1 45%";stage.style.minHeight="180px";
  const panel=document.createElement("section");panel.className="halo-live-chat";
  panel.style.cssText="flex:0 0 235px;min-height:0;display:flex;flex-direction:column;background:#10111f;color:white;padding:8px 10px;gap:7px;overflow:hidden;";
  const head=document.createElement("div");head.style.cssText="display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:bold;";
  const chatTitle=document.createElement("span");chatTitle.textContent="💬 گفتوگۆی لایڤ";
  const count=document.createElement("span");count.textContent="❤️ 0";
- head.append(chatTitle,count);
+ head.append(chatTitle,count,viewerCount);
  const list=document.createElement("div");list.style.cssText="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px;font-size:12px;";
  const replyNote=document.createElement("div");replyNote.style.cssText="display:none;color:#f5c96a;font-size:11px;";
  const form=document.createElement("form");form.style.cssText="display:flex;gap:6px;align-items:center;";
@@ -1574,6 +1597,7 @@ async function setupHaloLiveChat(channel,card,stage,status){
 }
 async function cleanupHaloLiveChat(){
  if(haloLiveChatChannel){try{await db.removeChannel(haloLiveChatChannel);}catch(_){}haloLiveChatChannel=null;}
+ await cleanupHaloLivePresence();
  haloLiveChatSessionId=null;haloLiveReplyTo=null;
 }
 
@@ -1657,6 +1681,9 @@ async function joinCall(){
   await agoraClient.publish(localTracks);localTracks[1].play("local");
   const {data:liveRow,error:liveError}=await db.from("live_sessions").insert({user_id:currentUser.id,channel:channel,title:channel,status:"live"}).select("id").single();
   if(liveError)throw liveError;haloLiveSessionId=liveRow.id;
+  let hostViewerCount=document.getElementById("haloHostViewerCount");
+  if(!hostViewerCount){hostViewerCount=document.createElement("span");hostViewerCount.id="haloHostViewerCount";hostViewerCount.style.cssText="display:inline-block;margin:0 8px;color:#f5c96a;font-weight:bold;";document.getElementById("status").insertAdjacentElement("afterend",hostViewerCount);}
+  await setupHaloLivePresence(liveRow.id,hostViewerCount);
   document.getElementById("status").innerText="بە سەرکەوتوویی چوویتە ژووری لایڤ. 🔴";
  }catch(e){document.getElementById("status").innerText="هەڵەی لایڤ: "+e.message;}
 }
@@ -1664,6 +1691,8 @@ async function joinCall(){
 // LEAVE LIVE
 async function leaveCall(){
  try{
+  await cleanupHaloLivePresence();
+  const hostViewerCount=document.getElementById("haloHostViewerCount");if(hostViewerCount)hostViewerCount.remove();
   if(haloLiveSessionId&&currentUser){const {error:liveEndError}=await db.from("live_sessions").update({status:"ended",ended_at:new Date().toISOString()}).eq("id",haloLiveSessionId).eq("user_id",currentUser.id);if(liveEndError)console.warn("Could not close live session:",liveEndError.message);haloLiveSessionId=null;}
   if(localTracks.length){localTracks.forEach(track=>{track.stop();track.close();});localTracks=[];}
   if(agoraClient){await agoraClient.leave();agoraClient=null;}
