@@ -1825,6 +1825,7 @@ async function leaveCall(){
   document.getElementById("local").innerHTML="";document.getElementById("remote").innerHTML="";
   document.getElementById("status").innerText="لە ژووری لایڤ دەرچوویت.";
  }catch(e){document.getElementById("status").innerText="هەڵە: "+e.message;}
+ await loadVideos();
 }
 async function toggleCamera(){if(!localTracks[1])return;cameraEnabled=!cameraEnabled;await localTracks[1].setEnabled(cameraEnabled);}
 async function toggleMic(){if(!localTracks[0])return;micEnabled=!micEnabled;await localTracks[0].setEnabled(micEnabled);}
