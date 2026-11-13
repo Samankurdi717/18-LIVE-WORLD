@@ -413,7 +413,62 @@ body.auth-required .bottom-nav{display:none!important}
 </div>
  
 <!-- ONE UNIFIED TIKTOK-STYLE VIDEO + LIVE HUB -->
+ 
 <section class="app-page unified-hub" id="unifiedHub">
+ <!-- KURD HALO CHANNELS -->
+<div id="haloChannelsPanel" style="padding:14px;margin:12px 0;background:#171717;border:1px solid #b89542;border-radius:14px;color:white;">
+
+  <h3 style="color:#e5c46b;">📺 کەناڵەکانی KURD HALO</h3>
+  <p>کەناڵەکانی کوردستان و جیهان بدۆزەرەوە، شوێنیان بکەوە و ڤیدیۆکان ببینە.</p>
+
+  <input id="haloChannelSearch" type="search" placeholder="گەڕان بەدوای ناوی کەناڵ..." style="width:100%;padding:12px;margin:8px 0;border-radius:8px;">
+
+  <select id="haloChannelCategory" style="width:100%;padding:12px;margin:8px 0;border-radius:8px;">
+    <option value="">هەموو بەشەکان</option>
+    <option value="هەواڵ">هەواڵ</option>
+    <option value="وەرزش">وەرزش</option>
+    <option value="هونەر">هونەر و میوزیک</option>
+    <option value="تەکنەلۆژیا">تەکنەلۆژیا</option>
+    <option value="کۆمیدی">کۆمیدی</option>
+    <option value="گشتی">گشتی</option>
+  </select>
+
+  <button onclick="loadHaloChannels()" style="width:100%;padding:12px;background:#b89542;color:black;border:0;border-radius:8px;font-weight:bold;">
+    گەڕان و نوێکردنەوە
+  </button>
+
+  <hr style="border-color:#555;margin:18px 0;">
+
+  <h3>➕ دروستکردنی کەناڵی خۆت</h3>
+
+  <input id="haloNewChannelName" placeholder="ناوی کەناڵ" style="width:100%;padding:12px;margin:6px 0;">
+
+  <textarea id="haloNewChannelDescription" placeholder="دەربارەی کەناڵەکەت..." style="width:100%;padding:12px;margin:6px 0;"></textarea>
+
+  <input id="haloNewChannelAvatar" placeholder="لینکی وێنەی کەناڵ (ئارەزوومەندانە)" style="width:100%;padding:12px;margin:6px 0;">
+
+  <select id="haloNewChannelCategory" style="width:100%;padding:12px;margin:6px 0;">
+    <option value="گشتی">گشتی</option>
+    <option value="هەواڵ">هەواڵ</option>
+    <option value="وەرزش">وەرزش</option>
+    <option value="هونەر">هونەر و میوزیک</option>
+    <option value="تەکنەلۆژیا">تەکنەلۆژیا</option>
+    <option value="کۆمیدی">کۆمیدی</option>
+  </select>
+
+  <button onclick="createHaloChannel()" style="width:100%;padding:13px;background:#e5c46b;color:black;border:0;border-radius:8px;font-weight:bold;">
+    دروستکردنی کەناڵ
+  </button>
+
+  <div id="haloChannelMessage" style="margin-top:12px;"></div>
+
+  <hr style="border-color:#555;margin:18px 0;">
+
+  <h3>🌍 کەناڵەکان</h3>
+  <div id="haloChannelsList">کەناڵەکان لێرە پیشان دەدرێن.</div>
+
+</div>
+<!-- END KURD HALO CHANNELS -->
  <div class="unified-heading">
   <h2>🦅 KURD HALO</h2>
   <p class="section-kicker" data-i18n="allVideos">هەموو ڤیدیۆکان لە یەک فیددا</p>
@@ -928,6 +983,218 @@ async function searchUsers(){
  
 // LOAD VIDEOS
 async function loadVideos(){
+// =====================================
+// KURD HALO CHANNELS
+// =====================================
+
+async function loadHaloChannels(){
+ const list=document.getElementById("haloChannelsList");
+ const search=document.getElementById("haloChannelSearch");
+ const category=document.getElementById("haloChannelCategory");
+ const message=document.getElementById("haloChannelMessage");
+ if(!list)return;
+
+ list.textContent="کەناڵەکان بار دەکرێن...";
+
+ try{
+  const term=(search?.value||"").trim();
+  const selectedCategory=category?.value||"";
+
+  let query=db.from("halo_channels").select("*").order("created_at",{ascending:false});
+
+  if(selectedCategory)query=query.eq("category",selectedCategory);
+  if(term)query=query.ilike("name","%"+term+"%");
+
+  const {data:channels,error}=await query.limit(100);
+  if(error)throw error;
+
+  let followedSet=new Set();
+
+  if(currentUser){
+   const {data:follows,error:followError}=await db
+    .from("halo_channel_follows")
+    .select("channel_id")
+    .eq("user_id",currentUser.id);
+
+   if(followError)throw followError;
+   followedSet=new Set((follows||[]).map(x=>x.channel_id));
+  }
+
+  list.replaceChildren();
+
+  if(!channels||!channels.length){
+   list.textContent="هیچ کەناڵێک نەدۆزرایەوە.";
+   return;
+  }
+
+  channels.forEach(channel=>{
+   const card=document.createElement("div");
+   card.style.cssText="padding:12px;margin:10px 0;background:#242424;border:1px solid #555;border-radius:12px;";
+
+   const header=document.createElement("div");
+   header.style.cssText="display:flex;align-items:center;gap:10px;";
+
+   if(channel.avatar_url){
+    const img=document.createElement("img");
+    img.src=channel.avatar_url;
+    img.alt="";
+    img.style.cssText="width:48px;height:48px;border-radius:50%;object-fit:cover;";
+    header.append(img);
+   }
+
+   const info=document.createElement("div");
+   info.style.cssText="flex:1;min-width:0;";
+
+   const name=document.createElement("strong");
+   name.textContent=(channel.is_verified?"✓ ":"📺 ")+(channel.name||"کەناڵ");
+   name.style.color="#e5c46b";
+
+   const detail=document.createElement("div");
+   detail.style.cssText="font-size:12px;color:#bbb;margin-top:5px;";
+   detail.textContent=(channel.category||"گشتی")+(channel.is_external?" • کەناڵی دەرەکی":" • کەناڵی ئەندام");
+
+   info.append(name,detail);
+   header.append(info);
+   card.append(header);
+
+   if(channel.description){
+    const desc=document.createElement("p");
+    desc.textContent=channel.description;
+    desc.style.cssText="font-size:13px;color:#ddd;";
+    card.append(desc);
+   }
+
+   const actions=document.createElement("div");
+   actions.style.cssText="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;";
+
+   const follow=document.createElement("button");
+   follow.type="button";
+   const isFollowing=followedSet.has(channel.id);
+   follow.dataset.following=String(isFollowing);
+   follow.textContent=isFollowing?"✓ شوێنکەوتوویت":"➕ شوێنکەوتن";
+   follow.style.cssText="padding:9px 14px;border:0;border-radius:8px;background:#b89542;color:#111;font-weight:bold;";
+   follow.addEventListener("click",()=>toggleHaloChannelFollow(channel.id,follow));
+   actions.append(follow);
+
+   const url=channel.channel_url||channel.website_url;
+   if(url){
+    try{
+     const parsed=new URL(url);
+     if(parsed.protocol==="https:"||parsed.protocol==="http:"){
+      const link=document.createElement("a");
+      link.href=parsed.href;
+      link.target="_blank";
+      link.rel="noopener noreferrer";
+      link.textContent="بینینی کەناڵ ↗";
+      link.style.cssText="padding:9px;color:#e5c46b;";
+      actions.append(link);
+     }
+    }catch(e){}
+   }
+
+   card.append(actions);
+   list.append(card);
+  });
+
+  if(message)message.textContent="کەناڵەکان نوێکرانەوە.";
+ }catch(e){
+  list.textContent="هەڵە لە بارکردنی کەناڵەکان: "+e.message;
+ }
+}
+
+async function toggleHaloChannelFollow(channelId,button){
+ if(!currentUser){
+  alert("بۆ شوێنکەوتنی کەناڵ سەرەتا بچۆ ژوورەوە.");
+  return;
+ }
+
+ const wasFollowing=button.dataset.following==="true";
+ button.disabled=true;
+
+ try{
+  if(wasFollowing){
+   const {error}=await db.from("halo_channel_follows")
+    .delete()
+    .eq("user_id",currentUser.id)
+    .eq("channel_id",channelId);
+   if(error)throw error;
+  }else{
+   const {error}=await db.from("halo_channel_follows")
+    .insert({user_id:currentUser.id,channel_id:channelId});
+   if(error)throw error;
+  }
+
+  button.dataset.following=String(!wasFollowing);
+  button.textContent=wasFollowing?"➕ شوێنکەوتن":"✓ شوێنکەوتوویت";
+ }catch(e){
+  alert("شوێنکەوتنی کەناڵ سەرکەوتوو نەبوو: "+e.message);
+ }finally{
+  button.disabled=false;
+ }
+}
+
+async function createHaloChannel(){
+ const nameInput=document.getElementById("haloNewChannelName");
+ const descInput=document.getElementById("haloNewChannelDescription");
+ const avatarInput=document.getElementById("haloNewChannelAvatar");
+ const categoryInput=document.getElementById("haloNewChannelCategory");
+ const message=document.getElementById("haloChannelMessage");
+
+ const name=(nameInput?.value||"").trim();
+ const description=(descInput?.value||"").trim();
+ const avatar=(avatarInput?.value||"").trim();
+ const category=categoryInput?.value||"گشتی";
+
+ if(!currentUser){
+  if(message)message.textContent="بۆ دروستکردنی کەناڵ سەرەتا بچۆ ژوورەوە.";
+  return;
+ }
+
+ if(name.length<2){
+  if(message)message.textContent="ناوی کەناڵ لانیکەم دوو پیت بێت.";
+  return;
+ }
+
+ if(avatar){
+  try{
+   const parsed=new URL(avatar);
+   if(parsed.protocol!=="https:"&&parsed.protocol!=="http:")throw new Error();
+  }catch(e){
+   if(message)message.textContent="لینکی وێنەکە دروست نییە.";
+   return;
+  }
+ }
+
+ const createButton=document.querySelector('#haloChannelsPanel button[onclick="createHaloChannel()"]');
+ if(createButton)createButton.disabled=true;
+ if(message)message.textContent="کەناڵەکەت دروست دەکرێت...";
+
+ try{
+  const {error}=await db.from("halo_channels").insert({
+   owner_id:currentUser.id,
+   name:name,
+   description:description,
+   avatar_url:avatar||null,
+   category:category,
+   is_external:false,
+   is_verified:false
+  });
+
+  if(error)throw error;
+
+  if(nameInput)nameInput.value="";
+  if(descInput)descInput.value="";
+  if(avatarInput)avatarInput.value="";
+
+  if(message)message.textContent="کەناڵەکەت بە سەرکەوتوویی دروست کرا. 🎉";
+  await loadHaloChannels();
+ }catch(e){
+  if(message)message.textContent="دروستکردنی کەناڵ سەرکەوتوو نەبوو: "+e.message;
+ }finally{
+  if(createButton)createButton.disabled=false;
+ }
+}
+
  const feed=document.getElementById("feed");
  if(!currentUser){feed.innerHTML="<p class='small'>بۆ بینینی ڤیدیۆکان سەرەتا هەژمار دروست بکە یان بچۆ ژوورەوە.</p>";return;}
  feed.innerHTML="<p>چاوەڕێ بکە...</p>";
