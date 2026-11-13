@@ -471,7 +471,23 @@ body.auth-required .bottom-nav{display:none!important}
 .feed-seek::-webkit-slider-thumb{-webkit-appearance:none!important;appearance:none!important;width:18px!important;height:18px!important;margin-top:-7px!important;border:2px solid #fff!important;border-radius:50%!important;background:#f5c96a!important;box-shadow:0 1px 5px #000!important}
 .feed-seek::-moz-range-track{height:6px!important;border-radius:8px!important;background:rgba(255,255,255,.75)!important}
 .feed-seek::-moz-range-thumb{width:18px!important;height:18px!important;border:2px solid #fff!important;border-radius:50%!important;background:#f5c96a!important}
-\n</style>
+\n
+/* KURD HALO animated gift catalog */
+.halo-gifts{margin:12px 0;padding:12px;border:1px solid rgba(245,201,106,.38);border-radius:16px;background:rgba(16,17,32,.94);color:#fff}
+.halo-gifts summary{cursor:pointer;font-weight:800;color:#f5cf78;padding:7px}
+.halo-gifts input,.halo-gifts select{width:100%;margin:7px 0;padding:11px;border-radius:10px;background:#202238;color:#fff;border:1px solid #555}
+.halo-gift-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;max-height:390px;overflow:auto}
+.halo-gift-card{min-width:0;padding:9px 4px;border:1px solid #45465d;border-radius:12px;background:#202238;color:#fff;text-align:center;cursor:pointer}
+.halo-gift-card:active,.halo-gift-card.selected{border-color:#f5cf78;background:#383047}
+.halo-gift-emoji{display:block;font-size:30px;animation:haloGiftFloat 2s ease-in-out infinite}
+.halo-gift-name{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px 0}
+.halo-gift-price{display:block;font-size:11px;color:#f5cf78;font-weight:800}
+.halo-gift-preview{margin-top:10px;padding:12px;border-radius:12px;background:#111323;text-align:center;line-height:1.8}
+.halo-gift-preview .big{font-size:48px;display:block;animation:haloGiftFloat 1.3s ease-in-out infinite}
+@keyframes haloGiftFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.08)}}
+@media(max-width:420px){.halo-gift-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.halo-gift-card{padding:7px 2px}}
+
+</style>
 </head>
 <body>
 <div class="container">
@@ -660,6 +676,15 @@ body.auth-required .bottom-nav{display:none!important}
    <button class="dark" onclick="toggleCamera()" data-i18n="camera">📷 کامێرا</button>
    <button class="dark" onclick="toggleMic()" data-i18n="microphone">🎤 مایکرۆفۆن</button>
   </div>
+  <details class="halo-gifts" id="haloGiftCatalog">
+   <summary>🎁 کۆمەڵە دیارییەکانی KURD HALO — ١ تا ١٠,٠٠٠ درهەم</summary>
+   <p class="small">١٢٥ دیاریی جۆراوجۆر: گوڵ، دڵ، خۆشی، ئاژەڵ، شێر، پڵنگ، ئۆتۆمبێل و شتە ئەفسانەییەکان.</p>
+   <input id="giftSearch" type="search" placeholder="گەڕان بە ناوی دیاری..." oninput="renderHaloGifts()">
+   <select id="giftCategory" onchange="renderHaloGifts()"><option value="all">هەموو جۆرەکان</option><option value="love">خۆشەویستی و گوڵ</option><option value="fun">خۆشی و ڕۆژانە</option><option value="luxury">شتە گرانبەهاکان</option><option value="fantasy">ئەفسانەیی و ئاژەڵان</option><option value="travel">گەشت و ئۆتۆمبێل</option></select>
+   <div id="haloGiftGrid" class="halo-gift-grid"></div>
+   <div id="haloGiftPreview" class="halo-gift-preview">دیارییەک هەڵبژێرە بۆ بینینی نرخ و دابەشکردنی ٤٠٪ / ٦٠٪.</div>
+   <p class="small">ئەمە کاتالۆگی دیارییەکانە؛ ناردنی ڕاستەقینە و کەمکردنەوەی باڵانس پێویستی بە خشتە و پاراستنی Supabase هەیە. تا ئەوە ئامادە نەبێت هیچ درهەمێک کەم ناکرێتەوە.</p>
+  </details>
  </details>
  
 </section>
@@ -1496,6 +1521,32 @@ async function switchCamera(){
  }catch(e){document.getElementById("status").innerText="هەڵەی کامێرا: "+e.message;}
 }
  
+
+ // KURD HALO gift catalog: 125 gifts with animated previews and 40/60 split calculator.
+ const HALO_GIFT_GROUPS={
+ love:[['🌹','گوڵی سوور'],['🌷','گوڵی لێلی'],['🌻','گوڵی خۆر'],['💐','دەستەگوڵ'],['🌺','گوڵی جوان'],['🌸','شکۆفە'],['🪷','نیلوفەر'],['❤️','دڵی سوور'],['💖','دڵی بریسکەدار'],['💗','دڵی گەورە'],['💘','دڵی تیرکراو'],['💝','دڵی دیاری'],['💕','دوو دڵ'],['💞','دڵی سووڕاو'],['💓','دڵی لێدان'],['💌','نامەی خۆشەویستی'],['💋','ماچ'],['😘','ماچ و پەیک'],['🧸','خرسی خۆشەویستی'],['🦋','پەپوولە'],['🕊️','کۆترەی ئاشتی'],['🌹','گوڵباران'],['💍','ئەڵقە'],['💑','کۆپلەی خۆشەویست'],['🌈','کەوانەڕەنگ']],
+ fun:[['🎈','باڵۆن'],['🎉','ئاهەنگ'],['🎊','کۆنفێتی'],['🎂','کیک'],['🧁','کاپکەیک'],['🍰','شیرینی'],['🍓','توت‌فرەنگی'],['🍫','شۆکۆلاتە'],['🍬','شەکرەمەنی'],['🍭','لۆلیپۆپ'],['🍩','دۆنات'],['🍕','پیتزا'],['🍔','هامبەرگەر'],['🍉','شوتی'],['☕','قاوە'],['🧋','شەربەتی مۆڵ'],['🎁','سندوقی دیاری'],['🎀','شریتی سوور'],['🎵','مۆسیقا'],['🎸','گیتار'],['🎤','مایکرۆفۆن'],['🎧','سەماعە'],['⚽','تۆپی پێ'],['🏆','جام'],['🥇','مەدالیای زێڕ']],
+ luxury:[['👑','تاجی شاهانە'],['💎','ئەڵماس'],['💍','ئەڵقەی زێڕ'],['💰','کیسی پارە'],['🪙','دراوی زێڕ'],['💵','پارەی کاغەزی'],['🏅','مەدالیای تایبەت'],['🚘','لیمۆزین'],['🏎️','سەیارەی خێرا'],['🛥️','یەخت'],['🚁','هێلیکۆپتەر'],['✈️','فڕۆکە'],['🏰','کۆشک'],['🏝️','دوورگەی تایبەت'],['🌌','ئاسمانی ئەستێرە'],['💫','گەردوونی زێڕین'],['🪄','دارە جادوو'],['🔱','سێشاخی شاهانە'],['🦚','تاووس'],['🦢','قازە سپی'],['🦄','ئەسپە شاخدار'],['🐎','ئەسپ'],['🐬','دۆلفین'],['🦅','هەڵۆ'],['🌟','ئەستێرەی زێڕین']],
+ fantasy:[['🦁','شێر'],['🐅','پڵنگ'],['🐉','ئەژدیها'],['🐲','سەری ئەژدیها'],['🦖','دایناسۆر'],['🐺','گورگ'],['🦊','ڕێوی'],['🐻','ورچ'],['🐼','پاندە'],['🦓','گورخر'],['🦒','زەرافە'],['🐘','فیل'],['🦏','کرگدن'],['🦛','ئەسپابی'],['🦌','ئاسک'],['🦜','تووتی'],['🦉','بوومەلەرز'],['🦩','فلامینگو'],['🦈','کوسە'],['🐳','نەهەنگ'],['🐙','هەشتپێ'],['🦀','کەڕوو'],['🔥','ئاگری ئەفسانەیی'],['🪽','باڵی فریشتە'],['🧚','پەری']],
+ travel:[['🚗','ئۆتۆمبێل'],['🚕','تەکسی'],['🚙','جیپ'],['🏍️','ماتۆڕ'],['🚲','پاسکیل'],['🛴','سکوتەر'],['🚂','شەمەندەفەر'],['🚄','شەمەندەفەری خێرا'],['🚆','شەمەندەفەری گەشت'],['🚀','مووشەک'],['🛸','فڕۆکەی نامۆ'],['🛩️','فڕۆکەی بچووک'],['🛳️','کەشتی گەشتیاری'],['⛵','بەلەم'],['🚤','بەلەمی خێرا'],['🚜','تراکتۆر'],['🚒','ئۆتۆمبێلی ئاگرکوژێنەوە'],['🚑','ئەمبولانس'],['🚓','پۆلیس'],['🚐','ڤان'],['🚌','پاس'],['🚎','پاسی کارەبایی'],['🚝','مۆنۆڕەیل'],['🚠','تەلفریک'],['🚁','هێلیکۆپتەر']]
+ };
+ const HALO_GIFT_PRICES=[1,2,3,5,7,10,15,20,25,30,40,50,60,75,100,125,150,200,250,300,350,400,450,500,600,650,700,750,800,900,1000,1200,1500,1800,2000,2500,3000,3500,4000,5000,6000,7500,10000];
+ const haloGiftList=Object.entries(HALO_GIFT_GROUPS).flatMap(([category,items],groupIndex)=>items.map((item,index)=>({category,emoji:item[0],name:item[1],price:HALO_GIFT_PRICES[(index*7+groupIndex*5)%HALO_GIFT_PRICES.length]})));
+ let selectedHaloGift=null;
+ function renderHaloGifts(){
+  const grid=document.getElementById('haloGiftGrid');if(!grid)return;
+  const q=(document.getElementById('giftSearch')?.value||'').trim().toLowerCase(),cat=document.getElementById('giftCategory')?.value||'all';
+  const list=haloGiftList.filter(g=>(cat==='all'||g.category===cat)&&(!q||(g.name+' '+g.emoji).toLowerCase().includes(q)));
+  grid.innerHTML=list.map(g=>'<button type="button" class="halo-gift-card '+(selectedHaloGift===g.name?'selected':'')+'" onclick="selectHaloGift('+haloGiftList.indexOf(g)+')"><span class="halo-gift-emoji">'+g.emoji+'</span><span class="halo-gift-name">'+g.name+'</span><span class="halo-gift-price">'+g.price.toLocaleString('en-US')+' درهەم</span></button>').join('')||'<p class="small">هیچ دیارییەک نەدۆزرایەوە.</p>';
+ }
+ function selectHaloGift(index){
+  const g=haloGiftList[index];if(!g)return;selectedHaloGift=g.name;
+  const preview=document.getElementById('haloGiftPreview');if(!preview)return;
+  const owner=Math.round(g.price*.4),receiver=g.price-owner;
+  preview.innerHTML='<span class="big">'+g.emoji+'</span><strong>'+g.name+'</strong><br>نرخ: '+g.price.toLocaleString('en-US')+' درهەم<br>٤٠٪ بۆ KURD HALO: '+owner.toLocaleString('en-US')+' درهەم<br>٦٠٪ بۆ وەرگر: '+receiver.toLocaleString('en-US')+' درهەم';
+  renderHaloGifts();
+ }
+
 // SESSION AND AUTH EVENTS
 // ===============================
 // KURD HALO PUBLIC SOUND LIBRARY
