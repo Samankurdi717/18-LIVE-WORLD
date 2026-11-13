@@ -628,9 +628,6 @@ body.auth-required .bottom-nav{display:none!important}
   <summary data-i18n="uploadTitle">⬆️ بڵاوکردنەوەی ڤیدیۆ</summary>
   <p data-i18n="chooseVideo">ڤیدیۆیەک لە گەلەری مۆبایلەکەت هەڵبژێرە</p>
   <input type="file" id="videoFile" accept="video/*">
-  <p class="small">🎵 گۆرانی/دەنگ لە مۆبایلەکەت هەڵبژێرە (ئارەزوومەندانە)</p>
-  <input type="file" id="soundFile" accept="audio/*">
-  <audio id="soundPreview" controls style="display:none;width:100%;margin:8px 0"></audio>
   <textarea id="caption" rows="2" placeholder="دەربارەی ڤیدیۆکەت بنووسە..."></textarea>
   <button onclick="uploadVideo()" data-i18n="uploadButton">⬆️ بارکردنی ڤیدیۆ</button>
   <p id="uploadStatus"></p>
@@ -1037,23 +1034,16 @@ async function openProfileFeature(key){
 }
 function closeProfileFeature(){document.getElementById('profileFeatureModal').classList.add('hidden');}
  
-// SOUND FILE PREVIEW
-const soundPicker=document.getElementById("soundFile");
-if(soundPicker){soundPicker.addEventListener("change",()=>{const f=soundPicker.files[0],a=document.getElementById("soundPreview");if(!f){a.pause();a.removeAttribute("src");a.style.display="none";return;}if(!f.type.startsWith("audio/")){alert("تکایە فایلێکی دەنگی هەڵبژێرە.");soundPicker.value="";return;}a.src=URL.createObjectURL(f);a.style.display="block";a.load();});}
- 
-// UPLOAD VIDEO WITH OPTIONAL SOUND
+// UPLOAD VIDEO ONLY
 async function uploadVideo(){
  if(haloVideoUploadInProgress)return;
  if(!currentUser){alert("بۆ بارکردنی ڤیدیۆ سەرەتا بچۆ ژوورەوە.");return;}
  const file=document.getElementById("videoFile").files[0];
- const soundFile=document.getElementById("soundFile").files[0];
  const caption=document.getElementById("caption").value.trim();
  const status=document.getElementById("uploadStatus");
  if(!file){status.innerText="تکایە ڤیدیۆیەک هەڵبژێرە.";return;}
  if(!file.type.startsWith("video/")){status.innerText="فایلەکە ڤیدیۆ نییە.";return;}
  if(file.size>50*1024*1024){status.innerText="قەبارەی ڤیدیۆ نابێت لە 50MB زیاتر بێت.";return;}
- if(soundFile && !soundFile.type.startsWith("audio/")){status.innerText="فایلی دەنگ دروست نییە.";return;}
- if(soundFile && soundFile.size>20*1024*1024){status.innerText="قەبارەی دەنگ نابێت لە 20MB زیاتر بێت.";return;}
  haloVideoUploadInProgress=true;
  const uploadButton=document.querySelector('button[onclick="uploadVideo()"]');
  if(uploadButton){uploadButton.disabled=true;uploadButton.dataset.originalText=uploadButton.textContent;uploadButton.textContent="⏳ تکایە چاوەڕێ بکە...";}
@@ -1063,19 +1053,11 @@ async function uploadVideo(){
   const path=currentUser.id+"/videos/"+Date.now()+"."+extension;
   const {error:uploadError}=await db.storage.from("videos").upload(path,file,{contentType:file.type,upsert:false});
   if(uploadError)throw uploadError;
-  let soundPath=null;
-  if(soundFile){
-   status.innerText="گۆرانییەکە بار دەکرێت...";
-   const soundExt=(soundFile.name.split(".").pop()||"mp3").replace(/[^a-zA-Z0-9]/g,"");
-   soundPath=currentUser.id+"/sounds/"+Date.now()+"."+soundExt;
-   const {error:soundError}=await db.storage.from("sounds").upload(soundPath,soundFile,{contentType:soundFile.type,upsert:false});
-   if(soundError)throw soundError;
-  }
-  const {error:dbError}=await db.from("videos").insert({user_id:currentUser.id,storage_path:path,caption,sound_path:soundPath});
+  const {error:dbError}=await db.from("videos").insert({user_id:currentUser.id,storage_path:path,caption});
   if(dbError)throw dbError;
-  status.innerText="ڤیدیۆکەت"+(soundPath?" لەگەڵ گۆرانییەکەی":"")+" بە سەرکەوتوویی بڵاوکرایەوە. ⭐";
-  document.getElementById("videoFile").value="";document.getElementById("soundFile").value="";document.getElementById("caption").value="";
-  const preview=document.getElementById("soundPreview");preview.pause();preview.removeAttribute("src");preview.style.display="none";
+  status.innerText="ڤیدیۆکەت بە سەرکەوتوویی بڵاوکرایەوە. ⭐";
+  document.getElementById("videoFile").value="";
+  document.getElementById("caption").value="";
   loadVideos();
  }catch(e){status.innerText="هەڵە: "+e.message;}
  finally{
@@ -1755,34 +1737,6 @@ async function deleteSound(sound) {
       <div id="soundLibraryList"><p>دەنگەکان بار دەکرێن...</p></div>
     `;
     nav.parentNode.insertBefore(hub, nav);
-  }
- 
-  const localPreview = document.getElementById('soundPreview');
-  if (localPreview && !document.getElementById('librarySoundSelect')) {
-    const select = document.createElement('select');
-    select.id = 'librarySoundSelect';
-    select.innerHTML = '<option value="">🎵 دەنگێک لە کتێبخانە هەڵبژێرە (ئارەزوومەندانە)</option>';
-    localPreview.parentNode.insertBefore(select, localPreview.nextSibling);
- 
-    const preview = document.createElement('audio');
-    preview.id = 'librarySoundPreview';
-    preview.controls = true;
-    preview.style.cssText = 'display:none;width:100%;margin:8px 0';
-    select.parentNode.insertBefore(preview, select.nextSibling);
- 
-    select.addEventListener('change', async function () {
-      const path = select.value;
-      const audio = document.getElementById('librarySoundPreview');
-      if (!path) {
-        audio.pause();
-        audio.removeAttribute('src');
-        audio.style.display = 'none';
-        return;
-      }
-      audio.src = soundPublicUrl(path);
-      audio.style.display = 'block';
-      audio.load();
-    });
   }
  
   const oldSwitchAppTab = window.switchAppTab;
