@@ -1299,12 +1299,12 @@ async function loadVideos(){
    const videoUrl=db.storage.from("videos").getPublicUrl(item.storage_path).data.publicUrl;
    const card=document.createElement("article");card.className="feed-card";
    const video=document.createElement("video");video.src=videoUrl;video.controls=false;video.playsInline=true;video.preload="metadata";video.loop=true;video.muted=!haloFeedSoundEnabled;video.addEventListener("click",()=>{if(video.paused)video.play().catch(()=>{});else video.pause();});
-   const videoTime=document.createElement("div");videoTime.className="feed-time";videoTime.textContent="00:00 / --:--";
+   const videoTime=document.createElement("div");videoTime.className="feed-time";videoTime.textContent="ماوەی ڤیدیۆ: چاوەڕێ بکە...";
    const formatVideoTime=seconds=>{if(!Number.isFinite(seconds)||seconds<0)return "--:--";const total=Math.floor(seconds);const hours=Math.floor(total/3600);const minutes=Math.floor((total%3600)/60);const secs=total%60;return hours?hours+":"+String(minutes).padStart(2,"0")+":"+String(secs).padStart(2,"0"):String(minutes).padStart(2,"0")+":"+String(secs).padStart(2,"0");};
    const seekBar=document.createElement("input");seekBar.type="range";seekBar.className="feed-seek";seekBar.min="0";seekBar.max="1000";seekBar.step="1";seekBar.value="0";seekBar.setAttribute("aria-label","پێش و دواخستنی ڤیدیۆ");
-   const updateVideoTime=()=>{videoTime.textContent=formatVideoTime(video.currentTime)+" / "+formatVideoTime(video.duration);if(Number.isFinite(video.duration)&&video.duration>0)seekBar.value=String(Math.round(video.currentTime/video.duration*1000));};
+   const updateVideoTime=()=>{videoTime.textContent="ماوەی ڤیدیۆ: "+formatVideoTime(video.duration);if(Number.isFinite(video.duration)&&video.duration>0)seekBar.value=String(Math.round(video.currentTime/video.duration*1000));};
    seekBar.addEventListener("pointerdown",event=>event.stopPropagation());seekBar.addEventListener("click",event=>event.stopPropagation());seekBar.addEventListener("input",()=>{if(Number.isFinite(video.duration)&&video.duration>0)video.currentTime=video.duration*(Number(seekBar.value)/1000);});
-   video.addEventListener("loadedmetadata",updateVideoTime);video.addEventListener("durationchange",updateVideoTime);video.addEventListener("timeupdate",updateVideoTime);
+   video.addEventListener("loadedmetadata",updateVideoTime);video.addEventListener("durationchange",updateVideoTime);video.addEventListener("loadeddata",updateVideoTime);video.addEventListener("canplay",updateVideoTime);video.addEventListener("timeupdate",updateVideoTime);video.addEventListener("play",updateVideoTime);
    const author=document.createElement("div");author.className="feed-author";
    const profile=profileMap.get(item.user_id);
    const authorName=document.createElement("span");authorName.className="feed-author-name";authorName.textContent="⭐ "+(profile?.display_name||("ئەندام "+item.user_id.slice(0,8)));author.append(authorName);
