@@ -1626,7 +1626,7 @@ async function setupHaloLiveChat(channel,card,stage,status){
  const giftWallet=document.createElement("div");giftWallet.style.cssText="font-size:12px;color:#f5c96a;font-weight:bold;";giftWallet.textContent="🪙 باڵانس: بار دەکرێت...";
  const giftControls=document.createElement("div");giftControls.style.cssText="display:flex;gap:6px;align-items:center;";
  const giftSelect=document.createElement("select");giftSelect.style.cssText="flex:1;min-width:0;padding:8px;border-radius:8px;background:#080914;color:white;border:1px solid #ffffff30;";
- const giftSend=document.createElement("button");giftSend.type="button";giftSend.textContent="🎁 ناردن";giftSend.style.cssText="margin:0;padding:8px 10px;background:#8b6b24;color:white;white-space:nowrap;";
+ const giftSend=document.createElement("button");giftSend.type="button";giftSend.textContent="🎁 Send";giftSend.style.cssText="margin:0;padding:8px 10px;background:#8b6b24;color:white;white-space:nowrap;";
  giftControls.append(giftSelect,giftSend);giftBox.append(giftWallet,giftControls);
  if(currentUser.id===session.user_id){giftWallet.textContent="🎁 بۆ ناردنی دیاری، وەک بینەر بچۆ ژوورەوە.";giftSelect.disabled=true;giftSend.disabled=true;}
  else{
@@ -1658,7 +1658,7 @@ async function setupHaloLiveChat(channel,card,stage,status){
     list.append(notice);list.scrollTop=list.scrollHeight;
     giftSelect.value="";
    }catch(e){alert("ناردنی دیاری سەرکەوتوو نەبوو: "+(e.message||e));}
-   finally{giftSend.disabled=false;giftSend.textContent="🎁 ناردن";}
+   finally{giftSend.disabled=false;giftSend.textContent="🎁 Send";}
   });
  }
  panel.append(giftBox);
