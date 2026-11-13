@@ -119,14 +119,18 @@ button:disabled{opacity:.5}
 .feed-card video{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:cover;background:#000;border-radius:0;z-index:-2}
 .feed-card:before{content:"";position:absolute;inset:42% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.82));pointer-events:none;z-index:-1}
 .feed-card:after{content:"";position:absolute;inset:0;border-radius:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);pointer-events:none}
-.feed-author{position:relative;z-index:1;padding:0 16px 5px;color:#fff;text-align:right;font-weight:800;font-size:14px;text-shadow:0 2px 8px #000}
-.feed-caption{position:relative;z-index:1;padding:5px 16px 18px;margin:0;color:#fff;text-align:right;text-shadow:0 1px 5px #000;line-height:1.7;font-size:13px}
+.feed-author{position:relative;z-index:1;padding:0 76px 5px 16px;color:#fff;text-align:right;font-weight:800;font-size:14px;text-shadow:0 2px 8px #000}
+.feed-caption{position:relative;z-index:1;padding:5px 76px 18px 16px;margin:0;color:#fff;text-align:right;text-shadow:0 1px 5px #000;line-height:1.7;font-size:13px}
 .feed-actions{
- position:absolute;z-index:3;left:12px;bottom:74px;display:flex;flex-direction:column;gap:15px;align-items:center
+ position:absolute;z-index:4;right:10px;left:auto;bottom:108px;display:flex;flex-direction:column;gap:13px;align-items:center
 }
-.feed-action{display:flex;flex-direction:column;align-items:center;gap:3px;color:#fff;font-size:11px;text-shadow:0 2px 5px #000}
-.feed-action b{font-size:25px;line-height:1.1}
-.feed-action.like-active b{color:#ff4f85}
+.feed-action{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:52px;min-height:54px;margin:0;padding:0;background:transparent;border:0;border-radius:14px;box-shadow:none;color:#fff;font-size:11px;font-weight:700;text-shadow:0 2px 5px #000;cursor:pointer}
+.feed-action b{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.24);border-radius:50%;background:rgba(12,12,20,.42);backdrop-filter:blur(8px);font-size:26px;line-height:1;text-shadow:0 2px 5px #000;box-shadow:0 3px 12px #0005}
+.feed-action span{max-width:60px;overflow-wrap:anywhere;text-align:center;font-size:10px;line-height:1.2;color:#fff}
+.feed-action:active{transform:scale(.92)}
+.feed-action.like-active b{color:#ff4f85;border-color:rgba(255,79,133,.75);background:rgba(255,79,133,.2)}
+.feed-action.saved b{color:#ffd66b;border-color:rgba(255,214,107,.75);background:rgba(255,214,107,.18)}
+.feed-action:disabled{opacity:.55;cursor:wait}
  
 .comments-modal{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.76);backdrop-filter:blur(9px);display:flex;align-items:flex-end;justify-content:center;padding:12px}
 .comments-sheet{width:min(620px,100%);max-height:78svh;display:flex;flex-direction:column;background:#111326;border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:0 18px 60px #000b}
