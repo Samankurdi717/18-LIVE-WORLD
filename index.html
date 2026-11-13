@@ -429,22 +429,12 @@ body.auth-required .bottom-nav{display:none!important}
  #feed .feed-caption{position:absolute!important;right:0!important;bottom:0!important;left:0!important;padding-bottom:95px!important}
 }
 
-/* FINAL OVERRIDE: keep Home's global video sound button visible above the feed. */
+/* Place the mute/unmute control beside the lower video action rail. */
 @media (max-width:700px){
- #unifiedHub>.feed-toolbar{
-  display:flex!important;position:fixed!important;top:101px!important;right:8px!important;
-  left:auto!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;
-  z-index:999!important;background:transparent!important;justify-content:flex-end!important;
-  align-items:center!important;pointer-events:none!important;
- }
+ #unifiedHub>.feed-toolbar{display:flex!important;position:fixed!important;top:auto!important;bottom:292px!important;right:9px!important;left:auto!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;z-index:999!important;background:transparent!important;justify-content:flex-end!important;align-items:center!important;pointer-events:none!important}
  #unifiedHub>.feed-toolbar h3,
  #unifiedHub>.feed-toolbar button[onclick="loadVideos()"]{display:none!important}
- #unifiedHub>.feed-toolbar>#globalFeedSoundButton{
-  display:inline-flex!important;visibility:visible!important;opacity:1!important;
-  position:static!important;pointer-events:auto!important;white-space:nowrap!important;
-  padding:8px 12px!important;font-size:12px!important;border:1px solid #ffffff66!important;
-  border-radius:22px!important;background:#111e!important;color:#fff!important;
- }
+ #unifiedHub>.feed-toolbar>#globalFeedSoundButton{display:inline-flex!important;visibility:visible!important;opacity:1!important;position:static!important;pointer-events:auto!important;align-items:center!important;justify-content:center!important;width:44px!important;height:44px!important;min-width:44px!important;padding:0!important;font-size:23px!important;line-height:1!important;border:1px solid #ffffff66!important;border-radius:50%!important;background:rgba(12,12,20,.62)!important;color:#fff!important;backdrop-filter:blur(8px)!important}
 }
 </style>
 </head>
@@ -1156,11 +1146,11 @@ function toggleHaloChannelPanel(){
 let haloFeedSoundEnabled=false;
 let haloFeedLoadVersion=0;
 function updateFeedSoundButtons(){
- const label=haloFeedSoundEnabled?"🔊 دەنگی هەموو ڤیدیۆکان چالاکە":"🔇 سەوتی هەموو ڤیدیۆکان";
+ const label=haloFeedSoundEnabled?"🔊 دەنگ داخراوە؟":"🔇 دەنگ داخراوە";
  const globalButton=document.getElementById("globalFeedSoundButton");
- if(globalButton)globalButton.textContent=label;
+ if(globalButton){globalButton.textContent=haloFeedSoundEnabled?"🔊":"🔇";globalButton.setAttribute("aria-label",haloFeedSoundEnabled?"داخستنی دەنگ":"کردنەوەی دەنگ");globalButton.title=haloFeedSoundEnabled?"داخستنی دەنگ":"کردنەوەی دەنگ";}
  document.querySelectorAll("#feed .feed-sound-toggle").forEach(button=>{
-  button.innerHTML=haloFeedSoundEnabled?"<b>🔊</b><span>دەنگ چالاکە</span>":"<b>🔇</b><span>دەنگ داخراوە</span>";
+  button.innerHTML=haloFeedSoundEnabled?"<b>🔊</b><span>دەنگ داخراوە</span>":"<b>🔇</b><span>دەنگ داخراوە</span>";
  });
 }
 function toggleAllFeedSound(){
