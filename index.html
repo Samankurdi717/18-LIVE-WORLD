@@ -1053,7 +1053,7 @@ async function renderMyProfile(){
 async function openProfileFeature(key){
  closeProfileMenu();
  const titles={balance:'💰 Balance',activity:'📊 Activity Center',offline:'📥 Offline Videos',qr:'▦ Your QR Code',minis:'🎬 KURD HALO Minis',studio:'🎥 KURD HALO Studio',promote:'📣 Promote',settings:'⚙️ Settings and Privacy'};
- const descriptions={balance:'هاوسەنگی دراوی ناوخۆیی. هیچ پارەدان یان گواستنەوەی پارە لەم قۆناغەدا چالاک نییە.',activity:'نوێترین کاردانەوەکان لەسەر پرۆفایل و ڤیدیۆکانت.',offline:'ڤیدیۆ پاشەکەوتکراوەکانت لە بەشی Saved ببینە. بینینی بێ ئینتەرنێت پێویستی بە پشتگیری پاشەکەوتی مۆبایل هەیە.',qr:'ناسنامەی تایبەتی هەژمارەکەت بۆ ناساندن.',minis:'ڤیدیۆ کورتەکانی KURD HALO لێرە ببینە.',studio:'ئامار و بەڕێوەبردنی ناوەڕۆکی خۆت.',promote:'پێشخستنی ڤیدیۆ کاتێک سیستەمی ڕیکلام و پارەدان ئامادە بوو چالاک دەکرێت.',settings:'ڕێکخستنەکانی هەژمار و پاراستنی تایبەتمەندی.'};
+ const descriptions={balance:'هاوسەنگی دراوی ناوخۆیی. هیچ پارەدان یان گواستنەوەی پارە لەم قۆناغەدا چالاک نییە.',activity:'نوێترین کاردانەوەکان لەسەر پرۆفایل و ڤیدیۆکانت.',offline:'ڤیدیۆ پاشەکەوتکراوەکانت لە بەشی Saved ببینە. بینینی بێ ئینتەرنێت پێویستی بە پشتگیری پاشەکەوتی مۆبایل هەیە.',qr:'ناسنامەی تایبەتی هەژمارەکەت بۆ ناساندن.',minis:'ڤیدیۆ کورتەکانی KURD HALO لێرە ببینە.',studio:'ئامار و بەڕێوەبردنی ناوەڕۆکی خۆت.',promote:'ڤیدیۆکانت بە ئاسانی لەگەڵ هاوڕێکانت هاوبەش بکە و بانگەشەیان بۆ بکە.',settings:'ڕێکخستنەکانی هەژمار و پاراستنی تایبەتمەندی.'};
  const content=document.getElementById('profileFeatureContent');content.replaceChildren();
  const title=document.createElement('h3');title.textContent=titles[key]||'KURD HALO';
  const intro=document.createElement('p');intro.className='small';intro.textContent=descriptions[key]||'';
@@ -1073,6 +1073,22 @@ async function openProfileFeature(key){
     card.append(video,caption);minisList.append(card);
    });
   }catch(e){minisStatus.textContent='نەتوانرا ڤیدیۆ کورتەکان باربکرێن: '+String(e.message||e);}
+ }else if(key==='promote'&&currentUser){
+  const promoteStatus=document.createElement('p');promoteStatus.className='small';promoteStatus.textContent='ڤیدیۆکانت بار دەکرێن...';content.append(promoteStatus);
+  const promoteList=document.createElement('div');promoteList.style.cssText='display:grid;gap:12px;margin-top:14px';content.append(promoteList);
+  try{
+   const result=await db.from('videos').select('id,caption,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(30);
+   if(result.error)throw result.error;
+   const clips=result.data||[];promoteStatus.textContent=clips.length?'ڤیدیۆی خۆت هەڵبژێرە و لەگەڵ هاوڕێکانت هاوبەشی بکە.':'هێشتا ڤیدیۆیەکت بارنەکردووە.';
+   clips.forEach(item=>{
+    const row=document.createElement('div');row.style.cssText='padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);display:grid;gap:9px';
+    const label=document.createElement('p');label.className='small';label.style.margin='0';label.textContent='🎬 '+(item.caption||'ڤیدیۆی KURD HALO');
+    const message='🎬 '+(item.caption||'ڤیدیۆیەکی نوێ لە KURD HALO')+'\nسەردانی KURD HALO بکە و ڤیدیۆکانی کورد هەڵۆ ببینە: '+location.href.split('#')[0];
+    const share=document.createElement('button');share.type='button';share.className='dark';share.textContent='📣 هاوبەشکردنی بانگەشە';share.addEventListener('click',async()=>{try{if(navigator.share){await navigator.share({title:'KURD HALO',text:message,url:location.href.split('#')[0]});}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(message);alert('دەقی بانگەشە کۆپی کرا.');}else{alert(message);}}catch(e){if(e.name!=='AbortError')alert('هاوبەشکردن سەرکەوتوو نەبوو: '+e.message);}});
+    const copy=document.createElement('button');copy.type='button';copy.className='dark';copy.textContent='📋 کۆپی دەقی بانگەشە';copy.addEventListener('click',async()=>{try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(message);alert('دەقی بانگەشە کۆپی کرا.');}else{alert(message);}}catch(e){alert(message);}});
+    row.append(label,share,copy);promoteList.append(row);
+   });
+  }catch(e){promoteStatus.textContent='نەتوانرا ڤیدیۆکان باربکرێن: '+String(e.message||e);}
  }else if(key==='settings'){
   const settings=document.createElement('div');
   const heading=(label)=>{const h=document.createElement('h4');h.textContent=label;h.style.cssText='color:var(--gold);margin:18px 2px 8px';settings.append(h);};
