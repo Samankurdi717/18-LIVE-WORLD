@@ -1083,6 +1083,37 @@ async function openProfileFeature(key){
   note('KURD HALO · کۆمەڵگای دیجیتاڵی کوردی');
   action('🚪 دەرچوون لە هەژمار',()=>signOut(),'drawer-item logout-drawer');
   content.append(settings);
+ }else if(key==='balance'){
+  if(!currentUser){
+   const p=document.createElement('p');p.className='small';p.textContent='باڵانس تەنها بۆ ئەندامی چووەتە ژوورەوە پیشان دەدرێت.';content.append(p);
+  }else{
+   const walletPanel=document.createElement('div');
+   walletPanel.style.cssText='margin-top:14px;padding:18px;border:1px solid var(--gold);border-radius:16px;background:linear-gradient(135deg,rgba(245,201,106,.12),rgba(255,255,255,.025));text-align:center';
+   const label=document.createElement('p');label.className='small';label.textContent='باڵانسی دراوی ناوخۆیی KURD HALO';
+   const amount=document.createElement('div');amount.style.cssText='font-size:30px;font-weight:800;color:var(--gold);margin:10px 0';amount.textContent='⏳ ...';
+   const unit=document.createElement('p');unit.className='small';unit.textContent='درهەمی مەجازی';
+   walletPanel.append(label,amount,unit);content.append(walletPanel);
+   const status=document.createElement('p');status.className='small';status.textContent='باڵانس بار دەکرێت...';content.append(status);
+   const refresh=document.createElement('button');refresh.type='button';refresh.className='dark';refresh.textContent='🔄 نوێکردنەوەی باڵانس';content.append(refresh);
+   const loadWallet=async()=>{
+    refresh.disabled=true;status.textContent='باڵانس بار دەکرێت...';
+    try{
+     const {data:wallet,error}=await db.from('halo_wallets').select('balance').eq('user_id',currentUser.id).maybeSingle();
+     if(error)throw error;
+     const value=Number(wallet?.balance||0);
+     if(!Number.isFinite(value))throw new Error('نرخی باڵانس دروست نییە.');
+     amount.textContent=value.toLocaleString('en-US');
+     status.textContent=wallet?'باڵانسی هەژمارەکەت بە سەرکەوتوویی خوێندرایەوە.':'هێشتا وۆڵێتێک بۆ ئەم هەژمارە دروست نەکراوە؛ باڵانس 0 پیشان دەدرێت.';
+    }catch(e){
+     amount.textContent='—';
+     status.textContent='نەتوانرا باڵانس بخوێندرێتەوە: '+String(e.message||e);
+    }finally{refresh.disabled=false;}
+   };
+   refresh.addEventListener('click',loadWallet);
+   await loadWallet();
+   const info=document.createElement('p');info.className='small';info.style.marginTop='14px';info.textContent='ئەم دراوە تەنها دراوی مەجازی ناو ئەپەکەیە؛ پارەی ڕاستەقینە نییە، نە دەتوانرێت بگوازرێتەوە و نە بە پارەی ڕاستەقینە بگۆڕدرێت.';
+   content.append(info);
+  }
  }else if(key==='qr'&&currentUser){
   const code=document.createElement('code');code.className='feature-account-code';code.textContent=currentUser.id;content.append(code);
   const copy=document.createElement('button');copy.type='button';copy.className='dark';copy.textContent='📋 کۆپی ناسنامە';copy.onclick=()=>{navigator.clipboard?.writeText(currentUser.id).then(()=>alert('ناسنامەکەت کۆپی کرا.')).catch(()=>alert(currentUser.id));};content.append(copy);
