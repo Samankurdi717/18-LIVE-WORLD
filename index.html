@@ -626,16 +626,16 @@ body.auth-required .bottom-nav{display:none!important}
 <div id="profileMenuBackdrop" class="profile-drawer-backdrop hidden" onclick="closeProfileMenu()"></div>
 <aside id="profileDrawer" class="profile-drawer hidden" aria-label="Profile menu" dir="auto">
  <div class="drawer-head"><strong>🦅 KURD HALO</strong><button class="account-close" type="button" onclick="closeProfileMenu()">✕</button></div>
- <button class="drawer-item" onclick="openProfileFeature('balance')"><span class="drawer-icon">💰</span><span>Balance</span><span class="drawer-arrow">‹</span></button>
- <button class="drawer-item" onclick="openProfileFeature('activity')"><span class="drawer-icon">📊</span><span>Activity Center</span><span class="drawer-arrow">‹</span></button>
- <button class="drawer-item" onclick="openProfileFeature('offline')"><span class="drawer-icon">📥</span><span>Offline Videos</span><span class="drawer-arrow">‹</span></button>
- <button class="drawer-item" onclick="openProfileFeature('qr')"><span class="drawer-icon">▦</span><span>Your QR Code</span><span class="drawer-arrow">‹</span></button>
+ <button class="drawer-item" onclick="openProfileFeature('balance')"><span class="drawer-icon">💰</span><span data-halo-profile-label="balance">Balance</span><span class="drawer-arrow">‹</span></button>
+ <button class="drawer-item" onclick="openProfileFeature('activity')"><span class="drawer-icon">📊</span><span data-halo-profile-label="activity">Activity Center</span><span class="drawer-arrow">‹</span></button>
+ <button class="drawer-item" onclick="openProfileFeature('offline')"><span class="drawer-icon">📥</span><span data-halo-profile-label="offline">Offline Videos</span><span class="drawer-arrow">‹</span></button>
+ <button class="drawer-item" onclick="openProfileFeature('qr')"><span class="drawer-icon">▦</span><span data-halo-profile-label="qr">Your QR Code</span><span class="drawer-arrow">‹</span></button>
  <div class="drawer-divider"></div>
- <button class="drawer-item" onclick="openProfileFeature('minis')"><span class="drawer-icon">🎬</span><span>KURD HALO Minis</span><span class="drawer-arrow">‹</span></button>
- <button class="drawer-item" onclick="openProfileFeature('studio')"><span class="drawer-icon">🎥</span><span>KURD HALO Studio</span><span class="drawer-arrow">‹</span></button>
- <button class="drawer-item" onclick="openProfileFeature('promote')"><span class="drawer-icon">📣</span><span>Promote</span><span class="drawer-arrow">‹</span></button>
+ <button class="drawer-item" onclick="openProfileFeature('minis')"><span class="drawer-icon">🎬</span><span data-halo-profile-label="minis">KURD HALO Minis</span><span class="drawer-arrow">‹</span></button>
+ <button class="drawer-item" onclick="openProfileFeature('studio')"><span class="drawer-icon">🎥</span><span data-halo-profile-label="studio">KURD HALO Studio</span><span class="drawer-arrow">‹</span></button>
+ <button class="drawer-item" onclick="openProfileFeature('promote')"><span class="drawer-icon">📣</span><span data-halo-profile-label="promote">Promote</span><span class="drawer-arrow">‹</span></button>
  <div class="drawer-divider"></div>
- <button class="drawer-item" onclick="openProfileFeature('settings')"><span class="drawer-icon">⚙️</span><span>Settings and Privacy</span><span class="drawer-arrow">‹</span></button>
+ <button class="drawer-item" onclick="openProfileFeature('settings')"><span class="drawer-icon">⚙️</span><span data-halo-profile-label="settings">Settings and Privacy</span><span class="drawer-arrow">‹</span></button>
  <button class="drawer-item logout-drawer" onclick="signOut()"><span class="drawer-icon">🚪</span><span data-i18n="logout">Log out</span></button>
 </aside>
 <div id="profileFeatureModal" class="account-modal hidden" onclick="if(event.target===this)closeProfileFeature()">
@@ -768,6 +768,16 @@ const translations={
  fr:{tagline:"Du Kurdistan au monde entier",languageLabel:"Langue",accountTitle:"👤 Compte utilisateur",firstName:"Prénom",fatherName:"Nom du père",grandfatherName:"Nom du grand-père",gender:"Genre",chooseGender:"Choisir le genre",male:"Homme",female:"Femme",intersex:"Intersexe",email:"E-mail",mobile:"Numéro de mobile",password:"Mot de passe",confirmPassword:"Confirmer le mot de passe",signup:"📝 S'inscrire",signin:"Se connecter",forgot:"Mot de passe oublié ?",logout:"Se déconnecter",myProfile:"🪪 Mon profil",choosePhoto:"Choisissez une photo dans votre galerie",smsNote:"Le numéro est enregistré, mais la vérification SMS n'est pas encore configurée.",saveProfile:"💾 Enregistrer",newPasswordTitle:"🔐 Nouveau mot de passe",changePassword:"Changer le mot de passe",uploadTitle:"📹 Publier une vidéo",chooseVideo:"Choisissez une vidéo dans la galerie",uploadButton:"⬆️ Envoyer la vidéo",videoLimit:"La vidéo ne doit pas dépasser 50 Mo.",feedTitle:"🌍 Vidéos KURD STAR",refresh:"🔄 Actualiser",liveTitle:"🔴 Rejoindre le direct",liveDescription:"Connexion en direct avec le monde entier",ageConfirm:"J'ai 18 ans ou plus",joinLive:"▶ Rejoindre le direct",leaveLive:"Quitter",yourVideo:"📹 Votre vidéo",participants:"🌍 Participants en direct",switchCamera:"🔄 Changer de caméra",camera:"📷 Caméra",microphone:"🎤 Microphone",gamesTitle:'🎮 Jeux KURDORA',gamesIntro:'Jeux kurdes, de réflexion et de compétition entre amis, réunis au même endroit.',allVideos:'Toutes les vidéos dans un seul fil',forYou:'Pour vous',following:'Abonnements',navFeed:'Vidéos',navGames:'Jeux',navUpload:'Publier',navAccount:'Compte'},
  de:{tagline:"Von Kurdistan in die ganze Welt",languageLabel:"Sprache",accountTitle:"👤 Benutzerkonto",firstName:"Vorname",fatherName:"Name des Vaters",grandfatherName:"Name des Großvaters",gender:"Geschlecht",chooseGender:"Geschlecht auswählen",male:"Männlich",female:"Weiblich",intersex:"Intergeschlechtlich",email:"E-Mail",mobile:"Handynummer",password:"Passwort",confirmPassword:"Passwort bestätigen",signup:"📝 Registrieren",signin:"Anmelden",forgot:"Passwort vergessen?",logout:"Abmelden",myProfile:"🪪 Mein Profil",choosePhoto:"Profilfoto aus der Galerie auswählen",smsNote:"Die Telefonnummer wird gespeichert; SMS-Bestätigung ist noch nicht eingerichtet.",saveProfile:"💾 Änderungen speichern",newPasswordTitle:"🔐 Neues Passwort",changePassword:"Passwort ändern",uploadTitle:"📹 Video veröffentlichen",chooseVideo:"Video aus der Galerie auswählen",uploadButton:"⬆️ Video hochladen",videoLimit:"Das Video darf höchstens 50 MB groß sein.",feedTitle:"🌍 KURD STAR Videos",refresh:"🔄 Aktualisieren",liveTitle:"🔴 Live beitreten",liveDescription:"Live-Verbindung mit Menschen weltweit",ageConfirm:"Ich bin mindestens 18 Jahre alt",joinLive:"▶ Live beitreten",leaveLive:"Verlassen",yourVideo:"📹 Dein Video",participants:"🌍 Live-Teilnehmer",switchCamera:"🔄 Kamera wechseln",camera:"📷 Kamera",microphone:"🎤 Mikrofon",gamesTitle:'🎮 KURDORA Spiele',gamesIntro:'Kurdische, Denk- und Wettbewerbsspiele mit Freunden – alles an einem Ort.',allVideos:'Alle Videos in einem Feed',forYou:'Für dich',following:'Gefolgt',navFeed:'Videos',navGames:'Spiele',navUpload:'Hochladen',navAccount:'Konto'}
 };
+const haloProfileLabels={
+ ku:{balance:'باڵانس',activity:'ناوەندی چالاکی',offline:'ڤیدیۆ ئۆفلاینەکان',qr:'کۆدی QR ـی تۆ',minis:'KURD HALO Minis',studio:'ستودیۆی KURD HALO',promote:'بانگەشەکردن',settings:'ڕێکخستن و تایبەتمەندی'},
+ fa:{balance:'موجودی',activity:'مرکز فعالیت',offline:'ویدیوهای آفلاین',qr:'کد QR شما',minis:'KURD HALO Minis',studio:'استودیوی KURD HALO',promote:'تبلیغ',settings:'تنظیمات و حریم خصوصی'},
+ en:{balance:'Balance',activity:'Activity Center',offline:'Offline Videos',qr:'Your QR Code',minis:'KURD HALO Minis',studio:'KURD HALO Studio',promote:'Promote',settings:'Settings and Privacy'},
+ ar:{balance:'الرصيد',activity:'مركز النشاط',offline:'الفيديوهات دون اتصال',qr:'رمز QR الخاص بك',minis:'KURD HALO Minis',studio:'استوديو KURD HALO',promote:'ترويج',settings:'الإعدادات والخصوصية'},
+ tr:{balance:'Bakiye',activity:'Etkinlik Merkezi',offline:'Çevrimdışı Videolar',qr:'QR Kodunuz',minis:'KURD HALO Minis',studio:'KURD HALO Stüdyosu',promote:'Tanıtım',settings:'Ayarlar ve Gizlilik'},
+ fr:{balance:'Solde',activity:'Centre d’activité',offline:'Vidéos hors ligne',qr:'Votre code QR',minis:'KURD HALO Minis',studio:'Studio KURD HALO',promote:'Promouvoir',settings:'Paramètres et confidentialité'},
+ de:{balance:'Guthaben',activity:'Aktivitätszentrum',offline:'Offline-Videos',qr:'Dein QR-Code',minis:'KURD HALO Minis',studio:'KURD HALO Studio',promote:'Bewerben',settings:'Einstellungen und Datenschutz'}
+};
+function haloProfileLabel(key,lang){return (haloProfileLabels[lang]||haloProfileLabels.ku)[key]||key;}
  
 function changeLanguage(lang){
  const t=translations[lang]||translations.ku;
@@ -775,6 +785,7 @@ function changeLanguage(lang){
  document.documentElement.dir=["ku","fa","ar"].includes(lang)?"rtl":"ltr";
  const headerLanguage=document.getElementById("language");if(headerLanguage)headerLanguage.value=lang;
  document.querySelectorAll("select[data-halo-language]").forEach(el=>{if(el.value!==lang)el.value=lang;});
+ document.querySelectorAll("[data-halo-profile-label]").forEach(el=>{el.textContent=haloProfileLabel(el.getAttribute("data-halo-profile-label"),lang);});
  document.querySelectorAll("[data-i18n]").forEach(el=>{
   const key=el.getAttribute("data-i18n");
   if(t[key])el.textContent=t[key];
@@ -1055,7 +1066,7 @@ async function renderMyProfile(){
 }
 async function openProfileFeature(key){
  closeProfileMenu();
- const titles={balance:'💰 Balance',activity:'📊 Activity Center',offline:'📥 Offline Videos',qr:'▦ Your QR Code',minis:'🎬 KURD HALO Minis',studio:'🎥 KURD HALO Studio',promote:'📣 Promote',settings:'⚙️ Settings and Privacy'};
+ const titles={balance:'💰 '+haloProfileLabel('balance',localStorage.getItem('kurdora_language')||'ku'),activity:'📊 '+haloProfileLabel('activity',localStorage.getItem('kurdora_language')||'ku'),offline:'📥 '+haloProfileLabel('offline',localStorage.getItem('kurdora_language')||'ku'),qr:'▦ '+haloProfileLabel('qr',localStorage.getItem('kurdora_language')||'ku'),minis:'🎬 '+haloProfileLabel('minis',localStorage.getItem('kurdora_language')||'ku'),studio:'🎥 '+haloProfileLabel('studio',localStorage.getItem('kurdora_language')||'ku'),promote:'📣 '+haloProfileLabel('promote',localStorage.getItem('kurdora_language')||'ku'),settings:'⚙️ '+haloProfileLabel('settings',localStorage.getItem('kurdora_language')||'ku')};
  const descriptions={balance:'هاوسەنگی دراوی ناوخۆیی. هیچ پارەدان یان گواستنەوەی پارە لەم قۆناغەدا چالاک نییە.',activity:'نوێترین کاردانەوەکان لەسەر پرۆفایل و ڤیدیۆکانت.',offline:'ڤیدیۆ پاشەکەوتکراوەکانت لە بەشی Saved ببینە. بینینی بێ ئینتەرنێت پێویستی بە پشتگیری پاشەکەوتی مۆبایل هەیە.',qr:'ناسنامەی تایبەتی هەژمارەکەت بۆ ناساندن.',minis:'ڤیدیۆ کورتەکانی KURD HALO لێرە ببینە.',studio:'ئامار و بەڕێوەبردنی ناوەڕۆکی خۆت.',promote:'ڤیدیۆکانت بە ئاسانی لەگەڵ هاوڕێکانت هاوبەش بکە و بانگەشەیان بۆ بکە.',settings:'ڕێکخستنەکانی هەژمار و پاراستنی تایبەتمەندی.'};
  const content=document.getElementById('profileFeatureContent');content.replaceChildren();
  const title=document.createElement('h3');title.textContent=titles[key]||'KURD HALO';
