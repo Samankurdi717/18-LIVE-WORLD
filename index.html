@@ -117,6 +117,7 @@ button:disabled{opacity:.5}
  scroll-snap-align:start;display:flex;flex-direction:column;justify-content:flex-end;isolation:isolate
 }
 .feed-card video{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:cover;background:#000;border-radius:0;z-index:-2}
+.halo-live-feed-card .halo-live-viewer-stage video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-height:none!important;object-fit:contain!important;background:#000!important;border-radius:0!important;z-index:1!important;}
 .feed-card:before{content:"";position:absolute;inset:42% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.82));pointer-events:none;z-index:-1}
 .feed-card:after{content:"";position:absolute;inset:0;border-radius:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);pointer-events:none}
 .feed-author{position:relative;z-index:1;padding:0 76px 5px 16px;color:#fff;text-align:right;font-weight:800;font-size:14px;text-shadow:0 2px 8px #000}
@@ -1520,7 +1521,7 @@ async function joinLiveViewer(channel,title,inlineCard){
   const top=document.createElement("div");top.style.cssText="height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#111;z-index:2;";
   const label=document.createElement("strong");label.textContent="🔴 LIVE — "+title;
   const close=document.createElement("button");close.type="button";close.textContent="✕ داخستن";close.onclick=leaveLiveViewer;top.append(label,close);
-  stage=document.createElement("div");stage.style.cssText="position:relative;flex:1;min-height:0;width:100%;background:#000;overflow:hidden;";
+  stage=document.createElement("div");stage.className="halo-live-viewer-stage";stage.style.cssText="position:relative;flex:1;min-height:0;width:100%;height:100%;background:#000;overflow:hidden;";
   status=document.createElement("p");status.style.cssText="margin:0;padding:8px;text-align:center;background:#111;color:white;";
   inlineCard.append(top,stage,status);
  }else{
