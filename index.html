@@ -1178,8 +1178,13 @@ async function openProfileFeature(key){
    }catch(e){offlineStatus.textContent='نەتوانرا لیستی ڤیدیۆکان باربکرێت: '+String(e.message||e);}
   }
  }else if(key==='qr'&&currentUser){
+  const qrWrap=document.createElement('div');qrWrap.style.cssText='display:grid;justify-items:center;gap:12px;margin:18px auto;padding:16px;background:#fff;border-radius:16px;max-width:280px';
+  const qrImage=document.createElement('img');qrImage.alt='KURD HALO account QR code';qrImage.width=240;qrImage.height=240;qrImage.style.cssText='width:240px;height:240px;max-width:100%;object-fit:contain';
+  qrImage.src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&data='+encodeURIComponent(currentUser.id);
+  qrImage.onerror=()=>{qrImage.remove();const fallback=document.createElement('p');fallback.style.cssText='color:#111;text-align:center;font-size:13px';fallback.textContent='نەتوانرا وێنەی QR باربکرێت؛ ناسنامەکەت لە خوارەوە بەکاربهێنە.';qrWrap.append(fallback);};
+  qrWrap.append(qrImage);content.append(qrWrap);
   const code=document.createElement('code');code.className='feature-account-code';code.textContent=currentUser.id;content.append(code);
-  const copy=document.createElement('button');copy.type='button';copy.className='dark';copy.textContent='📋 کۆپی ناسنامە';copy.onclick=()=>{navigator.clipboard?.writeText(currentUser.id).then(()=>alert('ناسنامەکەت کۆپی کرا.')).catch(()=>alert(currentUser.id));};content.append(copy);
+  const copy=document.createElement('button');copy.type='button';copy.className='dark';copy.textContent='📋 کۆپی ناسنامە';copy.onclick=()=>{const value=currentUser.id;if(navigator.clipboard?.writeText){navigator.clipboard.writeText(value).then(()=>alert('ناسنامەکەت کۆپی کرا.')).catch(()=>alert(value));}else{alert(value);}};content.append(copy);
  }else if((key==='activity'||key==='studio')&&currentUser){
   const loading=document.createElement('p');loading.className='small';loading.textContent='زانیارییەکان بار دەکرێن...';content.append(loading);
   try{
