@@ -949,7 +949,11 @@ if(soundPicker){soundPicker.addEventListener("change",()=>{const f=soundPicker.f
  
 // UPLOAD VIDEO WITH OPTIONAL SOUND
 async function uploadVideo(){
+ if(haloVideoUploadInProgress)return;
  if(!currentUser){alert("بۆ بارکردنی ڤیدیۆ سەرەتا بچۆ ژوورەوە.");return;}
+ haloVideoUploadInProgress=true;
+ const uploadButton=document.querySelector('button[onclick="uploadVideo()"]');
+ if(uploadButton){uploadButton.disabled=true;uploadButton.dataset.originalText=uploadButton.textContent;uploadButton.textContent="⏳ تکایە چاوەڕێ بکە...";}
  const file=document.getElementById("videoFile").files[0];
  const soundFile=document.getElementById("soundFile").files[0];
  const caption=document.getElementById("caption").value.trim();
@@ -980,6 +984,10 @@ async function uploadVideo(){
   const preview=document.getElementById("soundPreview");preview.pause();preview.removeAttribute("src");preview.style.display="none";
   loadVideos();
  }catch(e){status.innerText="هەڵە: "+e.message;}
+ finally{
+  haloVideoUploadInProgress=false;
+  if(uploadButton){uploadButton.disabled=false;uploadButton.textContent=uploadButton.dataset.originalText||"⬆️ بارکردنی ڤیدیۆ";}
+ }
 }
  
 // COMMENTS PANEL
@@ -1106,6 +1114,7 @@ let haloFeedSoundEnabled=false;
 let haloFeedLoadVersion=0;
 
 // LOAD VIDEOS
+let haloVideoUploadInProgress=false;
 async function loadVideos(){
  const requestVersion=++haloFeedLoadVersion;
  const feed=document.getElementById("feed");
