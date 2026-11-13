@@ -649,15 +649,15 @@ body.auth-required .bottom-nav{display:none!important}
   <p class="section-kicker" data-i18n="allVideos">هەموو ڤیدیۆکان لە یەک فیددا</p>
  </div>
  
- <div class="user-search-panel"><input id="userSearchInput" type="search" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
+ <div class="user-search-panel"><input id="userSearchInput" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()" data-i18n="searchButton">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
  <div class="feed-mode-tabs" id="feedModeTabs" role="tablist" aria-label="Feed filters">
-  <button type="button" id="forYouTab" class="selected" role="tab" aria-selected="true" onclick="setFeedMode('forYou')">For You</button>
-  <button type="button" id="followingTab" role="tab" aria-selected="false" onclick="setFeedMode('following')">Following</button>
-  <button type="button" id="savedTab" role="tab" aria-selected="false" onclick="setFeedMode('saved')">Saved</button>
+  <button type="button" id="forYouTab" class="selected" role="tab" aria-selected="true" onclick="setFeedMode('forYou')" data-i18n="forYouTab">For You</button>
+  <button type="button" id="followingTab" role="tab" aria-selected="false" onclick="setFeedMode('following')" data-i18n="followingTab">Following</button>
+  <button type="button" id="savedTab" role="tab" aria-selected="false" onclick="setFeedMode('saved')" data-i18n="savedTab">Saved</button>
  </div>
  <div class="feed-toolbar">
   <h3 data-i18n="feedTitle">🌍 ڤیدیۆکانی کورد هەڵۆ</h3>
-  <button class="dark" type="button" onclick="openLive()">🔴 Live</button>
+  <button class="dark" type="button" onclick="openLive()" data-i18n="liveButton">🔴 Live</button>
   <button class="dark" id="globalFeedSoundButton" type="button" onclick="toggleAllFeedSound()">🔇 سەوتی هەموو ڤیدیۆکان</button>
   <button class="dark" onclick="loadVideos()" data-i18n="refresh">🔄 نوێکردنەوە</button>
  </div>
@@ -704,16 +704,16 @@ body.auth-required .bottom-nav{display:none!important}
  
 <!-- PRIVATE INBOX / DIRECT MESSAGES -->
 <section class="inbox-page" id="inboxHub" aria-label="Inbox">
- <div class="inbox-title"><h2>✉️ Inbox</h2><button class="dark" type="button" onclick="loadInbox()">↻ نوێکردنەوە</button></div>
+ <div class="inbox-title"><h2 data-i18n="inboxTitle">✉️ Inbox</h2><button class="dark" type="button" onclick="loadInbox()" data-i18n="refreshInbox">↻ نوێکردنەوە</button></div>
  <div class="inbox-shell">
-  <div class="inbox-contacts" id="inboxContacts"><div class="inbox-empty">هاوڕێکان و گفتوگۆکان لێرە دەردەکەون.</div></div>
+  <div class="inbox-contacts" id="inboxContacts"><div class="inbox-empty" data-i18n="inboxEmptyContacts">هاوڕێکان و گفتوگۆکان لێرە دەردەکەون.</div></div>
   <div class="inbox-chat">
-   <div class="inbox-chat-head" id="inboxChatHead"><span class="inbox-avatar">💬</span><span>گفتوگۆیەک هەڵبژێرە</span></div>
-   <div class="inbox-messages" id="inboxMessages"><div class="inbox-empty">هاوڕێیەک هەڵبژێرە بۆ دەستپێکردنی گفتوگۆ.</div></div>
+   <div class="inbox-chat-head" id="inboxChatHead"><span class="inbox-avatar">💬</span><span data-i18n="chooseConversation">گفتوگۆیەک هەڵبژێرە</span></div>
+   <div class="inbox-messages" id="inboxMessages"><div class="inbox-empty" data-i18n="chooseFriend">هاوڕێیەک هەڵبژێرە بۆ دەستپێکردنی گفتوگۆ.</div></div>
    <form class="dm-compose" id="dmCompose" onsubmit="sendDirectMessage(event)">
-    <div class="dm-attach-wrap"><input id="dmVideoFile" type="file" accept="video/mp4,video/quicktime,video/webm,video/3gpp,video/x-m4v,video/3gpp2" hidden><button class="dark dm-attach" type="button" onclick="document.getElementById('dmVideoFile').click()" aria-label="ناردنی ڤیدیۆ لە گەلەری" title="ناردنی ڤیدیۆ لە گەلەری">🎬</button></div>
-    <textarea id="dmText" rows="1" maxlength="2000" placeholder="نامەکەت بنووسە..." disabled></textarea>
-    <button id="dmSendButton" type="submit" disabled>ناردن</button>
+    <div class="dm-attach-wrap"><input id="dmVideoFile" type="file" accept="video/mp4,video/quicktime,video/webm,video/3gpp,video/x-m4v,video/3gpp2" hidden><button class="dark dm-attach" type="button" onclick="document.getElementById('dmVideoFile').click()" aria-label="ناردنی ڤیدیۆ لە گەلەری" title="ناردنی ڤیدیۆ لە گەلەری" data-i18n-title="sendVideoGallery">🎬</button></div>
+    <textarea id="dmText" rows="1" maxlength="2000" data-i18n-placeholder="messagePlaceholder" placeholder="نامەکەت بنووسە..." disabled></textarea>
+    <button id="dmSendButton" type="submit" data-i18n="sendMessage" disabled>ناردن</button>
    </form>
   </div>
  </div>
@@ -721,11 +721,11 @@ body.auth-required .bottom-nav{display:none!important}
 </section>
  
 <nav class="bottom-nav" id="mainBottomNav" aria-label="Main navigation">
- <button id="navHome" class="active" type="button" onclick="switchAppTab('home')"><span class="nav-icon">⌂</span><span>Home</span></button>
- <button id="navFriends" type="button" onclick="switchAppTab('friends')"><span class="nav-icon">👥</span><span>Friends</span></button>
- <button id="navCreate" class="upload-main" type="button" onclick="openUpload()"><span class="nav-icon">＋</span><span>Create</span></button>
- <button id="navInbox" type="button" onclick="switchAppTab('inbox')"><span class="nav-icon">✉</span><span>Inbox</span></button>
- <button id="navProfile" type="button" onclick="openMyProfile()"><span class="nav-icon">👤</span><span>Profile</span></button>
+ <button id="navHome" class="active" type="button" onclick="switchAppTab('home')"><span class="nav-icon">⌂</span><span data-i18n="navHome">Home</span></button>
+ <button id="navFriends" type="button" onclick="switchAppTab('friends')"><span class="nav-icon">👥</span><span data-i18n="navFriends">Friends</span></button>
+ <button id="navCreate" class="upload-main" type="button" onclick="openUpload()"><span class="nav-icon">＋</span><span data-i18n="navCreate">Create</span></button>
+ <button id="navInbox" type="button" onclick="switchAppTab('inbox')"><span class="nav-icon">✉</span><span data-i18n="navInbox">Inbox</span></button>
+ <button id="navProfile" type="button" onclick="openMyProfile()"><span class="nav-icon">👤</span><span data-i18n="navProfile">Profile</span></button>
 </nav>
  <button id="haloLiveButton" type="button" onclick="openLive()" aria-label="Open Live">🔴 Live</button>
 
@@ -768,6 +768,9 @@ const translations={
  fr:{tagline:"Du Kurdistan au monde entier",languageLabel:"Langue",accountTitle:"👤 Compte utilisateur",firstName:"Prénom",fatherName:"Nom du père",grandfatherName:"Nom du grand-père",gender:"Genre",chooseGender:"Choisir le genre",male:"Homme",female:"Femme",intersex:"Intersexe",email:"E-mail",mobile:"Numéro de mobile",password:"Mot de passe",confirmPassword:"Confirmer le mot de passe",signup:"📝 S'inscrire",signin:"Se connecter",forgot:"Mot de passe oublié ?",logout:"Se déconnecter",myProfile:"🪪 Mon profil",choosePhoto:"Choisissez une photo dans votre galerie",smsNote:"Le numéro est enregistré, mais la vérification SMS n'est pas encore configurée.",saveProfile:"💾 Enregistrer",newPasswordTitle:"🔐 Nouveau mot de passe",changePassword:"Changer le mot de passe",uploadTitle:"📹 Publier une vidéo",chooseVideo:"Choisissez une vidéo dans la galerie",uploadButton:"⬆️ Envoyer la vidéo",videoLimit:"La vidéo ne doit pas dépasser 50 Mo.",feedTitle:"🌍 Vidéos KURD STAR",refresh:"🔄 Actualiser",liveTitle:"🔴 Rejoindre le direct",liveDescription:"Connexion en direct avec le monde entier",ageConfirm:"J'ai 18 ans ou plus",joinLive:"▶ Rejoindre le direct",leaveLive:"Quitter",yourVideo:"📹 Votre vidéo",participants:"🌍 Participants en direct",switchCamera:"🔄 Changer de caméra",camera:"📷 Caméra",microphone:"🎤 Microphone",gamesTitle:'🎮 Jeux KURDORA',gamesIntro:'Jeux kurdes, de réflexion et de compétition entre amis, réunis au même endroit.',allVideos:'Toutes les vidéos dans un seul fil',forYou:'Pour vous',following:'Abonnements',navFeed:'Vidéos',navGames:'Jeux',navUpload:'Publier',navAccount:'Compte'},
  de:{tagline:"Von Kurdistan in die ganze Welt",languageLabel:"Sprache",accountTitle:"👤 Benutzerkonto",firstName:"Vorname",fatherName:"Name des Vaters",grandfatherName:"Name des Großvaters",gender:"Geschlecht",chooseGender:"Geschlecht auswählen",male:"Männlich",female:"Weiblich",intersex:"Intergeschlechtlich",email:"E-Mail",mobile:"Handynummer",password:"Passwort",confirmPassword:"Passwort bestätigen",signup:"📝 Registrieren",signin:"Anmelden",forgot:"Passwort vergessen?",logout:"Abmelden",myProfile:"🪪 Mein Profil",choosePhoto:"Profilfoto aus der Galerie auswählen",smsNote:"Die Telefonnummer wird gespeichert; SMS-Bestätigung ist noch nicht eingerichtet.",saveProfile:"💾 Änderungen speichern",newPasswordTitle:"🔐 Neues Passwort",changePassword:"Passwort ändern",uploadTitle:"📹 Video veröffentlichen",chooseVideo:"Video aus der Galerie auswählen",uploadButton:"⬆️ Video hochladen",videoLimit:"Das Video darf höchstens 50 MB groß sein.",feedTitle:"🌍 KURD STAR Videos",refresh:"🔄 Aktualisieren",liveTitle:"🔴 Live beitreten",liveDescription:"Live-Verbindung mit Menschen weltweit",ageConfirm:"Ich bin mindestens 18 Jahre alt",joinLive:"▶ Live beitreten",leaveLive:"Verlassen",yourVideo:"📹 Dein Video",participants:"🌍 Live-Teilnehmer",switchCamera:"🔄 Kamera wechseln",camera:"📷 Kamera",microphone:"🎤 Mikrofon",gamesTitle:'🎮 KURDORA Spiele',gamesIntro:'Kurdische, Denk- und Wettbewerbsspiele mit Freunden – alles an einem Ort.',allVideos:'Alle Videos in einem Feed',forYou:'Für dich',following:'Gefolgt',navFeed:'Videos',navGames:'Spiele',navUpload:'Hochladen',navAccount:'Konto'}
 };
+const haloCoreTranslations={"ku":{"navHome":"سەرەکی","navFriends":"هاوڕێکان","navCreate":"دروستکردن","navInbox":"پەیامەکان","navProfile":"پرۆفایل","searchPlaceholder":"گەڕان بەدوای ناوی بەکارهێنەر...","searchButton":"🔍 گەڕان","forYouTab":"بۆ تۆ","followingTab":"شوێنکەوتووان","savedTab":"پاشەکەوتکراو","liveButton":"🔴 لایڤ","inboxTitle":"✉️ پەیامەکان","refreshInbox":"↻ نوێکردنەوە","inboxEmptyContacts":"هاوڕێکان و گفتوگۆکان لێرە دەردەکەون.","chooseConversation":"گفتوگۆیەک هەڵبژێرە","chooseFriend":"هاوڕێیەک هەڵبژێرە بۆ دەستپێکردنی گفتوگۆ.","sendVideoGallery":"ناردنی ڤیدیۆ لە گەلەری","messagePlaceholder":"نامەکەت بنووسە...","sendMessage":"ناردن","feedForYou":"بۆ تۆ","feedFollowing":"شوێنکەوتووان","feedSaved":"پاشەکەوتکراو"},"fa":{"navHome":"خانه","navFriends":"دوستان","navCreate":"ایجاد","navInbox":"پیام‌ها","navProfile":"پروفایل","searchPlaceholder":"جستجو بر اساس نام کاربری...","searchButton":"🔍 جستجو","forYouTab":"برای شما","followingTab":"دنبال‌شده‌ها","savedTab":"ذخیره‌شده","liveButton":"🔴 زنده","inboxTitle":"✉️ پیام‌ها","refreshInbox":"↻ تازه‌سازی","inboxEmptyContacts":"دوستان و گفتگوها اینجا نمایش داده می‌شوند.","chooseConversation":"یک گفتگو انتخاب کنید","chooseFriend":"برای شروع گفتگو یک دوست انتخاب کنید.","sendVideoGallery":"ارسال ویدیو از گالری","messagePlaceholder":"پیام خود را بنویسید...","sendMessage":"ارسال","feedForYou":"برای شما","feedFollowing":"دنبال‌شده‌ها","feedSaved":"ذخیره‌شده"},"en":{"navHome":"Home","navFriends":"Friends","navCreate":"Create","navInbox":"Messages","navProfile":"Profile","searchPlaceholder":"Search by username...","searchButton":"🔍 Search","forYouTab":"For You","followingTab":"Following","savedTab":"Saved","liveButton":"🔴 Live","inboxTitle":"✉️ Messages","refreshInbox":"↻ Refresh","inboxEmptyContacts":"Your friends and conversations will appear here.","chooseConversation":"Choose a conversation","chooseFriend":"Choose a friend to start a conversation.","sendVideoGallery":"Send a video from gallery","messagePlaceholder":"Write your message...","sendMessage":"Send","feedForYou":"For You","feedFollowing":"Following","feedSaved":"Saved"},"ar":{"navHome":"الرئيسية","navFriends":"الأصدقاء","navCreate":"إنشاء","navInbox":"الرسائل","navProfile":"الملف الشخصي","searchPlaceholder":"ابحث باسم المستخدم...","searchButton":"🔍 بحث","forYouTab":"لك","followingTab":"المتابَعون","savedTab":"المحفوظات","liveButton":"🔴 مباشر","inboxTitle":"✉️ الرسائل","refreshInbox":"↻ تحديث","inboxEmptyContacts":"سيظهر أصدقاؤك ومحادثاتك هنا.","chooseConversation":"اختر محادثة","chooseFriend":"اختر صديقاً لبدء محادثة.","sendVideoGallery":"إرسال فيديو من المعرض","messagePlaceholder":"اكتب رسالتك...","sendMessage":"إرسال","feedForYou":"لك","feedFollowing":"المتابَعون","feedSaved":"المحفوظات"},"tr":{"navHome":"Ana Sayfa","navFriends":"Arkadaşlar","navCreate":"Oluştur","navInbox":"Mesajlar","navProfile":"Profil","searchPlaceholder":"Kullanıcı adına göre ara...","searchButton":"🔍 Ara","forYouTab":"Senin için","followingTab":"Takip edilenler","savedTab":"Kaydedilenler","liveButton":"🔴 Canlı","inboxTitle":"✉️ Mesajlar","refreshInbox":"↻ Yenile","inboxEmptyContacts":"Arkadaşların ve konuşmaların burada görünecek.","chooseConversation":"Bir konuşma seç","chooseFriend":"Sohbeti başlatmak için bir arkadaş seç.","sendVideoGallery":"Galeriden video gönder","messagePlaceholder":"Mesajını yaz...","sendMessage":"Gönder","feedForYou":"Senin için","feedFollowing":"Takip edilenler","feedSaved":"Kaydedilenler"},"fr":{"navHome":"Accueil","navFriends":"Amis","navCreate":"Créer","navInbox":"Messages","navProfile":"Profil","searchPlaceholder":"Rechercher par nom d’utilisateur...","searchButton":"🔍 Rechercher","forYouTab":"Pour vous","followingTab":"Abonnements","savedTab":"Enregistrés","liveButton":"🔴 En direct","inboxTitle":"✉️ Messages","refreshInbox":"↻ Actualiser","inboxEmptyContacts":"Vos amis et conversations apparaîtront ici.","chooseConversation":"Choisir une conversation","chooseFriend":"Choisissez un ami pour commencer une conversation.","sendVideoGallery":"Envoyer une vidéo depuis la galerie","messagePlaceholder":"Écrivez votre message...","sendMessage":"Envoyer","feedForYou":"Pour vous","feedFollowing":"Abonnements","feedSaved":"Enregistrés"},"de":{"navHome":"Startseite","navFriends":"Freunde","navCreate":"Erstellen","navInbox":"Nachrichten","navProfile":"Profil","searchPlaceholder":"Nach Benutzernamen suchen...","searchButton":"🔍 Suchen","forYouTab":"Für dich","followingTab":"Gefolgt","savedTab":"Gespeichert","liveButton":"🔴 Live","inboxTitle":"✉️ Nachrichten","refreshInbox":"↻ Aktualisieren","inboxEmptyContacts":"Deine Freunde und Unterhaltungen erscheinen hier.","chooseConversation":"Unterhaltung auswählen","chooseFriend":"Wähle einen Freund, um eine Unterhaltung zu beginnen.","sendVideoGallery":"Video aus Galerie senden","messagePlaceholder":"Nachricht schreiben...","sendMessage":"Senden","feedForYou":"Für dich","feedFollowing":"Gefolgt","feedSaved":"Gespeichert"}};
+Object.keys(haloCoreTranslations).forEach(lang=>Object.assign(translations[lang],haloCoreTranslations[lang]));
+
 const haloProfileLabels={
  ku:{balance:'باڵانس',activity:'ناوەندی چالاکی',offline:'ڤیدیۆ ئۆفلاینەکان',qr:'کۆدی QR ـی تۆ',minis:'KURD HALO Minis',studio:'ستودیۆی KURD HALO',promote:'بانگەشەکردن',settings:'ڕێکخستن و تایبەتمەندی'},
  fa:{balance:'موجودی',activity:'مرکز فعالیت',offline:'ویدیوهای آفلاین',qr:'کد QR شما',minis:'KURD HALO Minis',studio:'استودیوی KURD HALO',promote:'تبلیغ',settings:'تنظیمات و حریم خصوصی'},
@@ -786,12 +789,14 @@ function changeLanguage(lang){
  const headerLanguage=document.getElementById("language");if(headerLanguage)headerLanguage.value=lang;
  document.querySelectorAll("select[data-halo-language]").forEach(el=>{if(el.value!==lang)el.value=lang;});
  document.querySelectorAll("[data-halo-profile-label]").forEach(el=>{el.textContent=haloProfileLabel(el.getAttribute("data-halo-profile-label"),lang);});
+ document.querySelectorAll("[data-i18n-title]").forEach(el=>{const key=el.getAttribute("data-i18n-title");if(t[key])el.title=t[key];});
  document.querySelectorAll("[data-i18n]").forEach(el=>{
   const key=el.getAttribute("data-i18n");
   if(t[key])el.textContent=t[key];
  });
  const placeholders={
   firstName:t.firstName,fatherName:t.fatherName,grandfatherName:t.grandfatherName,
+  userSearchInput:t.searchPlaceholder,dmText:t.messagePlaceholder,
   email:t.email,phoneNumber:t.mobile,password:t.password,confirmSignupPassword:t.confirmPassword,
   profileName:t.firstName,profilePhone:t.mobile,newPassword:t.newPasswordTitle,
   confirmPassword:t.confirmPassword,caption:t.caption||t.uploadTitle,channel:t.liveTitle
