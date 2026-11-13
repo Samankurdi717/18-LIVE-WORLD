@@ -400,6 +400,20 @@ body.auth-required .bottom-nav{display:none!important}
  #haloChannelArea .halo-create-channel{margin-top:3px!important;padding-top:4px!important;font-size:10px!important}
  #haloChannelArea .halo-create-channel:not([open])>*:not(summary){display:none!important}
 }
+
+/* KURD HALO FIX: force full-screen video layer on mobile */
+@media(max-width:700px){
+ html,body{height:100%!important;min-height:100%!important;overflow:hidden!important}
+ #feed.reels-feed{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-height:none!important;min-height:0!important;display:flex!important;flex-direction:column!important;overflow-y:auto!important;overflow-x:hidden!important;padding:0!important;margin:0!important;transform:none!important}
+ #feed .feed-card{position:relative!important;display:block!important;box-sizing:border-box!important;width:100%!important;height:100vh!important;height:100dvh!important;min-height:100vh!important;min-height:100dvh!important;max-height:none!important;flex:0 0 100vh!important;flex-basis:100dvh!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#000!important;isolation:isolate!important}
+ #feed .feed-card>video{position:absolute!important;display:block!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center center!important;z-index:0!important}
+ #feed .feed-card:before{position:absolute!important;inset:42% 0 0!important;z-index:1!important;pointer-events:none!important}
+ #feed .feed-card:after{z-index:2!important;pointer-events:none!important}
+ #feed .feed-actions,#feed .feed-author,#feed .feed-caption{position:relative!important;z-index:5!important}
+ #feed .feed-actions{position:absolute!important;left:9px!important;bottom:105px!important}
+ #feed .feed-author{position:absolute!important;right:0!important;bottom:70px!important;left:0!important}
+ #feed .feed-caption{position:absolute!important;right:0!important;bottom:0!important;left:0!important;padding-bottom:95px!important}
+}
 </style>
 </head>
 <body>
