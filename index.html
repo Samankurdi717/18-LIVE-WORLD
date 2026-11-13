@@ -1084,7 +1084,7 @@ async function uploadVideo(){
 }
  
 // COMMENTS PANEL
-async function openVideoComments(videoId){
+async function openVideoComments(videoId,onCommentAdded){
  const modal=document.createElement("div");modal.className="comments-modal";
  const sheet=document.createElement("section");sheet.className="comments-sheet";
  const head=document.createElement("div");head.className="comments-head";
@@ -1122,7 +1122,7 @@ async function openVideoComments(videoId){
   const {error}=await db.from("video_comments").insert({video_id:videoId,user_id:currentUser.id,content});
   send.disabled=false;send.textContent="ناردن";
   if(error){alert("کۆمێنت نەنووسرا: "+error.message);return;}
-  input.value="";await refreshComments();
+  input.value="";if(typeof onCommentAdded==="function")onCommentAdded();await refreshComments();
  });
  await refreshComments();
 }
@@ -1331,7 +1331,7 @@ async function loadVideos(){
      like.classList.toggle("like-active",likedByMe.has(item.id));like.querySelector("b").textContent=likedByMe.has(item.id)?"♥":"♡";like.querySelector("span").textContent=likeCounts[item.id]||0;
     }catch(e){alert("لایک نەگۆڕا: "+e.message);}finally{like.disabled=false;}
    });
-   const comment=document.createElement("button");comment.type="button";comment.className="feed-action";comment.innerHTML="<b>💬</b><span>"+(commentCounts[item.id]||0)+"</span>";comment.setAttribute("aria-label","کۆمێنت");comment.addEventListener("click",()=>openVideoComments(item.id));
+   const comment=document.createElement("button");comment.type="button";comment.className="feed-action";comment.innerHTML="<b>💬</b><span>"+(commentCounts[item.id]||0)+"</span>";comment.setAttribute("aria-label","کۆمێنت");comment.addEventListener("click",()=>openVideoComments(item.id,()=>{commentCounts[item.id]=(commentCounts[item.id]||0)+1;comment.querySelector("span").textContent=commentCounts[item.id];}));
    const share=document.createElement("button");share.type="button";share.className="feed-action";share.innerHTML="<b>↗</b><span>هاوبەش</span>";share.addEventListener("click",()=>openShareVideo(item.id));
    const save=document.createElement("button");save.type="button";save.className="feed-action save-video-button"+(savedByMe.has(item.id)?" saved":"");save.innerHTML="<b>🔖</b><span>"+(savedByMe.has(item.id)?"پاشەکەوتکراوە":"Save")+"</span>";
    save.addEventListener("click",async()=>{
