@@ -301,6 +301,15 @@ body.auth-required .bottom-nav{display:none!important}
 
 
 
+
+/* Keep the global feed sound control visible on the immersive Home screen. */
+@media(max-width:700px){
+ #unifiedHub>.feed-toolbar{display:flex!important;position:fixed!important;top:99px!important;right:8px!important;z-index:145!important;width:auto!important;margin:0!important;padding:0!important;background:transparent!important;justify-content:flex-end!important;pointer-events:none!important}
+ #unifiedHub>.feed-toolbar h3,
+ #unifiedHub>.feed-toolbar button[onclick="loadVideos()"]{display:none!important}
+ #unifiedHub>.feed-toolbar #globalFeedSoundButton{display:inline-flex!important;pointer-events:auto!important;max-width:190px!important;padding:7px 10px!important;font-size:11px!important;border:1px solid rgba(255,255,255,.28)!important;border-radius:18px!important;background:rgba(0,0,0,.72)!important;color:#fff!important}
+}
+
 /* KURD HALO — single immersive home screen */
 @media(max-width:700px){
  html,body{height:100%;min-height:100%;overflow:hidden}
