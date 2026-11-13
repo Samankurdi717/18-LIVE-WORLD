@@ -1642,8 +1642,9 @@ async function setupHaloLiveChat(channel,card,stage,status){
    if(!availableGifts.length){giftSelect.innerHTML='<option value="">هیچ دیارییەک نییە</option>';giftSend.disabled=true;}
   }
   giftSend.addEventListener("click",async()=>{
+   if(giftSelect.value===""){alert("سەرەتا دیارییەک هەڵبژێرە.");return;}
    const gift=availableGifts[Number(giftSelect.value)];
-   if(!gift){alert("سەرەتا دیارییەک هەڵبژێرە.");return;}
+   if(!gift){alert("دیارییەکە نەدۆزرایەوە.");return;}
    if(!confirm("دڵنیایت لە ناردنی "+gift.gift_name+" بە "+Number(gift.coin_price).toLocaleString("en-US")+" درهەم؟"))return;
    giftSend.disabled=true;giftSend.textContent="دەنێردرێت...";
    try{
