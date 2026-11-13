@@ -691,7 +691,9 @@ function setActiveNav(id){document.querySelectorAll('.bottom-nav button').forEac
 function switchAppTab(tab){
  const profile=document.getElementById('profilePage');const home=document.getElementById('unifiedHub');const inbox=document.getElementById('inboxHub');
  profile?.classList.add('hidden');
- document.body.classList.toggle('halo-search-open',tab==='friends');
+ if(tab==='friends'){document.body.classList.add('halo-search-open');}
+ else{document.body.classList.remove('halo-search-open');}
+
  const isInbox=tab==='inbox';home?.classList.toggle('hidden',isInbox);inbox?.classList.toggle('active',isInbox);
  if(tab==='home'){setActiveNav('navHome');window.scrollTo({top:0,behavior:'smooth'});}
  else if(tab==='friends'){setActiveNav('navFriends');const input=document.getElementById('userSearchInput');input?.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input?.focus(),180);}
@@ -1927,10 +1929,9 @@ db.auth.onAuthStateChange((event,session)=>{
  
 // Immersive-screen controls: keep secondary tools available without crowding the feed.
 function openSearch(){
- switchAppTab('home');
- document.body.classList.toggle('halo-search-open');
+ switchAppTab('friends');
  const input=document.getElementById('userSearchInput');
- if(document.body.classList.contains('halo-search-open'))setTimeout(()=>input?.focus(),100);
+ if(input)setTimeout(()=>input.focus(),100);
 }
 function openUpload(){
  if(!currentUser){openAccount();return;}
