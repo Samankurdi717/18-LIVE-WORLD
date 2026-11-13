@@ -289,8 +289,8 @@ body.auth-required .bottom-nav{display:none!important}
 .halo-channel-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;margin:8px 0;padding:11px 14px;border:1px solid #d6ad45;border-radius:13px;background:linear-gradient(110deg,#171323,#28200d);color:#ffe08a;font-weight:800;font-size:14px}
 .halo-channel-area{margin:0 0 12px;padding:10px;border:1px solid #ffffff20;border-radius:14px;background:#10101beF}
 .halo-channel-area.hidden{display:none!important}
-.reels-feed{display:flex;flex-direction:column;gap:0;scroll-snap-type:y mandatory;overflow:visible;overscroll-behavior-y:contain;touch-action:pan-y}
-.feed-card{min-height:calc(100svh - 58px);height:calc(100svh - 58px);scroll-snap-align:start;scroll-snap-stop:always}
+.reels-feed{display:flex;flex-direction:column;gap:0;height:calc(100svh - 220px);min-height:360px;max-height:calc(100svh - 160px);overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;scroll-behavior:smooth;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:0}
+.feed-card{min-height:100%;height:100%;scroll-snap-align:start;scroll-snap-stop:always;flex:0 0 100%}
 .feed-card iframe,.feed-card .channel-feed-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;z-index:-2}
 @media(max-width:600px){.feed-toolbar{margin:6px 0}.feed-card{min-height:calc(100svh - 58px);height:calc(100svh - 58px)}}
 
@@ -1208,7 +1208,7 @@ async function loadVideos(){
   if(window.kurdStarFeedObserver)window.kurdStarFeedObserver.disconnect();
   window.kurdStarFeedObserver=new IntersectionObserver(entries=>{
    entries.forEach(entry=>{const v=entry.target.querySelector("video");if(!v)return;if(entry.isIntersecting&&entry.intersectionRatio>=0.65){v.play().catch(()=>{});}else{v.pause();}});
-  },{root:null,threshold:[0,0.65,1]});
+  },{root:feed,threshold:[0,0.65,1]});
   feed.querySelectorAll(".feed-card").forEach(card=>window.kurdStarFeedObserver.observe(card));
  }catch(e){feed.textContent="هەڵە لە بارکردنی ڤیدیۆکان: "+e.message;}
 }
