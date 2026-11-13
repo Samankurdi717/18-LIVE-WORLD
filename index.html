@@ -1543,12 +1543,14 @@ async function loadVideos(){
  const requestVersion=++haloFeedLoadVersion;
  const feed=document.getElementById("feed");
  if(!currentUser){feed.innerHTML="<p class='small'>بۆ بینینی ڤیدیۆکان سەرەتا هەژمار دروست بکە یان بچۆ ژوورەوە.</p>";return;}
- feed.innerHTML="<p>چاوەڕێ بکە...</p>";
+ const feedStatus=message=>{if(requestVersion===haloFeedLoadVersion)feed.innerHTML="<p class='small'>"+message+"</p>";};
+ feedStatus("١/٥ — پەیوەندی بە داتابەیسی ڤیدیۆکان...");
  try{
   const {data:allVideos,error}=await db.from("videos").select("*").order("created_at",{ascending:false}).limit(100);
   if(error)throw error;
   if(requestVersion!==haloFeedLoadVersion)return;
   let data=allVideos||[];
+  feedStatus("٢/٥ — ڤیدیۆکان دۆزرایەوە؛ زانیارییەکانیان بار دەکرێت...");
   let followedIds=[];
   if(feedMode==="saved"){
    const {data:savedRows,error:savedError}=await db.from("video_saves").select("video_id").eq("user_id",currentUser.id);
@@ -1563,6 +1565,7 @@ async function loadVideos(){
   }
   
   const videoIds=data.map(v=>v.id);
+  feedStatus("٣/٥ — لایک و کۆمێنتەکان بار دەکرێن...");
   const [likesResult,commentsResult]=videoIds.length?await Promise.all([
    db.from("video_likes").select("video_id,user_id").in("video_id",videoIds),
    db.from("video_comments").select("video_id").in("video_id",videoIds)
@@ -1570,6 +1573,7 @@ async function loadVideos(){
   if(likesResult.error)throw likesResult.error;
   if(commentsResult.error)throw commentsResult.error;
   const authorIds=[...new Set(data.map(v=>v.user_id))];
+  feedStatus("٤/٥ — پرۆفایلی خاوەنی ڤیدیۆکان بار دەکرێت...");
   const [profilesResult,followingResult,savesResult]=authorIds.length?await Promise.all([
    db.from("profiles").select("id,display_name,avatar_url").in("id",authorIds),
    db.from("user_follows").select("following_id").eq("follower_id",currentUser.id).in("following_id",authorIds),
@@ -1590,6 +1594,7 @@ async function loadVideos(){
    new Date(b.published_at||b.created_at||0)-new Date(a.published_at||a.created_at||0)
   );
   // Active live broadcasts appear before short videos in the same vertical feed.
+  feedStatus("٥/٥ — پشکنینی لایڤەکان...");
   const liveResult=await db.from("live_sessions").select("id,user_id,channel,title,started_at").eq("status","live").order("started_at",{ascending:false}).limit(30);
   if(liveResult.error)throw liveResult.error;
   const liveRows=liveResult.data||[];
