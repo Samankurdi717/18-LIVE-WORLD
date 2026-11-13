@@ -463,7 +463,7 @@ body.auth-required .bottom-nav{display:none!important}
 .feature-stat-row{display:flex;justify-content:space-between;gap:14px;padding:12px 14px;margin:8px 0;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.045)}
 .feature-account-code{display:block;overflow-wrap:anywhere;padding:12px;margin:12px 0;border-radius:10px;background:rgba(255,255,255,.08);color:#fff}
 .feature-activity-item{padding:11px 12px;margin:7px 0;border-radius:12px;background:rgba(255,255,255,.045);font-size:13px;overflow-wrap:anywhere}
-</style>
+\n.feed-time{position:absolute;z-index:8;top:14px;left:12px;padding:6px 10px;border:1px solid rgba(255,255,255,.28);border-radius:18px;background:rgba(0,0,0,.68);backdrop-filter:blur(8px);color:#fff;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;direction:ltr;text-shadow:0 1px 3px #000;pointer-events:none}\n</style>
 </head>
 <body>
 <div class="container">
@@ -1292,6 +1292,10 @@ async function loadVideos(){
    const videoUrl=db.storage.from("videos").getPublicUrl(item.storage_path).data.publicUrl;
    const card=document.createElement("article");card.className="feed-card";
    const video=document.createElement("video");video.src=videoUrl;video.controls=false;video.playsInline=true;video.preload="metadata";video.loop=true;video.muted=!haloFeedSoundEnabled;video.addEventListener("click",()=>{if(video.paused)video.play().catch(()=>{});else video.pause();});
+   const videoTime=document.createElement("div");videoTime.className="feed-time";videoTime.textContent="00:00 / --:--";
+   const formatVideoTime=seconds=>{if(!Number.isFinite(seconds)||seconds<0)return "--:--";const total=Math.floor(seconds);const hours=Math.floor(total/3600);const minutes=Math.floor((total%3600)/60);const secs=total%60;return hours?hours+":"+String(minutes).padStart(2,"0")+":"+String(secs).padStart(2,"0"):String(minutes).padStart(2,"0")+":"+String(secs).padStart(2,"0");};
+   const updateVideoTime=()=>{videoTime.textContent=formatVideoTime(video.currentTime)+" / "+formatVideoTime(video.duration);};
+   video.addEventListener("loadedmetadata",updateVideoTime);video.addEventListener("timeupdate",updateVideoTime);
    const author=document.createElement("div");author.className="feed-author";
    const profile=profileMap.get(item.user_id);
    const authorName=document.createElement("span");authorName.className="feed-author-name";authorName.textContent="⭐ "+(profile?.display_name||("ئەندام "+item.user_id.slice(0,8)));author.append(authorName);
@@ -1330,7 +1334,7 @@ async function loadVideos(){
     }catch(e){alert("پاشەکەوتکردنی ڤیدیۆ سەرکەوتوو نەبوو: "+e.message);}finally{save.disabled=false;}
    });
    actions.append(like,comment,share,save);
-   card.appendChild(video);card.appendChild(actions);card.appendChild(author);card.appendChild(caption);feed.appendChild(card);
+   card.appendChild(video);card.appendChild(videoTime);card.appendChild(actions);card.appendChild(author);card.appendChild(caption);feed.appendChild(card);
   });
   if(window.kurdStarFeedObserver)window.kurdStarFeedObserver.disconnect();
   window.kurdStarFeedObserver=new IntersectionObserver(entries=>{
