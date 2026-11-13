@@ -694,6 +694,8 @@ function switchAppTab(tab){
  profile?.classList.add('hidden');
  const searchPanel=home?.querySelector('.user-search-panel');
  if(searchPanel)searchPanel.hidden=(tab!=='friends');
+ const uploadDrawer=document.getElementById('uploadDrawer');
+ if(uploadDrawer)uploadDrawer.open=false;
  if(tab==='friends'){document.body.classList.add('halo-search-open');}
  else{document.body.classList.remove('halo-search-open');}
 
@@ -953,6 +955,7 @@ function openMyProfile(){
  if(!currentUser){openAccount();return;}
  document.body.classList.remove('halo-search-open');
  const searchPanel=document.querySelector('#unifiedHub>.user-search-panel');if(searchPanel)searchPanel.hidden=true;
+ const uploadDrawer=document.getElementById('uploadDrawer');if(uploadDrawer)uploadDrawer.open=false;
  setActiveNav('navProfile');document.getElementById('inboxHub').classList.remove('active');
  document.getElementById('unifiedHub').classList.add('hidden');
  document.getElementById('profilePage').classList.remove('hidden');
