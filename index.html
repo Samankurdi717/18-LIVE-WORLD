@@ -428,6 +428,24 @@ body.auth-required .bottom-nav{display:none!important}
  #feed .feed-author{position:absolute!important;right:0!important;bottom:70px!important;left:0!important}
  #feed .feed-caption{position:absolute!important;right:0!important;bottom:0!important;left:0!important;padding-bottom:95px!important}
 }
+
+/* FINAL OVERRIDE: keep Home's global video sound button visible above the feed. */
+@media (max-width:700px){
+ #unifiedHub>.feed-toolbar{
+  display:flex!important;position:fixed!important;top:101px!important;right:8px!important;
+  left:auto!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;
+  z-index:999!important;background:transparent!important;justify-content:flex-end!important;
+  align-items:center!important;pointer-events:none!important;
+ }
+ #unifiedHub>.feed-toolbar h3,
+ #unifiedHub>.feed-toolbar button[onclick="loadVideos()"]{display:none!important}
+ #unifiedHub>.feed-toolbar>#globalFeedSoundButton{
+  display:inline-flex!important;visibility:visible!important;opacity:1!important;
+  position:static!important;pointer-events:auto!important;white-space:nowrap!important;
+  padding:8px 12px!important;font-size:12px!important;border:1px solid #ffffff66!important;
+  border-radius:22px!important;background:#111e!important;color:#fff!important;
+ }
+}
 </style>
 </head>
 <body>
