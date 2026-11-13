@@ -451,6 +451,12 @@ body.auth-required .bottom-nav{display:none!important}
   line-height:1.35!important;
   padding:1px 2px!important;
 }
+
+/* KURD HALO feed mode tabs */
+.feed-mode-tabs{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:10px auto 12px;padding:5px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.045)}
+.feed-mode-tabs button{flex:1;min-width:0;padding:10px 8px;border:0;border-radius:10px;background:transparent;color:#c9c9d5;font-weight:700;font-size:13px;cursor:pointer}
+.feed-mode-tabs button.selected{background:linear-gradient(135deg,#7b43d6,#b42b86);color:#fff;box-shadow:0 4px 16px rgba(135,55,190,.28)}
+@media(max-width:700px){.feed-mode-tabs{position:relative;z-index:2;margin:7px auto 9px;padding:4px;gap:5px}.feed-mode-tabs button{padding:9px 5px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -602,6 +608,11 @@ body.auth-required .bottom-nav{display:none!important}
  </div>
  
  <div class="user-search-panel"><input id="userSearchInput" type="search" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
+ <div class="feed-mode-tabs" id="feedModeTabs" role="tablist" aria-label="Feed filters">
+  <button type="button" id="forYouTab" class="selected" role="tab" aria-selected="true" onclick="setFeedMode('forYou')">For You</button>
+  <button type="button" id="followingTab" role="tab" aria-selected="false" onclick="setFeedMode('following')">Following</button>
+  <button type="button" id="savedTab" role="tab" aria-selected="false" onclick="setFeedMode('saved')">Saved</button>
+ </div>
  <div class="feed-toolbar">
   <h3 data-i18n="feedTitle">🌍 ڤیدیۆکانی کورد هەڵۆ</h3>
   <button class="dark" id="globalFeedSoundButton" type="button" onclick="toggleAllFeedSound()">🔇 سەوتی هەموو ڤیدیۆکان</button>
@@ -999,9 +1010,6 @@ if(soundPicker){soundPicker.addEventListener("change",()=>{const f=soundPicker.f
 async function uploadVideo(){
  if(haloVideoUploadInProgress)return;
  if(!currentUser){alert("بۆ بارکردنی ڤیدیۆ سەرەتا بچۆ ژوورەوە.");return;}
- haloVideoUploadInProgress=true;
- const uploadButton=document.querySelector('button[onclick="uploadVideo()"]');
- if(uploadButton){uploadButton.disabled=true;uploadButton.dataset.originalText=uploadButton.textContent;uploadButton.textContent="⏳ تکایە چاوەڕێ بکە...";}
  const file=document.getElementById("videoFile").files[0];
  const soundFile=document.getElementById("soundFile").files[0];
  const caption=document.getElementById("caption").value.trim();
@@ -1011,6 +1019,9 @@ async function uploadVideo(){
  if(file.size>50*1024*1024){status.innerText="قەبارەی ڤیدیۆ نابێت لە 50MB زیاتر بێت.";return;}
  if(soundFile && !soundFile.type.startsWith("audio/")){status.innerText="فایلی دەنگ دروست نییە.";return;}
  if(soundFile && soundFile.size>20*1024*1024){status.innerText="قەبارەی دەنگ نابێت لە 20MB زیاتر بێت.";return;}
+ haloVideoUploadInProgress=true;
+ const uploadButton=document.querySelector('button[onclick="uploadVideo()"]');
+ if(uploadButton){uploadButton.disabled=true;uploadButton.dataset.originalText=uploadButton.textContent;uploadButton.textContent="⏳ تکایە چاوەڕێ بکە...";}
  try{
   status.innerText="ڤیدیۆکە بار دەکرێت...";
   const extension=file.name.split(".").pop()||"mp4";
@@ -1085,10 +1096,12 @@ async function openVideoComments(videoId){
 // FOLLOW SYSTEM — requires the SQL setup file supplied with this build
 let feedMode="forYou";
 function setFeedMode(mode){
+ if(!["forYou","following","saved"].includes(mode))return;
  feedMode=mode;
- document.getElementById("forYouTab")?.classList.toggle("selected",mode==="forYou");
- document.getElementById("followingTab")?.classList.toggle("selected",mode==="following");
- document.getElementById("savedTab")?.classList.toggle("selected",mode==="saved");
+ [["forYouTab","forYou"],["followingTab","following"],["savedTab","saved"]].forEach(([id,value])=>{
+  const button=document.getElementById(id);if(!button)return;
+  const selected=mode===value;button.classList.toggle("selected",selected);button.setAttribute("aria-selected",String(selected));
+ });
  loadVideos();
 }
 async function loadFollowStats(){
