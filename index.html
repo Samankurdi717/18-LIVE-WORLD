@@ -480,6 +480,12 @@ body.auth-required .bottom-nav{display:none!important}
 .halo-gift-card{min-width:0;padding:9px 4px;border:1px solid #45465d;border-radius:12px;background:#202238;color:#fff;text-align:center;cursor:pointer}
 .halo-gift-card:active,.halo-gift-card.selected{border-color:#f5cf78;background:#383047}
 .halo-gift-emoji{display:block;font-size:30px;animation:haloGiftFloat 2s ease-in-out infinite}
+/* KURD HALO free 3D gifts */
+.halo-gift-model{display:block;width:100%;height:76px;background:radial-gradient(circle at 50% 45%,#39334a,#171727 72%);border-radius:9px;--poster-color:transparent;pointer-events:none}
+.halo-gift-model::part(default-progress-bar){background:#f5cf78}
+.halo-gift-preview model-viewer{display:block;width:min(100%,220px);height:190px;margin:0 auto;background:radial-gradient(circle at 50% 45%,#39334a,#111323 72%);border-radius:14px}
+.halo-gift-emoji{font-size:30px}
+
 .halo-gift-name{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px 0}
 .halo-gift-price{display:block;font-size:11px;color:#f5cf78;font-weight:800}
 .halo-gift-preview{margin-top:10px;padding:12px;border-radius:12px;background:#111323;text-align:center;line-height:1.8}
@@ -490,6 +496,8 @@ body.auth-required .bottom-nav{display:none!important}
 /* Always-visible Live shortcut for mobile and desktop */
 #haloLiveButton{position:fixed!important;top:112px!important;left:10px!important;z-index:190!important;display:flex!important;align-items:center!important;justify-content:center!important;min-height:40px!important;padding:8px 14px!important;border:1px solid #ff526e!important;border-radius:22px!important;background:rgba(125,12,38,.94)!important;color:#fff!important;font-size:13px!important;font-weight:800!important;box-shadow:0 4px 18px #0009!important;cursor:pointer!important}
 </style>
+
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -1536,19 +1544,31 @@ async function switchCamera(){
  travel:[['🚗','ئۆتۆمبێل'],['🚕','تەکسی'],['🚙','جیپ'],['🏍️','ماتۆڕ'],['🚲','پاسکیل'],['🛴','سکوتەر'],['🚂','شەمەندەفەر'],['🚄','شەمەندەفەری خێرا'],['🚆','شەمەندەفەری گەشت'],['🚀','مووشەک'],['🛸','فڕۆکەی نامۆ'],['🛩️','فڕۆکەی بچووک'],['🛳️','کەشتی گەشتیاری'],['⛵','بەلەم'],['🚤','بەلەمی خێرا'],['🚜','تراکتۆر'],['🚒','ئۆتۆمبێلی ئاگرکوژێنەوە'],['🚑','ئەمبولانس'],['🚓','پۆلیس'],['🚐','ڤان'],['🚌','پاس'],['🚎','پاسی کارەبایی'],['🚝','مۆنۆڕەیل'],['🚠','تەلفریک'],['🚁','هێلیکۆپتەر']]
  };
  const HALO_GIFT_PRICES=[1,2,3,5,7,10,15,20,25,30,40,50,60,75,100,125,150,200,250,300,350,400,450,500,600,650,700,750,800,900,1000,1200,1500,1800,2000,2500,3000,3500,4000,5000,6000,7500,10000];
- const haloGiftList=Object.entries(HALO_GIFT_GROUPS).flatMap(([category,items],groupIndex)=>items.map((item,index)=>({category,emoji:item[0],name:item[1],price:item[1]==='شێر'?500:item[1]==='پڵنگ'?750:HALO_GIFT_PRICES[(index*7+groupIndex*5)%HALO_GIFT_PRICES.length]})));
+ const HALO_GIFT_3D_MODELS={
+ 'گوڵی سوور':'/library/nature-kit/flower-red-a.glb','گوڵی لێلی':'/library/nature-kit/flower-purple-a.glb','گوڵی خۆر':'/library/nature-kit/flower-yellow-a.glb','دەستەگوڵ':'/library/platformer-kit/flowers.glb','گوڵی جوان':'/library/momuspark/flower-02-a-art.glb','شکۆفە':'/library/momuspark/flower-03-a.glb','نیلوفەر':'/library/momuspark/flower-03-b.glb',
+ 'دڵی سوور':'/library/platformer-kit/heart.glb','دڵی بریسکەدار':'/library/platformer-kit/heart.glb','دڵی گەورە':'/library/platformer-kit/heart.glb','دڵی تیرکراو':'/library/platformer-kit/heart.glb','دڵی دیاری':'/library/platformer-kit/heart.glb','دوو دڵ':'/library/platformer-kit/heart.glb','دڵی سووڕاو':'/library/platformer-kit/heart.glb','دڵی لێدان':'/library/platformer-kit/heart.glb',
+ 'کیک':'/library/food-kit/cake-birthday.glb','کاپکەیک':'/library/food-kit/cupcake.glb','شیرینی':'/library/food-kit/cake.glb','توت‌فرەنگی':'/library/food-kit/strawberry.glb','شۆکۆلاتە':'/library/food-kit/chocolate.glb','شەکرەمەنی':'/library/food-kit/candy-bar.glb','لۆلیپۆپ':'/library/food-kit/lollypop.glb','دۆنات':'/library/food-kit/donut.glb','پیتزا':'/library/food-kit/pizza.glb','هامبەرگەر':'/library/food-kit/burger.glb','شوتی':'/library/food-kit/watermelon.glb','قاوە':'/library/food-kit/cup-tea.glb','شەربەتی مۆڵ':'/library/food-kit/frappe.glb',
+ 'لیمۆزین':'/library/car-kit/sedan-luxury.glb','سەیارەی خێرا':'/library/car-kit/race.glb','ئۆتۆمبێل':'/library/car-kit/sedan.glb','تەکسی':'/library/car-kit/taxi.glb','جیپ':'/library/car-kit/suv.glb','ماتۆڕ':'/library/bikes/chopper-motorcycle.glb','پاسکیل':'/library/bikes/chopper-motorcycle.glb','تراکتۆر':'/library/car-kit/tractor.glb','ئۆتۆمبێلی ئاگرکوژێنەوە':'/library/car-kit/firetruck.glb','ئەمبولانس':'/library/car-kit/delivery.glb','پۆلیس':'/library/car-kit/police.glb','ڤان':'/library/car-kit/van.glb','پاس':'/library/car-kit/delivery.glb','هێلیکۆپتەر':'/library/aircraft-kit/helicopter.glb',
+ 'شێر':'/library/cube-pets/animal-lion.glb','پڵنگ':'/library/cube-pets/animal-tiger.glb','ورچ':'/library/cube-pets/animal-koala.glb','پاندە':'/library/cube-pets/animal-panda.glb','فیل':'/library/cube-pets/animal-elephant.glb','پەپوولە':'/library/momuspark/butterfly.glb','بوومەلەرز':'/library/momuspark/owl.glb','ئەسپ':'/library/animals/horse.glb','تاووس':'/library/animals/peacock.glb','کەوانەڕەنگ':'/library/platformer-kit/jewel.glb'
+ };
+ const haloGiftModelUrl=g=>g.modelUrl?'https://models.codelove.in'+g.modelUrl:'';
+ const haloGiftList=Object.entries(HALO_GIFT_GROUPS).flatMap(([category,items],groupIndex)=>items.map((item,index)=>({category,emoji:item[0],name:item[1],modelUrl:HALO_GIFT_3D_MODELS[item[1]]||'',price:item[1]==='شێر'?500:item[1]==='پڵنگ'?750:HALO_GIFT_PRICES[(index*7+groupIndex*5)%HALO_GIFT_PRICES.length]})));
  let selectedHaloGift=null;
+ function haloGiftVisual(g,large=false){
+  const url=haloGiftModelUrl(g);
+  return url?'<model-viewer class="halo-gift-model" src="'+url+'" loading="lazy" reveal="auto" camera-controls="false" disable-zoom auto-rotate rotation-per-second="24deg" shadow-intensity="0.8" interaction-prompt="none" aria-label="'+g.name+' 3D"></model-viewer>':'<span class="'+(large?'big ':'')+'halo-gift-emoji">'+g.emoji+'</span>';
+ }
  function renderHaloGifts(){
   const grid=document.getElementById('haloGiftGrid');if(!grid)return;
   const q=(document.getElementById('giftSearch')?.value||'').trim().toLowerCase(),cat=document.getElementById('giftCategory')?.value||'all';
   const list=haloGiftList.filter(g=>(cat==='all'||g.category===cat)&&(!q||(g.name+' '+g.emoji).toLowerCase().includes(q)));
-  grid.innerHTML=list.map(g=>'<button type="button" class="halo-gift-card '+(selectedHaloGift===g.name?'selected':'')+'" onclick="selectHaloGift('+haloGiftList.indexOf(g)+')"><span class="halo-gift-emoji">'+g.emoji+'</span><span class="halo-gift-name">'+g.name+'</span><span class="halo-gift-price">'+g.price.toLocaleString('en-US')+' درهەم</span></button>').join('')||'<p class="small">هیچ دیارییەک نەدۆزرایەوە.</p>';
+  grid.innerHTML=list.map(g=>'<button type="button" class="halo-gift-card '+(selectedHaloGift===g.name?'selected':'')+'" onclick="selectHaloGift('+haloGiftList.indexOf(g)+')">'+haloGiftVisual(g)+'<span class="halo-gift-name">'+g.name+'</span><span class="halo-gift-price">'+g.price.toLocaleString('en-US')+' درهەم</span></button>').join('')||'<p class="small">هیچ دیارییەک نەدۆزرایەوە.</p>';
  }
  function selectHaloGift(index){
   const g=haloGiftList[index];if(!g)return;selectedHaloGift=g.name;
   const preview=document.getElementById('haloGiftPreview');if(!preview)return;
   const owner=Math.round(g.price*.4),receiver=g.price-owner;
-  preview.innerHTML='<span class="big">'+g.emoji+'</span><strong>'+g.name+'</strong><br>نرخ: '+g.price.toLocaleString('en-US')+' درهەم<br>٤٠٪ بۆ KURD HALO: '+owner.toLocaleString('en-US')+' درهەم<br>٦٠٪ بۆ وەرگر: '+receiver.toLocaleString('en-US')+' درهەم';
+  preview.innerHTML=haloGiftVisual(g,true)+'<strong>'+g.name+'</strong><br>نرخ: '+g.price.toLocaleString('en-US')+' درهەم<br>٤٠٪ بۆ KURD HALO: '+owner.toLocaleString('en-US')+' درهەم<br>٦٠٪ بۆ وەرگر: '+receiver.toLocaleString('en-US')+' درهەم';
   renderHaloGifts();
  }
 
