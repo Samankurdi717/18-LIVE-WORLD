@@ -1291,7 +1291,7 @@ async function loadVideos(){
   memberItems.forEach(item=>{
    const videoUrl=db.storage.from("videos").getPublicUrl(item.storage_path).data.publicUrl;
    const card=document.createElement("article");card.className="feed-card";
-   const video=document.createElement("video");video.src=videoUrl;video.controls=false;video.playsInline=true;video.preload="metadata";video.loop=false;video.muted=!haloFeedSoundEnabled;video.dataset.playbackCompleted="false";video.addEventListener("ended",()=>{video.dataset.playbackCompleted="true";video.pause();});video.addEventListener("click",()=>{if(video.ended||video.dataset.playbackCompleted==="true")return;if(video.paused)video.play().catch(()=>{});else video.pause();});
+   const video=document.createElement("video");video.src=videoUrl;video.controls=false;video.playsInline=true;video.preload="metadata";video.loop=true;video.muted=!haloFeedSoundEnabled;video.addEventListener("click",()=>{if(video.paused)video.play().catch(()=>{});else video.pause();});
    const author=document.createElement("div");author.className="feed-author";
    const profile=profileMap.get(item.user_id);
    const authorName=document.createElement("span");authorName.className="feed-author-name";authorName.textContent="⭐ "+(profile?.display_name||("ئەندام "+item.user_id.slice(0,8)));author.append(authorName);
