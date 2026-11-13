@@ -1060,7 +1060,29 @@ async function openProfileFeature(key){
  content.append(title,intro);
  const addLine=(label,value)=>{const row=document.createElement('div');row.className='feature-stat-row';const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=String(value);row.append(a,b);content.append(row);};
  if(key==='settings'){
-  const settings=document.createElement('div');settings.innerHTML='<button class="drawer-item" onclick="document.getElementById(\'newPasswordBox\').classList.remove(\'hidden\');closeProfileFeature();document.getElementById(\'newPasswordBox\').scrollIntoView({behavior:\'smooth\'})">🔐 گۆڕینی وشەی نهێنی</button><button class="drawer-item" onclick="changeLanguage(\'ku\')">🌐 زمان: کوردی</button><button class="drawer-item logout-drawer" onclick="signOut()">🚪 دەرچوون لە هەژمار</button>';content.append(settings);
+  const settings=document.createElement('div');
+  const heading=(label)=>{const h=document.createElement('h4');h.textContent=label;h.style.cssText='color:var(--gold);margin:18px 2px 8px';settings.append(h);};
+  const action=(label,handler,cls='drawer-item')=>{const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;b.addEventListener('click',handler);settings.append(b);return b;};
+  const note=(value)=>{const p=document.createElement('p');p.className='small';p.textContent=value;settings.append(p);};
+  heading('👤 هەژمار');
+  note('ئیمەیڵ: '+(currentUser?.email||''));
+  action('🔐 گۆڕینی وشەی نهێنی',()=>{document.getElementById('newPasswordBox').classList.remove('hidden');closeProfileFeature();document.getElementById('newPasswordBox').scrollIntoView({behavior:'smooth'});});
+  heading('🌐 زمان');
+  const language=document.createElement('select');language.style.cssText='width:100%;padding:12px;border-radius:12px;background:#0b0d1b;color:white;border:1px solid var(--line)';
+  [['ku','کوردی'],['ar','العربية'],['en','English']].forEach(([value,label])=>{const o=document.createElement('option');o.value=value;o.textContent=label;language.append(o);});
+  language.value=localStorage.getItem('kurdHaloLanguage')||'ku';
+  language.addEventListener('change',()=>{localStorage.setItem('kurdHaloLanguage',language.value);if(typeof changeLanguage==='function')changeLanguage(language.value);});
+  settings.append(language);
+  heading('🔔 ئاگادارکردنەوەکان');
+  const pref=(key,label)=>{const wrap=document.createElement('label');wrap.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;margin:7px 0;border:1px solid var(--line);border-radius:12px;color:#fff';const span=document.createElement('span');span.textContent=label;const input=document.createElement('input');input.type='checkbox';input.checked=localStorage.getItem('haloPref_'+key)!=='off';input.addEventListener('change',()=>localStorage.setItem('haloPref_'+key,input.checked?'on':'off'));wrap.append(span,input);settings.append(wrap);};
+  pref('likes','ئاگادارکردنەوەی لایک');pref('comments','ئاگادارکردنەوەی کۆمێنت');pref('follows','ئاگادارکردنەوەی فۆڵۆو');
+  note('ئەم هەڵبژاردنانە لە ئامێرەکەتدا پاشەکەوت دەکرێن؛ هێشتا سیستەمی ناردنی ئاگادارکردنەوەی پۆش نییە.');
+  heading('🛡️ تایبەتمەندی');
+  note('هەژمارەکەت بە ئیمەیڵ و وشەی نهێنی پارێزراوە. ڕێکخستنی تایبەتی‌کردنی هەژمار هێشتا پێویستی بە زیادکردنی سیستەمی پاراستنی داتابەیس هەیە.');
+  heading('ℹ️ دەربارە');
+  note('KURD HALO · کۆمەڵگای دیجیتاڵی کوردی');
+  action('🚪 دەرچوون لە هەژمار',()=>signOut(),'drawer-item logout-drawer');
+  content.append(settings);
  }else if(key==='qr'&&currentUser){
   const code=document.createElement('code');code.className='feature-account-code';code.textContent=currentUser.id;content.append(code);
   const copy=document.createElement('button');copy.type='button';copy.className='dark';copy.textContent='📋 کۆپی ناسنامە';copy.onclick=()=>{navigator.clipboard?.writeText(currentUser.id).then(()=>alert('ناسنامەکەت کۆپی کرا.')).catch(()=>alert(currentUser.id));};content.append(copy);
