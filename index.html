@@ -1053,13 +1053,27 @@ async function renderMyProfile(){
 async function openProfileFeature(key){
  closeProfileMenu();
  const titles={balance:'💰 Balance',activity:'📊 Activity Center',offline:'📥 Offline Videos',qr:'▦ Your QR Code',minis:'🎬 KURD HALO Minis',studio:'🎥 KURD HALO Studio',promote:'📣 Promote',settings:'⚙️ Settings and Privacy'};
- const descriptions={balance:'هاوسەنگی دراوی ناوخۆیی. هیچ پارەدان یان گواستنەوەی پارە لەم قۆناغەدا چالاک نییە.',activity:'نوێترین کاردانەوەکان لەسەر پرۆفایل و ڤیدیۆکانت.',offline:'ڤیدیۆ پاشەکەوتکراوەکانت لە بەشی Saved ببینە. بینینی بێ ئینتەرنێت پێویستی بە پشتگیری پاشەکەوتی مۆبایل هەیە.',qr:'ناسنامەی تایبەتی هەژمارەکەت بۆ ناساندن.',minis:'بەشی ڤیدیۆ کورتە تایبەتەکان لە قۆناغی داهاتوودا زیاد دەکرێت.',studio:'ئامار و بەڕێوەبردنی ناوەڕۆکی خۆت.',promote:'پێشخستنی ڤیدیۆ کاتێک سیستەمی ڕیکلام و پارەدان ئامادە بوو چالاک دەکرێت.',settings:'ڕێکخستنەکانی هەژمار و پاراستنی تایبەتمەندی.'};
+ const descriptions={balance:'هاوسەنگی دراوی ناوخۆیی. هیچ پارەدان یان گواستنەوەی پارە لەم قۆناغەدا چالاک نییە.',activity:'نوێترین کاردانەوەکان لەسەر پرۆفایل و ڤیدیۆکانت.',offline:'ڤیدیۆ پاشەکەوتکراوەکانت لە بەشی Saved ببینە. بینینی بێ ئینتەرنێت پێویستی بە پشتگیری پاشەکەوتی مۆبایل هەیە.',qr:'ناسنامەی تایبەتی هەژمارەکەت بۆ ناساندن.',minis:'ڤیدیۆ کورتەکانی KURD HALO لێرە ببینە.',studio:'ئامار و بەڕێوەبردنی ناوەڕۆکی خۆت.',promote:'پێشخستنی ڤیدیۆ کاتێک سیستەمی ڕیکلام و پارەدان ئامادە بوو چالاک دەکرێت.',settings:'ڕێکخستنەکانی هەژمار و پاراستنی تایبەتمەندی.'};
  const content=document.getElementById('profileFeatureContent');content.replaceChildren();
  const title=document.createElement('h3');title.textContent=titles[key]||'KURD HALO';
  const intro=document.createElement('p');intro.className='small';intro.textContent=descriptions[key]||'';
  content.append(title,intro);
  const addLine=(label,value)=>{const row=document.createElement('div');row.className='feature-stat-row';const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=String(value);row.append(a,b);content.append(row);};
- if(key==='settings'){
+ if(key==='minis'){
+  const minisStatus=document.createElement('p');minisStatus.className='small';minisStatus.textContent='ڤیدیۆ کورتەکان بار دەکرێن...';content.append(minisStatus);
+  const minisList=document.createElement('div');minisList.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px';content.append(minisList);
+  try{
+   const result=await db.from('videos').select('id,storage_path,caption,created_at').order('created_at',{ascending:false}).limit(30);
+   if(result.error)throw result.error;
+   const clips=result.data||[];minisStatus.textContent=clips.length?'🎬 '+clips.length+' ڤیدیۆی نوێ':'هێشتا هیچ ڤیدیۆیەک نییە.';
+   clips.forEach(item=>{
+    const card=document.createElement('div');card.style.cssText='min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:7px;overflow:hidden';
+    const video=document.createElement('video');video.src=db.storage.from('videos').getPublicUrl(item.storage_path).data.publicUrl;video.controls=true;video.playsInline=true;video.preload='metadata';video.style.cssText='width:100%;aspect-ratio:9/16;object-fit:cover;background:#000;border-radius:8px';
+    const caption=document.createElement('p');caption.className='small';caption.style.cssText='margin:7px 2px 2px;overflow-wrap:anywhere';caption.textContent=item.caption||'🎬 KURD HALO Mini';
+    card.append(video,caption);minisList.append(card);
+   });
+  }catch(e){minisStatus.textContent='نەتوانرا ڤیدیۆ کورتەکان باربکرێن: '+String(e.message||e);}
+ }else if(key==='settings'){
   const settings=document.createElement('div');
   const heading=(label)=>{const h=document.createElement('h4');h.textContent=label;h.style.cssText='color:var(--gold);margin:18px 2px 8px';settings.append(h);};
   const action=(label,handler,cls='drawer-item')=>{const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;b.addEventListener('click',handler);settings.append(b);return b;};
