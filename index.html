@@ -1647,20 +1647,10 @@ async function deleteSound(sound) {
       background:#b58b25; color:#111; font-weight:bold;
     }
     #soundHub h3 { color:#e8bd45; }
-    .bottom-nav { grid-template-columns:repeat(6,minmax(0,1fr)) !important; }
   `;
   document.head.appendChild(style);
  
   const nav = document.getElementById('mainBottomNav');
-  if (nav && !document.getElementById('navSound')) {
-    const btn = document.createElement('button');
-    btn.id = 'navSound';
-    btn.type = 'button';
-    btn.innerHTML = '<span class="nav-icon">🎵</span><span>Sound</span>';
-    btn.onclick = () => switchAppTab('sound');
-    const profileBtn = document.getElementById('navProfile');
-    nav.insertBefore(btn, profileBtn || null);
-  }
  
   if (!document.getElementById('soundHub') && nav) {
     const hub = document.createElement('section');
