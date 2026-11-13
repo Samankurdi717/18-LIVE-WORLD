@@ -1114,6 +1114,69 @@ async function openProfileFeature(key){
    const info=document.createElement('p');info.className='small';info.style.marginTop='14px';info.textContent='ئەم دراوە تەنها دراوی مەجازی ناو ئەپەکەیە؛ پارەی ڕاستەقینە نییە، نە دەتوانرێت بگوازرێتەوە و نە بە پارەی ڕاستەقینە بگۆڕدرێت.';
    content.append(info);
   }
+ }else if(key==='offline'){
+  if(!currentUser){
+   const p=document.createElement('p');p.className='small';p.textContent='بۆ بەکارهێنانی ڤیدیۆی ئۆفلاین، سەرەتا بچۆ ژوورەوە.';content.append(p);
+  }else{
+   const introOffline=document.createElement('p');introOffline.className='small';introOffline.textContent='لە سەر Saved ڤیدیۆ هەڵبژێرە و دوگمەی داگرتنی ئۆفلاین دابگرە. دوای تەواوبوونی داگرتن دەتوانیت بەبێ ئینتەرنێت بیبینیت.';content.append(introOffline);
+   const offlineStatus=document.createElement('p');offlineStatus.className='small';offlineStatus.textContent='لیستی ڤیدیۆ پاشەکەوتکراوەکان بار دەکرێت...';content.append(offlineStatus);
+   const offlineList=document.createElement('div');offlineList.style.cssText='display:grid;gap:12px;margin-top:12px';content.append(offlineList);
+   const openOfflineDB=()=>new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)){reject(new Error('ئەم وێبگەڕە پشتگیری پاشەکەوتی ئۆفلاین ناکات.'));return;}
+    const request=indexedDB.open('kurdHaloOfflineVideos',1);
+    request.onupgradeneeded=()=>{const database=request.result;if(!database.objectStoreNames.contains('videos'))database.createObjectStore('videos',{keyPath:'id'});};
+    request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error('نەتوانرا بنکەی ئۆفلاین بکرێتەوە.'));
+   });
+   const offlineTransaction=(db,mode,work)=>new Promise((resolve,reject)=>{
+    const tx=db.transaction('videos',mode);const store=tx.objectStore('videos');let request;
+    try{request=work(store);}catch(e){reject(e);return;}
+    if(request){request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);}
+    else{tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error);}
+   });
+   const renderOffline=async()=>{
+    offlineList.replaceChildren();
+    const localDB=await openOfflineDB();
+    const cached=await offlineTransaction(localDB,'readonly',store=>store.getAll());
+    cached.sort((a,b)=>new Date(b.savedAt||0)-new Date(a.savedAt||0));
+    if(!cached.length){const empty=document.createElement('p');empty.className='small';empty.textContent='هێشتا هیچ ڤیدیۆیەک بۆ ئۆفلاین دابەزێنراوە. لە خوارەوە ڤیدیۆ پاشەکەوت بکە.';offlineList.append(empty);}
+    cached.forEach(item=>{
+     const card=document.createElement('div');card.style.cssText='padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035)';
+     const video=document.createElement('video');video.controls=true;video.playsInline=true;video.preload='metadata';video.style.cssText='width:100%;max-height:230px;border-radius:10px;background:#000';video.src=URL.createObjectURL(item.blob);
+     const caption=document.createElement('p');caption.className='small';caption.textContent=item.caption||'ڤیدیۆی KURD HALO';
+     const remove=document.createElement('button');remove.type='button';remove.className='dark';remove.textContent='🗑️ لابردن لە ئۆفلاین';remove.addEventListener('click',async()=>{remove.disabled=true;try{await offlineTransaction(localDB,'readwrite',store=>store.delete(item.id));video.pause();URL.revokeObjectURL(video.src);await renderOffline();}catch(e){offlineStatus.textContent='هەڵە: '+e.message;remove.disabled=false;}});
+     card.append(video,caption,remove);offlineList.append(card);
+    });
+    localDB.close();
+   };
+   try{
+    const {data:saves,error:savesError}=await db.from('video_saves').select('video_id').eq('user_id',currentUser.id);
+    if(savesError)throw savesError;
+    const ids=(saves||[]).map(x=>x.video_id);
+    let savedVideos=[];
+    if(ids.length){const result=await db.from('videos').select('id,storage_path,caption,created_at').in('id',ids).order('created_at',{ascending:false});if(result.error)throw result.error;savedVideos=result.data||[];}
+    offlineStatus.textContent='ڤیدیۆ پاشەکەوتکراوەکان: '+savedVideos.length+' · داگرتنی ئۆفلاین پێویستی بە ئینتەرنێت هەیە.';
+    savedVideos.forEach(item=>{
+     const row=document.createElement('div');row.style.cssText='padding:12px;border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:10px';
+     const label=document.createElement('span');label.className='small';label.style.flex='1';label.textContent='🎬 '+(item.caption||'ڤیدیۆی KURD HALO');
+     const download=document.createElement('button');download.type='button';download.className='dark';download.textContent='⬇️ داگرتنی ئۆفلاین';
+     download.addEventListener('click',async()=>{
+      download.disabled=true;download.textContent='⏳ داگرتن...';
+      try{
+       const url=db.storage.from('videos').getPublicUrl(item.storage_path).data.publicUrl;
+       const response=await fetch(url);if(!response.ok)throw new Error('داگرتنی ڤیدیۆ سەرکەوتوو نەبوو.');
+       const blob=await response.blob();if(!blob.type.startsWith('video/'))throw new Error('فایلەکە ڤیدیۆی دروست نییە.');
+       const localDB=await openOfflineDB();
+       await offlineTransaction(localDB,'readwrite',store=>store.put({id:item.id,blob,caption:item.caption||'',savedAt:new Date().toISOString()}));
+       localDB.close();download.textContent='✓ پاشەکەوت کرا';offlineStatus.textContent='ڤیدیۆکە بە سەرکەوتوویی بۆ ئۆفلاین پاشەکەوت کرا.';
+       await renderOffline();
+      }catch(e){download.textContent='دووبارە هەوڵبدەرەوە';offlineStatus.textContent='نەتوانرا ڤیدیۆکە پاشەکەوت بکرێت: '+String(e.message||e);}
+      finally{download.disabled=false;}
+     });
+     row.append(label,download);offlineList.append(row);
+    });
+    await renderOffline();
+   }catch(e){offlineStatus.textContent='نەتوانرا لیستی ڤیدیۆکان باربکرێت: '+String(e.message||e);}
+  }
  }else if(key==='qr'&&currentUser){
   const code=document.createElement('code');code.className='feature-account-code';code.textContent=currentUser.id;content.append(code);
   const copy=document.createElement('button');copy.type='button';copy.className='dark';copy.textContent='📋 کۆپی ناسنامە';copy.onclick=()=>{navigator.clipboard?.writeText(currentUser.id).then(()=>alert('ناسنامەکەت کۆپی کرا.')).catch(()=>alert(currentUser.id));};content.append(copy);
