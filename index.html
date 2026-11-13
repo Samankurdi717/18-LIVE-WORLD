@@ -284,6 +284,16 @@ body.auth-required .bottom-nav{display:none!important}
 .channel-feed-card .channel-feed-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
 .channel-feed-card .channel-source-link{position:relative;z-index:2;margin:0 14px 12px auto;color:#fff;background:#17192bd9;border:1px solid #ffffff33;border-radius:20px;padding:7px 11px;font-size:11px;text-decoration:none}
  
+
+/* KURD HALO immersive feed + collapsible channel directory */
+.halo-channel-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;margin:8px 0;padding:11px 14px;border:1px solid #d6ad45;border-radius:13px;background:linear-gradient(110deg,#171323,#28200d);color:#ffe08a;font-weight:800;font-size:14px}
+.halo-channel-area{margin:0 0 12px;padding:10px;border:1px solid #ffffff20;border-radius:14px;background:#10101beF}
+.halo-channel-area.hidden{display:none!important}
+.reels-feed{display:flex;flex-direction:column;gap:0;scroll-snap-type:y mandatory;overflow:visible;overscroll-behavior-y:contain;touch-action:pan-y}
+.feed-card{min-height:calc(100svh - 58px);height:calc(100svh - 58px);scroll-snap-align:start;scroll-snap-stop:always}
+.feed-card iframe,.feed-card .channel-feed-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;z-index:-2}
+@media(max-width:600px){.feed-toolbar{margin:6px 0}.feed-card{min-height:calc(100svh - 58px);height:calc(100svh - 58px)}}
+
 </style>
 </head>
 <body>
@@ -435,7 +445,8 @@ body.auth-required .bottom-nav{display:none!important}
  </div>
  <div class="feed-tabs"><button type="button" class="selected" id="forYouTab" onclick="setFeedMode('forYou')" data-i18n="forYou">بۆ تۆ</button><button type="button" id="followingTab" onclick="setFeedMode('following')" data-i18n="following">شوێنکەوتووان</button><button type="button" id="savedTab" onclick="setFeedMode('saved')">🔖 پاشەکەوتکراوەکانم</button><span>🔴 LIVE</span></div>
  <div class="user-search-panel"><input id="userSearchInput" type="search" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
- <div id="haloChannelArea" class="halo-channel-area">
+ <button type="button" id="haloChannelToggle" class="halo-channel-toggle" aria-expanded="false" onclick="toggleHaloChannelPanel()">📡 قەناڵەکان <span id="haloChannelToggleIcon">＋</span></button>
+ <div id="haloChannelArea" class="halo-channel-area hidden">
   <div class="halo-channel-head">
    <strong>📡 قەناڵەکان</strong>
    <button type="button" class="dark" onclick="loadHaloChannels()">↻</button>
@@ -973,6 +984,18 @@ async function searchUsers(){
  }catch(e){results.textContent="هەڵە لە گەڕان: "+e.message;}
 }
  
+function toggleHaloChannelPanel(){
+ const panel=document.getElementById("haloChannelArea");
+ const button=document.getElementById("haloChannelToggle");
+ const icon=document.getElementById("haloChannelToggleIcon");
+ if(!panel||!button)return;
+ const opening=panel.classList.contains("hidden");
+ panel.classList.toggle("hidden",!opening);
+ button.setAttribute("aria-expanded",String(opening));
+ if(icon)icon.textContent=opening?"−":"＋";
+ if(opening)loadHaloChannels();
+}
+
 // KURD HALO CHANNELS — channels stay inside the main feed
 let haloChannelsCache = [];
 let haloChannelFollowing = new Set();
@@ -1185,7 +1208,7 @@ async function loadVideos(){
   if(window.kurdStarFeedObserver)window.kurdStarFeedObserver.disconnect();
   window.kurdStarFeedObserver=new IntersectionObserver(entries=>{
    entries.forEach(entry=>{const v=entry.target.querySelector("video");if(!v)return;if(entry.isIntersecting&&entry.intersectionRatio>=0.65){v.play().catch(()=>{});}else{v.pause();}});
-  },{root:feed,threshold:[0,0.65,1]});
+  },{root:null,threshold:[0,0.65,1]});
   feed.querySelectorAll(".feed-card").forEach(card=>window.kurdStarFeedObserver.observe(card));
  }catch(e){feed.textContent="هەڵە لە بارکردنی ڤیدیۆکان: "+e.message;}
 }
