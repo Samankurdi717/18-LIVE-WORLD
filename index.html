@@ -378,6 +378,28 @@ body.auth-required .bottom-nav{display:none!important}
  body.auth-required .app-header{display:none!important}
 }
 
+
+/* CHANNEL PANEL COMPACT — keep the full-screen video visible */
+@media(max-width:700px){
+ #haloChannelArea:not(.hidden){
+  position:fixed!important;z-index:160!important;
+  top:137px!important;left:9px!important;right:9px!important;
+  width:auto!important;max-width:600px!important;
+  max-height:23svh!important;overflow-y:auto!important;overflow-x:hidden!important;
+  margin:0 auto!important;padding:8px 9px!important;
+  border-radius:14px!important;background:rgba(9,10,20,.94)!important;
+  box-shadow:0 8px 28px #0009!important;
+ }
+ #haloChannelArea .halo-channel-head{margin-bottom:4px!important;font-size:11px!important}
+ #haloChannelArea .halo-channel-strip{
+  display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+  gap:6px!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;
+  padding:2px 0 5px!important;
+ }
+ #haloChannelArea .halo-channel-chip{flex:0 0 auto!important;padding:6px 9px!important;font-size:10px!important}
+ #haloChannelArea .halo-create-channel{margin-top:3px!important;padding-top:4px!important;font-size:10px!important}
+ #haloChannelArea .halo-create-channel:not([open])>*:not(summary){display:none!important}
+}
 </style>
 </head>
 <body>
