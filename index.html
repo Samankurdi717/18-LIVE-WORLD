@@ -927,7 +927,7 @@ async function renderMyProfile(){
   document.getElementById('profileLikesCount').textContent=likes;
   const grid=document.getElementById('myVideoGrid');grid.replaceChildren();
   if(!rows.length){grid.innerHTML='<p class="small">هێشتا ڤیدیۆت بڵاو نەکردووەتەوە.</p>';return;}
-  rows.forEach(v=>{const tile=document.createElement('div');tile.className='profile-video-tile';const video=document.createElement('video');const {data}=db.storage.from('videos').getPublicUrl(v.storage_path);video.src=data.publicUrl;video.muted=true;video.playsInline=true;video.preload='metadata';const cap=document.createElement('div');cap.className='tile-caption';cap.textContent=v.caption||'KURD HALO';tile.append(video,cap);grid.append(tile);});
+  rows.forEach(v=>{const tile=document.createElement('div');tile.className='profile-video-tile';tile.dataset.ownVideoId=v.id;const video=document.createElement('video');const {data}=db.storage.from('videos').getPublicUrl(v.storage_path);video.src=data.publicUrl;video.muted=true;video.playsInline=true;video.preload='metadata';const cap=document.createElement('div');cap.className='tile-caption';cap.textContent=v.caption||'KURD HALO';const remove=document.createElement('button');remove.type='button';remove.className='feed-action';remove.textContent='🗑️ سڕینەوە';remove.addEventListener('click',()=>deleteOwnVideo(v,remove,tile));tile.append(video,cap,remove);grid.append(tile);});
  }catch(e){document.getElementById('myVideoGrid').innerHTML='<p class="small">نەتوانرا زانیاریی پرۆفایل باربکرێت: '+String(e.message||e)+'</p>';}
 }
 function openProfileFeature(key){
@@ -1113,6 +1113,29 @@ function toggleHaloChannelPanel(){
 let haloFeedSoundEnabled=false;
 let haloFeedLoadVersion=0;
 
+// DELETE ONLY THE SIGNED-IN MEMBER'S OWN VIDEO
+async function deleteOwnVideo(item,button,card){
+ if(!currentUser||!item||item.user_id!==currentUser.id){alert("تەنها خاوەنی ڤیدیۆ دەتوانێت بیسڕێتەوە.");return;}
+ if(!confirm("دڵنیایت دەتەوێت ئەم ڤیدیۆیە بسڕیتەوە؟ ئەم کارە ناگەڕێتەوە."))return;
+ button.disabled=true;
+ try{
+  const {data:deletedRows,error}=await db.from("videos").delete().eq("id",item.id).eq("user_id",currentUser.id).select("id");
+  if(error)throw error;
+  if(!deletedRows||!deletedRows.length)throw new Error("ڕێگەپێدان نییە یان ڤیدیۆکە نەدۆزرایەوە.");
+  if(item.storage_path&&item.storage_path.startsWith(currentUser.id+"/videos/")){
+   const {error:storageError}=await db.storage.from("videos").remove([item.storage_path]);
+   if(storageError)console.warn("Video row deleted; storage cleanup failed:",storageError.message);
+  }
+  if(item.sound_path&&item.sound_path.startsWith(currentUser.id+"/sounds/")){
+   const {error:soundStorageError}=await db.storage.from("sounds").remove([item.sound_path]);
+   if(soundStorageError)console.warn("Sound cleanup failed:",soundStorageError.message);
+  }
+  if(card)card.remove();
+  const tile=document.querySelector('[data-own-video-id="'+item.id+'"]');if(tile)tile.remove();
+  alert("ڤیدیۆکەت سڕایەوە. ⭐");
+ }catch(e){alert("نەتوانرا ڤیدیۆکە بسڕدرێتەوە: "+(e.message||e));button.disabled=false;}
+}
+
 // LOAD VIDEOS
 let haloVideoUploadInProgress=false;
 async function loadVideos(){
@@ -1207,6 +1230,9 @@ async function loadVideos(){
    });
    const sound=document.createElement("button");sound.type="button";sound.className="feed-action feed-sound-toggle";sound.innerHTML=haloFeedSoundEnabled?"<b>🔊</b><span>دەنگ</span>":"<b>🔇</b><span>دەنگ</span>";sound.title="چالاک/ناچالاککردنی دەنگ";sound.addEventListener("click",async()=>{haloFeedSoundEnabled=!haloFeedSoundEnabled;document.querySelectorAll("#feed video").forEach(v=>{v.muted=!haloFeedSoundEnabled;if(v!==video)v.pause();});sound.innerHTML=haloFeedSoundEnabled?"<b>🔊</b><span>دەنگ</span>":"<b>🔇</b><span>دەنگ</span>";if(haloFeedSoundEnabled&&!video.ended&&video.dataset.playbackCompleted!=="true"){try{await video.play();}catch(e){haloFeedSoundEnabled=false;video.muted=true;sound.innerHTML="<b>🔇</b><span>دەنگ</span>";alert("بۆ دەنگ، جارێکی تر دوگمەی دەنگ دابگرە.");}}});
    actions.append(like,comment,share,save,sound);
+   if(item.user_id===currentUser.id){
+    const remove=document.createElement("button");remove.type="button";remove.className="feed-action";remove.innerHTML="<b>🗑️</b><span>سڕینەوە</span>";remove.addEventListener("click",()=>deleteOwnVideo(item,remove,card));actions.append(remove);
+   }
    card.appendChild(video);card.appendChild(actions);card.appendChild(author);card.appendChild(caption);feed.appendChild(card);
   });
   if(window.kurdStarFeedObserver)window.kurdStarFeedObserver.disconnect();
