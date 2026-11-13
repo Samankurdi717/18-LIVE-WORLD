@@ -1089,15 +1089,18 @@ function toggleHaloChannelPanel(){
 
 // User gesture enables sound for the active feed video; browsers block audible autoplay.
 let haloFeedSoundEnabled=false;
+let haloFeedLoadVersion=0;
 
 // LOAD VIDEOS
 async function loadVideos(){
+ const requestVersion=++haloFeedLoadVersion;
  const feed=document.getElementById("feed");
  if(!currentUser){feed.innerHTML="<p class='small'>بۆ بینینی ڤیدیۆکان سەرەتا هەژمار دروست بکە یان بچۆ ژوورەوە.</p>";return;}
  feed.innerHTML="<p>چاوەڕێ بکە...</p>";
  try{
   const {data:allVideos,error}=await db.from("videos").select("*").order("created_at",{ascending:false}).limit(100);
   if(error)throw error;
+  if(requestVersion!==haloFeedLoadVersion)return;
   let data=allVideos||[];
   let followedIds=[];
   if(feedMode==="saved"){
@@ -1126,6 +1129,9 @@ async function loadVideos(){
    db.from("video_saves").select("video_id").eq("user_id",currentUser.id).in("video_id",videoIds)
   ]):[{data:[],error:null},{data:[],error:null},{data:[],error:null}];
   if(profilesResult.error)throw profilesResult.error;if(followingResult.error)throw followingResult.error;if(savesResult.error)throw savesResult.error;
+  if(requestVersion!==haloFeedLoadVersion)return;
+  const uniqueVideoPaths=new Set();
+  data=data.filter(v=>{if(!v.storage_path||uniqueVideoPaths.has(v.storage_path))return false;uniqueVideoPaths.add(v.storage_path);return true;});
   const profileMap=new Map((profilesResult.data||[]).map(p=>[p.id,p]));
   const followingSet=new Set((followingResult.data||[]).map(x=>x.following_id));
   const savedByMe=new Set((savesResult.data||[]).map(x=>x.video_id));
