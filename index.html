@@ -2856,11 +2856,6 @@ db.auth.onAuthStateChange((event,session)=>{
 
  
 // Immersive-screen controls: keep secondary tools available without crowding the feed.
-function openSearch(){
- switchAppTab('friends');
- const input=document.getElementById('userSearchInput');
- if(input)setTimeout(()=>input.focus(),100);
-}
 function openUpload(){
  if(!currentUser){openAccount();return;}
  switchAppTab('home');
