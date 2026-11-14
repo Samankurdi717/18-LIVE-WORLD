@@ -530,6 +530,13 @@ body.auth-required .bottom-nav{display:none!important}
  .app-header .header-actions{position:absolute!important;right:8px!important;top:5px!important}
 }
 
+/* KURD HALO: feed tabs live in the real header row for reliable taps */
+@media(max-width:700px){
+ .app-header{display:flex!important;align-items:center!important;justify-content:space-between!important;z-index:99999!important;overflow:visible!important}
+ .app-header>#feedModeTabs{position:static!important;inset:auto!important;transform:none!important;flex:1 1 auto!important;width:auto!important;max-width:none!important;height:auto!important;margin:0 6px!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:space-around!important;gap:1px!important;z-index:100000!important;pointer-events:auto!important;background:transparent!important;backdrop-filter:none!important;overflow:visible!important}
+ .app-header>#feedModeTabs button{flex:1 1 0!important;min-width:0!important;margin:0!important;padding:8px 1px!important;font-size:clamp(8px,2.65vw,11px)!important;white-space:nowrap!important;line-height:1.15!important;pointer-events:auto!important}
+ .app-header .header-actions{position:static!important;flex:0 0 38px!important;z-index:100001!important}
+}
 </style>
 
 <script>self.ModelViewerElement=self.ModelViewerElement||{};self.ModelViewerElement.meshoptDecoderLocation='https://cdn.jsdelivr.net/npm/meshoptimizer/meshopt_decoder.js';</script>
@@ -538,6 +545,13 @@ body.auth-required .bottom-nav{display:none!important}
 <body>
 <div class="container">
 <header class="app-header">
+<div class="feed-mode-tabs" id="feedModeTabs" role="tablist" aria-label="Main feed">
+  <button type="button" id="liveFeedTab" role="tab" aria-selected="false" onclick="setFeedMode('live')">🔴 Live</button>
+  <button type="button" id="communityTab" role="tab" aria-selected="false" onclick="setFeedMode('community')">Community</button>
+  <button type="button" id="followingTab" role="tab" aria-selected="false" onclick="setFeedMode('following')">Following</button>
+  <button type="button" id="forYouTab" class="selected" role="tab" aria-selected="true" onclick="setFeedMode('forYou')">For you</button>
+ </div>
+
 
  <div class="header-actions">
   <button class="profile-menu-trigger" type="button" onclick="openProfileMenu()" aria-label="مێنیو" title="مێنیو">☰</button>
@@ -679,12 +693,7 @@ body.auth-required .bottom-nav{display:none!important}
 
  
  <div class="user-search-panel"><input id="userSearchInput" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()" data-i18n="searchButton">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
- <div class="feed-mode-tabs" id="feedModeTabs" role="tablist" aria-label="Main feed">
-  <button type="button" id="liveFeedTab" role="tab" aria-selected="false" onclick="setFeedMode('live')">🔴 Live</button>
-  <button type="button" id="communityTab" role="tab" aria-selected="false" onclick="setFeedMode('community')">Community</button>
-  <button type="button" id="followingTab" role="tab" aria-selected="false" onclick="setFeedMode('following')">Following</button>
-  <button type="button" id="forYouTab" class="selected" role="tab" aria-selected="true" onclick="setFeedMode('forYou')">For you</button>
- </div>
+
  <div class="feed-toolbar">
   <h3 data-i18n="feedTitle">🌍 ڤیدیۆکانی کورد هەڵۆ</h3>
   <button class="dark" type="button" onclick="openLive()" data-i18n="liveButton">🔴 Live</button>
