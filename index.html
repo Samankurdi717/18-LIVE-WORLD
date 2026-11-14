@@ -1611,18 +1611,6 @@ async function searchUsers(){
  }catch(e){results.textContent="هەڵە لە گەڕان: "+e.message;}
 }
  
-function toggleHaloChannelPanel(){
- const panel=document.getElementById("haloChannelArea");
- const button=document.getElementById("haloChannelToggle");
- const icon=document.getElementById("haloChannelToggleIcon");
- if(!panel||!button)return;
- const opening=panel.classList.contains("hidden");
- panel.classList.toggle("hidden",!opening);
- button.setAttribute("aria-expanded",String(opening));
- if(icon)icon.textContent=opening?"−":"＋";
- if(opening)loadHaloChannels();
-}
-
 // One global sound switch controls every feed video.
 let haloFeedSoundEnabled=false;
 let haloFeedLoadVersion=0;
@@ -1811,7 +1799,6 @@ async function loadVideos(){
  
 // PRIVATE DIRECT MESSAGES + PHONE GALLERY VIDEO SHARING
 function dmStatus(message){const el=document.getElementById('inboxStatus');if(el)el.textContent=message||'';}
-function safeText(el,value){el.textContent=value||'';}
 const DM_VIDEO_MAX_BYTES=100*1024*1024;
 const DM_VIDEO_MIMES=new Set(['video/mp4','video/quicktime','video/webm','video/3gpp','video/x-m4v','video/3gpp2']);
 const dmVideoPicker=document.getElementById('dmVideoFile');
