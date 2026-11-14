@@ -506,6 +506,30 @@ body.auth-required .bottom-nav{display:none!important}
 
 /* Floating Live shortcut removed as requested */
 @media(max-width:700px){.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;height:66px!important}.bottom-nav button{font-size:9px!important}}
+
+/* KURD HALO: put the four feed tabs on the same top row as the hamburger */
+@media(max-width:700px){
+ #unifiedHub>#feedModeTabs{
+  position:fixed!important;top:5px!important;left:8px!important;right:58px!important;
+  width:auto!important;max-width:none!important;height:44px!important;margin:0!important;
+  padding:0 2px!important;display:flex!important;align-items:center!important;
+  justify-content:space-between!important;gap:2px!important;z-index:140!important;
+  background:transparent!important;backdrop-filter:none!important;
+  overflow:visible!important;
+ }
+ #unifiedHub>#feedModeTabs button{
+  flex:1 1 0!important;min-width:0!important;padding:7px 2px!important;
+  margin:0!important;font-size:clamp(9px,2.8vw,11px)!important;
+  white-space:nowrap!important;line-height:1.2!important;
+  color:#eee!important;text-shadow:0 1px 4px #000!important;
+ }
+ #unifiedHub>#feedModeTabs button.selected{
+  color:#fff!important;border-bottom:2px solid var(--gold)!important;
+ }
+ .app-header{z-index:145!important}
+ .app-header .header-actions{position:absolute!important;right:8px!important;top:5px!important}
+}
+
 </style>
 
 <script>self.ModelViewerElement=self.ModelViewerElement||{};self.ModelViewerElement.meshoptDecoderLocation='https://cdn.jsdelivr.net/npm/meshoptimizer/meshopt_decoder.js';</script>
