@@ -640,6 +640,8 @@ body.auth-required .bottom-nav{display:none!important}
  <button class="drawer-item" onclick="openProfileFeature('promote')"><span class="drawer-icon">📣</span><span data-halo-profile-label="promote">Promote</span><span class="drawer-arrow">‹</span></button>
  <div class="drawer-divider"></div>
  <button class="drawer-item" onclick="openProfileFeature('settings')"><span class="drawer-icon">⚙️</span><span data-halo-profile-label="settings">Settings and Privacy</span><span class="drawer-arrow">‹</span></button>
+ <button class="drawer-item" onclick="openUpload();closeProfileMenu()"><span class="drawer-icon">＋</span><span>دروستکردن / Create</span><span class="drawer-arrow">‹</span></button>
+ <button class="drawer-item" onclick="switchAppTab('inbox');closeProfileMenu()"><span class="drawer-icon">✉</span><span>پەیامەکان / Inbox</span><span class="drawer-arrow">‹</span></button>
  <button class="drawer-item logout-drawer" onclick="signOut()"><span class="drawer-icon">🚪</span><span data-i18n="logout">Log out</span></button>
 </aside>
 <div id="profileFeatureModal" class="account-modal hidden" onclick="if(event.target===this)closeProfileFeature()">
