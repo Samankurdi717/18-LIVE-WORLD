@@ -2072,6 +2072,7 @@ async function joinCall(){
   if(!hostViewerCount){hostViewerCount=document.createElement("span");hostViewerCount.id="haloHostViewerCount";hostViewerCount.style.cssText="display:inline-block;margin:0 8px;color:#f5c96a;font-weight:bold;";document.getElementById("status").insertAdjacentElement("afterend",hostViewerCount);}
   await setupHaloLivePresence(liveRow.id,hostViewerCount);
   await setupHaloHostGuestManager(liveRow.id);
+   await setupHaloPkInvites();
   document.getElementById("status").innerText="🔴 لایڤەکەت دەستی پێکرد!";
  }catch(e){
   if(haloLiveSessionId&&currentUser){try{await db.from("live_sessions").update({status:"ended",ended_at:new Date().toISOString()}).eq("id",haloLiveSessionId).eq("user_id",currentUser.id);}catch(_){}haloLiveSessionId=null;}
