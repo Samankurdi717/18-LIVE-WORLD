@@ -694,6 +694,9 @@ body.auth-required .bottom-nav{display:none!important}
    <button class="dark" onclick="toggleCamera()" data-i18n="camera">📷 کامێرا</button>
    <button class="dark" onclick="toggleMic()" data-i18n="microphone">🎤 مایکرۆفۆن</button>
   </div>
+  <div style="display:flex;justify-content:center;margin:14px 0 8px;">
+   <button type="button" onclick="closeLivePage()" style="width:100%;max-width:360px;padding:13px 18px;border:0;border-radius:14px;background:linear-gradient(135deg,#d93652,#a81735);color:#fff;font-size:15px;font-weight:800;box-shadow:0 5px 18px #d9365244;">✕ داخستنی پەڕەی لایڤ و گەڕانەوە</button>
+  </div>
   <details class="halo-gifts" id="haloGiftCatalog">
    <summary>🎁 کۆمەڵە دیارییەکانی KURD HALO — ١ تا ١٠,٠٠٠ درهەم</summary>
    <p class="small">١٢٥ دیاریی جۆراوجۆر: گوڵ، دڵ، خۆشی، ئاژەڵ، شێر، پڵنگ، ئۆتۆمبێل و شتە ئەفسانەییەکان.</p>
@@ -2204,6 +2207,20 @@ async function setupHaloPkInvites(){
  await refreshHaloPkScoreboard();
  if(haloPkPollTimer)clearInterval(haloPkPollTimer);
  haloPkPollTimer=setInterval(()=>{refreshHaloPkInvites();refreshHaloPkScoreboard();},3000);
+}
+
+// Close the live screen after ending the live session.
+async function closeLivePage(){
+ const closeButton=document.querySelector('#liveHub button[onclick="closeLivePage()"]');
+ if(closeButton){closeButton.disabled=true;closeButton.textContent="⏳ تکایە چاوەڕێ بکە...";}
+ try{
+  await leaveCall();
+  const liveHub=document.getElementById("liveHub");
+  if(liveHub)liveHub.open=false;
+  window.scrollTo({top:0,behavior:"smooth"});
+ }finally{
+  if(closeButton){closeButton.disabled=false;closeButton.textContent="✕ داخستنی پەڕەی لایڤ و گەڕانەوە";}
+ }
 }
 
 // LEAVE LIVE
