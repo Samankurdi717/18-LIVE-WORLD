@@ -1723,7 +1723,7 @@ async function loadVideos(){
   const liveResult=await db.from("live_sessions").select("id,user_id,channel,title,started_at").eq("status","live").order("started_at",{ascending:false}).limit(30);
   if(liveResult.error)throw liveResult.error;
   if(requestVersion!==haloFeedLoadVersion)return;
-  const liveRows=liveResult.data||[];
+  const liveRows=(feedMode==="saved"||feedMode==="following")?[]:(liveResult.data||[]);
   if(!data.length&&!liveRows.length){feed.innerHTML=feedMode==="live"?"<p class=\"small\">ئێستا هیچ لایڤێکی چالاک نییە.</p>":feedMode==="following"?"<p class=\"small\">هێشتا هیچ کەسێکت شوێن نەکەوتووە، یان ئەوانە ڤیدیۆیان بڵاو نەکردووەتەوە.</p>":"<p class=\"small\">هێشتا ڤیدیۆیەک بڵاو نەکراوەتەوە. یەکەم ڤیدیۆت بڵاو بکەرەوە!</p>";return;}
   const liveHostIds=liveRows.map(x=>x.user_id).filter(id=>!profileMap.has(id));
   if(liveHostIds.length){const liveProfiles=await db.from("profiles").select("id,display_name,avatar_url").in("id",liveHostIds);if(liveProfiles.error)throw liveProfiles.error;(liveProfiles.data||[]).forEach(p=>profileMap.set(p.id,p));}
