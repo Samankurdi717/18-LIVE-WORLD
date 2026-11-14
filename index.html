@@ -2091,24 +2091,28 @@ let agoraClient=null,localTracks=[],cameraEnabled=true,micEnabled=true,currentCa
 let haloLiveSessionId=null;
 let haloViewerClient=null;
 let haloViewerInlineCard=null;
+function showLiveViewer(){
+ let panel=document.getElementById("haloLiveViewer");
+ if(panel)return panel;
+ panel=document.createElement("section");panel.id="haloLiveViewer";
+ panel.style.cssText="display:none;position:fixed;inset:0;z-index:999999;background:#050509;color:white;flex-direction:column;width:100%;height:100%;height:100dvh;overflow:hidden;";
+ const top=document.createElement("div");top.style.cssText="height:52px;min-height:52px;display:flex;align-items:center;gap:12px;padding:0 12px;background:#111;z-index:2;";
+ const back=document.createElement("button");back.type="button";back.textContent="← گەڕانەوە";back.setAttribute("aria-label","گەڕانەوە بۆ ڤیدیۆکان");back.style.cssText="border:0;border-radius:22px;padding:9px 14px;background:#ffffff18;color:white;font-size:15px;font-weight:bold;";back.onclick=leaveLiveViewer;
+ const heading=document.createElement("strong");heading.id="haloLiveViewerTitle";heading.textContent="🔴 LIVE";
+ top.append(back,heading);
+ const stage=document.createElement("div");stage.id="haloLiveViewerStage";stage.className="halo-live-viewer-stage";stage.style.cssText="position:relative;flex:1 1 45%;min-height:180px;width:100%;background:#000;overflow:hidden;";
+ const status=document.createElement("p");status.id="haloLiveViewerStatus";status.style.cssText="margin:0;padding:8px;text-align:center;background:#111;color:white;";
+ panel.append(top,stage,status);document.body.appendChild(panel);return panel;
+}
 async function joinLiveViewer(channel,title,inlineCard){
  if(!currentUser){openAccount();return;}
  if(haloViewerClient)await leaveLiveViewer();
  let stage,status;
- if(inlineCard){
-  haloViewerInlineCard=inlineCard;inlineCard.innerHTML="";
-  inlineCard.style.cssText="position:relative;display:flex;flex-direction:column;justify-content:flex-start;background:#050509;color:white;";
-  const top=document.createElement("div");top.style.cssText="height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#111;z-index:2;";
-  const label=document.createElement("strong");label.textContent="🔴 LIVE — "+title;
-  const close=document.createElement("button");close.type="button";close.textContent="✕ داخستن";close.onclick=leaveLiveViewer;top.append(label,close);
-  stage=document.createElement("div");stage.className="halo-live-viewer-stage";stage.style.cssText="position:relative;flex:1;min-height:0;width:100%;height:100%;background:#000;overflow:hidden;";
-  status=document.createElement("p");status.style.cssText="margin:0;padding:8px;text-align:center;background:#111;color:white;";
-  inlineCard.append(top,stage,status);
- }else{
-  const panel=document.getElementById("haloLiveViewer")||showLiveViewer();
-  panel.style.display="flex";document.getElementById("haloLiveViewerTitle").textContent="🔴 LIVE — "+title;
-  status=document.getElementById("haloLiveViewerStatus");stage=document.getElementById("haloLiveViewerStage");stage.innerHTML="";
- }
+ haloViewerInlineCard=null;
+ const panel=showLiveViewer();panel.style.display="flex";
+ document.getElementById("haloLiveViewerTitle").textContent="🔴 LIVE — "+title;
+ status=document.getElementById("haloLiveViewerStatus");
+ stage=document.getElementById("haloLiveViewerStage");stage.innerHTML="";
  status.textContent="پەیوەندی بە لایڤەوە...";
  try{
   const uid=Math.floor(Math.random()*1000000000)+1;
@@ -2122,7 +2126,7 @@ async function joinLiveViewer(channel,title,inlineCard){
    if(mediaType==="audio")user.audioTrack.play();
   });
   haloViewerClient.on("user-left",()=>{status.textContent="لایڤکەر لایڤی کۆتایی پێهێنا.";setTimeout(()=>{if(haloViewerClient)leaveLiveViewer();},1200);});
-  await haloViewerClient.join(AGORA_APP_ID,channel,tokenData.token,uid);status.textContent="🔴 لە هەمان فیددا لایڤ دەبینیت";await setupHaloLiveChat(channel,inlineCard,stage,status);
+  await haloViewerClient.join(AGORA_APP_ID,channel,tokenData.token,uid);status.textContent="🔴 لە هەمان فیددا لایڤ دەبینیت";await setupHaloLiveChat(channel,panel,stage,status);
   const guestButton=document.createElement("button");guestButton.type="button";guestButton.textContent="🎙️ داوای چوونە سەر سەکۆ";guestButton.style.cssText="margin:6px 10px;padding:9px 12px;background:#8b6b24;color:white;";
   guestButton.onclick=()=>requestHaloGuestSeat(status,guestButton);status.insertAdjacentElement("afterend",guestButton);
  }catch(e){status.textContent="هەڵە لە پەیوەندی: "+e.message;if(haloViewerClient){try{await haloViewerClient.leave();}catch(_){}haloViewerClient=null;}}
@@ -2131,10 +2135,7 @@ async function leaveLiveViewer(){
  await cleanupHaloGuestRole();
  await cleanupHaloLiveChat();
  if(haloViewerClient){try{await haloViewerClient.leave();}catch(_){}haloViewerClient=null;}
- if(haloViewerInlineCard){
-  const card=haloViewerInlineCard;haloViewerInlineCard=null;
-  card.innerHTML="<button type='button' aria-label='داخستن' onclick='this.parentElement.remove()' style='position:absolute;top:12px;right:12px;z-index:5;width:38px;height:38px;border:0;border-radius:50%;background:#ffffff22;color:white;font-size:22px'>✕</button><div style='text-align:center;padding:24px;color:white'><strong>🔴 LIVE</strong><p>لایڤەکە داخرا</p><button type='button' onclick='loadVideos()'>گەڕانەوە بۆ فید</button></div>";
- }
+ haloViewerInlineCard=null;
  const panel=document.getElementById("haloLiveViewer");if(panel)panel.style.display="none";
 }
 
