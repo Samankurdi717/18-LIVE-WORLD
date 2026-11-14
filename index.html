@@ -1722,6 +1722,7 @@ async function loadVideos(){
   feedStatus("٥/٥ — پشکنینی لایڤەکان...");
   const liveResult=await db.from("live_sessions").select("id,user_id,channel,title,started_at").eq("status","live").order("started_at",{ascending:false}).limit(30);
   if(liveResult.error)throw liveResult.error;
+  if(requestVersion!==haloFeedLoadVersion)return;
   const liveRows=liveResult.data||[];
   if(!data.length&&!liveRows.length){feed.innerHTML=feedMode==="live"?"<p class=\"small\">ئێستا هیچ لایڤێکی چالاک نییە.</p>":feedMode==="following"?"<p class=\"small\">هێشتا هیچ کەسێکت شوێن نەکەوتووە، یان ئەوانە ڤیدیۆیان بڵاو نەکردووەتەوە.</p>":"<p class=\"small\">هێشتا ڤیدیۆیەک بڵاو نەکراوەتەوە. یەکەم ڤیدیۆت بڵاو بکەرەوە!</p>";return;}
   const liveHostIds=liveRows.map(x=>x.user_id).filter(id=>!profileMap.has(id));
@@ -1803,7 +1804,7 @@ async function loadVideos(){
   },{root:feed,threshold:[0,0.65,1]});
   updateFeedSoundButtons();
   feed.querySelectorAll(".feed-card").forEach(card=>window.kurdStarFeedObserver.observe(card));
- }catch(e){feed.textContent="هەڵە لە بارکردنی ڤیدیۆکان: "+e.message;}
+ }catch(e){if(requestVersion===haloFeedLoadVersion)feed.textContent="هەڵە لە بارکردنی ڤیدیۆکان: "+e.message;}
 }
  
 // PRIVATE DIRECT MESSAGES + PHONE GALLERY VIDEO SHARING
