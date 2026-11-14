@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const { RtcTokenBuilder, RtcRole } = require("agora-token");
+const { createClient } = require("@supabase/supabase-js");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const os = require("os");
@@ -19,21 +20,107 @@ app.get("/", (req, res) => {
   res.send("KURD HALO Server is running");
 });
 
-// Agora token
-app.get("/token", (req, res) => {
+// Verify every token request against Supabase Auth.
+async function requireSupabaseUser(req, res, next) {
+  const header = String(req.headers.authorization || "");
+  const match = header.match(/^Bearer\\s+(.+)$/i);
+  if (!match) {
+    return res.status(401).json({ error: "Sign-in required" });
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) {
+    return res.status(500).json({ error: "Authentication settings missing" });
+  }
+
+  try {
+    const client = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: "Bearer " + match[1] } }
+    });
+    const { data, error } = await client.auth.getUser(match[1]);
+    if (error || !data.user) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+    req.supabaseUser = data.user;
+    req.supabaseClient = client;
+    next();
+  } catch (_) {
+    return res.status(401).json({ error: "Authentication failed" });
+  }
+}
+
+// Agora token: viewers receive subscriber tokens; only live hosts and
+// approved guests may request publisher tokens.
+app.get("/token", requireSupabaseUser, async (req, res) => {
   const appId = process.env.AGORA_APP_ID;
   const certificate = process.env.AGORA_APP_CERTIFICATE;
-
   const channel = String(req.query.channel || "").trim();
   const uid = Number(req.query.uid);
+  const requestedRole = String(req.query.role || "subscriber").toLowerCase();
 
   if (!appId || !certificate) {
     return res.status(500).json({ error: "Server settings missing" });
   }
-
   if (!channel || channel.length > 64 ||
       !Number.isInteger(uid) || uid < 1) {
     return res.status(400).json({ error: "Invalid channel or uid" });
+  }
+  if (requestedRole !== "subscriber" && requestedRole !== "publisher") {
+    return res.status(400).json({ error: "Invalid role" });
+  }
+
+  let tokenRole = RtcRole.SUBSCRIBER;
+  if (requestedRole === "publisher") {
+    try {
+      const { data: hostSession, error: hostError } = await req.supabaseClient
+        .from("live_sessions")
+        .select("id")
+        .eq("channel", channel)
+        .eq("user_id", req.supabaseUser.id)
+        .in("status", ["starting", "live"])
+        .maybeSingle();
+
+      if (hostError) {
+        return res.status(403).json({ error: "Could not verify live host" });
+      }
+
+      let authorized = Boolean(hostSession);
+      if (!authorized) {
+        const { data: guestRequests, error: guestError } = await req.supabaseClient
+          .from("live_guest_requests")
+          .select("live_session_id")
+          .eq("user_id", req.supabaseUser.id)
+          .eq("status", "approved");
+
+        if (guestError) {
+          return res.status(403).json({ error: "Could not verify guest approval" });
+        }
+
+        for (const request of (guestRequests || [])) {
+          const { data: liveSession, error: sessionError } = await req.supabaseClient
+            .from("live_sessions")
+            .select("id")
+            .eq("id", request.live_session_id)
+            .eq("channel", channel)
+            .eq("status", "live")
+            .maybeSingle();
+
+          if (!sessionError && liveSession) {
+            authorized = true;
+            break;
+          }
+        }
+      }
+
+      if (!authorized) {
+        return res.status(403).json({ error: "Publisher role is not authorized" });
+      }
+      tokenRole = RtcRole.PUBLISHER;
+    } catch (_) {
+      return res.status(403).json({ error: "Publisher authorization failed" });
+    }
   }
 
   try {
@@ -42,13 +129,12 @@ app.get("/token", (req, res) => {
       certificate,
       channel,
       uid,
-      RtcRole.PUBLISHER,
+      tokenRole,
       3600,
       3600
     );
-
-    res.json({ token, appId });
-  } catch (error) {
+    res.json({ token, appId, role: requestedRole });
+  } catch (_) {
     res.status(500).json({ error: "Token generation failed" });
   }
 });
