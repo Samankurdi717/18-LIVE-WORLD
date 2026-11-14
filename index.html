@@ -535,7 +535,10 @@ body.auth-required .bottom-nav{display:none!important}
  .app-header{display:flex!important;align-items:center!important;justify-content:space-between!important;z-index:99999!important;overflow:visible!important}
  .app-header>#feedModeTabs{position:static!important;inset:auto!important;transform:none!important;flex:1 1 auto!important;width:auto!important;max-width:none!important;height:auto!important;margin:0 6px!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:space-around!important;gap:1px!important;z-index:100000!important;pointer-events:auto!important;background:transparent!important;backdrop-filter:none!important;overflow:visible!important}
  .app-header>#feedModeTabs button{flex:1 1 0!important;min-width:0!important;margin:0!important;padding:8px 1px!important;font-size:clamp(8px,2.65vw,11px)!important;white-space:nowrap!important;line-height:1.15!important;pointer-events:auto!important}
- .app-header .header-actions{position:static!important;flex:0 0 38px!important;z-index:100001!important}
+ .app-header{position:sticky!important;padding-left:52px!important;min-height:58px!important}
+ .app-header>#feedModeTabs{margin-left:0!important}
+ .app-header .header-actions{position:absolute!important;left:8px!important;right:auto!important;top:15px!important;flex:0 0 38px!important;width:38px!important;z-index:100001!important}
+ .app-header .profile-menu-trigger{width:38px!important;height:38px!important;padding:0!important}
 }
 </style>
 
