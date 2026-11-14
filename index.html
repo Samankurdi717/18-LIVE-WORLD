@@ -1574,13 +1574,15 @@ async function toggleFollow(targetId,button){
  try{
   if(wasFollowing){const {error}=await db.from("user_follows").delete().eq("follower_id",currentUser.id).eq("following_id",targetId);if(error)throw error;}
   else{const {error}=await db.from("user_follows").insert({follower_id:currentUser.id,following_id:targetId});if(error)throw error;}
-  button.dataset.following=String(!wasFollowing);button.textContent=wasFollowing?"➕ شوێنکەوتن":"✓ شوێنکەوتوویت";button.classList.toggle("following",!wasFollowing);
+  document.querySelectorAll(".follow-button[data-target-user-id]").forEach(control=>{if(control.dataset.targetUserId!==targetId)return;control.dataset.following=String(!wasFollowing);control.textContent=wasFollowing?"➕ شوێنکەوتن":"✓ شوێنکەوتوویت";control.classList.toggle("following",!wasFollowing);});
   loadFollowStats();
  }catch(e){alert("شوێنکەوتن نەگۆڕا. پێویستە SQL ـی فۆڵۆ جێبەجێ بکرێت. هەڵە: "+e.message);}finally{button.disabled=false;}
 }
  
 // USER SEARCH — searches public profile display names
+let haloUserSearchVersion=0;
 async function searchUsers(){
+ const searchVersion=++haloUserSearchVersion;
  const input=document.getElementById("userSearchInput");
  const results=document.getElementById("userSearchResults");
  const term=(input?.value||"").trim();
@@ -1589,11 +1591,11 @@ async function searchUsers(){
  results.textContent="گەڕان دەکرێت...";
  try{
   const {data,error}=await db.from("profiles").select("id,display_name,avatar_url").ilike("display_name",`%${term}%`).neq("id",currentUser.id).limit(20);
-  if(error)throw error;
+  if(error)throw error;if(searchVersion!==haloUserSearchVersion)return;
   if(!data||!data.length){results.textContent="هیچ بەکارهێنەرێک بەو ناوە نەدۆزرایەوە. دڵنیابە ناوی لە پرۆفایلەکەی پاشەکەوت کردووە.";return;}
   const ids=data.map(x=>x.id);
   const {data:followRows,error:followError}=await db.from("user_follows").select("following_id").eq("follower_id",currentUser.id).in("following_id",ids);
-  if(followError)throw followError;
+  if(followError)throw followError;if(searchVersion!==haloUserSearchVersion)return;
   const followingSet=new Set((followRows||[]).map(x=>x.following_id));
   results.innerHTML="";
   data.forEach(profile=>{
@@ -1603,7 +1605,7 @@ async function searchUsers(){
    const name=document.createElement("span");name.className="result-name";name.textContent=profile.display_name||"بەکارهێنەری KURD HALO";left.append(name);
    const actions=document.createElement("div");actions.style.cssText="display:flex;align-items:center;gap:6px;flex-shrink:0";
    const message=document.createElement("button");message.type="button";message.className="dark";message.textContent="💬 پەیام";message.addEventListener("click",()=>startDmWithUser(profile.id));
-   const follow=document.createElement("button");follow.type="button";follow.className="follow-button"+(followingSet.has(profile.id)?" following":"");follow.dataset.following=String(followingSet.has(profile.id));follow.textContent=followingSet.has(profile.id)?"✓ فۆڵۆ":"➕ فۆڵۆ";follow.addEventListener("click",()=>toggleFollow(profile.id,follow));
+   const follow=document.createElement("button");follow.type="button";follow.className="follow-button"+(followingSet.has(profile.id)?" following":"");follow.dataset.targetUserId=profile.id;follow.dataset.following=String(followingSet.has(profile.id));follow.textContent=followingSet.has(profile.id)?"✓ فۆڵۆ":"➕ فۆڵۆ";follow.addEventListener("click",()=>toggleFollow(profile.id,follow));
    actions.append(message,follow);row.append(left,actions);results.append(row);
   });
  }catch(e){results.textContent="هەڵە لە گەڕان: "+e.message;}
@@ -1757,7 +1759,7 @@ async function loadVideos(){
    const profile=profileMap.get(item.user_id);
    const authorName=document.createElement("span");authorName.className="feed-author-name";authorName.textContent="⭐ "+(profile?.display_name||("ئەندام "+item.user_id.slice(0,8)));author.append(authorName);
    if(profile?.avatar_url){const avatar=document.createElement("img");avatar.src=profile.avatar_url;avatar.alt="";avatar.style.cssText="width:30px;height:30px;border-radius:50%;object-fit:cover";author.prepend(avatar);}
-   if(item.user_id!==currentUser.id){const follow=document.createElement("button");follow.type="button";follow.className="follow-button";follow.dataset.following=String(followingSet.has(item.user_id));follow.classList.toggle("following",followingSet.has(item.user_id));follow.textContent=followingSet.has(item.user_id)?"✓ شوێنکەوتوویت":"➕ شوێنکەوتن";follow.addEventListener("click",()=>toggleFollow(item.user_id,follow));author.append(follow);}
+   if(item.user_id!==currentUser.id){const follow=document.createElement("button");follow.type="button";follow.className="follow-button";follow.dataset.targetUserId=item.user_id;follow.dataset.following=String(followingSet.has(item.user_id));follow.classList.toggle("following",followingSet.has(item.user_id));follow.textContent=followingSet.has(item.user_id)?"✓ شوێنکەوتوویت":"➕ شوێنکەوتن";follow.addEventListener("click",()=>toggleFollow(item.user_id,follow));author.append(follow);}
    const caption=document.createElement("p");caption.className="feed-caption";caption.textContent=item.caption||"ڤیدیۆی KURD HALO";
    const actions=document.createElement("div");actions.className="feed-actions";
    const feedSoundToggle=document.createElement("button");feedSoundToggle.type="button";feedSoundToggle.className="feed-action feed-sound-toggle";feedSoundToggle.innerHTML=haloFeedSoundEnabled?"<b>🔊</b><span>داخستن</span>":"<b>🔇</b><span>کردنەوە</span>";feedSoundToggle.setAttribute("aria-label",haloFeedSoundEnabled?"داخستنی دەنگ":"کردنەوەی دەنگ");feedSoundToggle.addEventListener("click",toggleAllFeedSound);actions.append(feedSoundToggle);
