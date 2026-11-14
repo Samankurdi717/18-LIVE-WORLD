@@ -458,7 +458,11 @@ body.auth-required .bottom-nav{display:none!important}
 .feed-mode-tabs{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:10px auto 12px;padding:5px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.045)}
 .feed-mode-tabs button{flex:1;min-width:0;padding:10px 8px;border:0;border-radius:10px;background:transparent;color:#c9c9d5;font-weight:700;font-size:13px;cursor:pointer}
 .feed-mode-tabs button.selected{background:linear-gradient(135deg,#7b43d6,#b42b86);color:#fff;box-shadow:0 4px 16px rgba(135,55,190,.28)}
-@media(max-width:700px){.feed-mode-tabs{position:relative;z-index:2;margin:7px auto 9px;padding:4px;gap:5px}.feed-mode-tabs button{padding:9px 5px;font-size:12px}}
+@media(max-width:700px){
+ .feed-mode-tabs{position:fixed!important;top:57px!important;left:50%!important;transform:translateX(-50%)!important;width:min(96vw,600px)!important;height:38px!important;z-index:136!important;margin:0!important;padding:3px 7px!important;gap:3px!important;border:0!important;border-radius:0 0 15px 15px!important;background:rgba(5,6,14,.62)!important;backdrop-filter:blur(12px)!important}
+ .feed-mode-tabs button{padding:7px 2px!important;font-size:11px!important;white-space:nowrap!important}
+ .feed-mode-tabs button.selected{background:transparent!important;color:#fff!important;box-shadow:none!important;border-bottom:2px solid #fff!important;border-radius:0!important}
+}
 
 /* Profile feature panels */
 .feature-stat-row{display:flex;justify-content:space-between;gap:14px;padding:12px 14px;margin:8px 0;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.045)}
@@ -650,10 +654,11 @@ body.auth-required .bottom-nav{display:none!important}
  </div>
  
  <div class="user-search-panel"><input id="userSearchInput" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()" data-i18n="searchButton">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
- <div class="feed-mode-tabs" id="feedModeTabs" role="tablist" aria-label="Feed filters">
-  <button type="button" id="forYouTab" class="selected" role="tab" aria-selected="true" onclick="setFeedMode('forYou')" data-i18n="forYouTab">For You</button>
-  <button type="button" id="followingTab" role="tab" aria-selected="false" onclick="setFeedMode('following')" data-i18n="followingTab">Following</button>
-  <button type="button" id="savedTab" role="tab" aria-selected="false" onclick="setFeedMode('saved')" data-i18n="savedTab">Saved</button>
+ <div class="feed-mode-tabs" id="feedModeTabs" role="tablist" aria-label="Main feed">
+  <button type="button" id="liveFeedTab" role="tab" aria-selected="false" onclick="setFeedMode('live')">🔴 Live</button>
+  <button type="button" id="communityTab" role="tab" aria-selected="false" onclick="setFeedMode('community')">Community</button>
+  <button type="button" id="followingTab" role="tab" aria-selected="false" onclick="setFeedMode('following')">Following</button>
+  <button type="button" id="forYouTab" class="selected" role="tab" aria-selected="true" onclick="setFeedMode('forYou')">For you</button>
  </div>
  <div class="feed-toolbar">
   <h3 data-i18n="feedTitle">🌍 ڤیدیۆکانی کورد هەڵۆ</h3>
@@ -1442,9 +1447,9 @@ async function openVideoComments(videoId,onCommentAdded){
 // FOLLOW SYSTEM — requires the SQL setup file supplied with this build
 let feedMode="forYou";
 function setFeedMode(mode){
- if(!["forYou","following","saved"].includes(mode))return;
+ if(!["live","community","following","forYou"].includes(mode))return;
  feedMode=mode;
- [["forYouTab","forYou"],["followingTab","following"],["savedTab","saved"]].forEach(([id,value])=>{
+ [["liveFeedTab","live"],["communityTab","community"],["followingTab","following"],["forYouTab","forYou"]].forEach(([id,value])=>{
   const button=document.getElementById(id);if(!button)return;
   const selected=mode===value;button.classList.toggle("selected",selected);button.setAttribute("aria-selected",String(selected));
  });
@@ -1569,6 +1574,7 @@ async function loadVideos(){
   if(error)throw error;
   if(requestVersion!==haloFeedLoadVersion)return;
   let data=allVideos||[];
+  if(feedMode==="live")data=[];
   feedStatus("٢/٥ — ڤیدیۆکان دۆزرایەوە؛ زانیارییەکانیان بار دەکرێت...");
   let followedIds=[];
   if(feedMode==="saved"){
@@ -1617,7 +1623,7 @@ async function loadVideos(){
   const liveResult=await db.from("live_sessions").select("id,user_id,channel,title,started_at").eq("status","live").order("started_at",{ascending:false}).limit(30);
   if(liveResult.error)throw liveResult.error;
   const liveRows=liveResult.data||[];
-  if(!data.length&&!liveRows.length){feed.innerHTML=feedMode==="following"?"<p class=\"small\">هێشتا هیچ کەسێکت شوێن نەکەوتووە، یان ئەوانە ڤیدیۆیان بڵاو نەکردووەتەوە.</p>":feedMode==="saved"?"<p class=\"small\">هێشتا هیچ ڤیدیۆیەکت پاشەکەوت نەکردووە.</p>":"<p class=\"small\">هێشتا ڤیدیۆیەک بڵاو نەکراوەتەوە. یەکەم ڤیدیۆت بڵاو بکەرەوە!</p>";return;}
+  if(!data.length&&!liveRows.length){feed.innerHTML=feedMode==="live"?"<p class=\"small\">ئێستا هیچ لایڤێکی چالاک نییە.</p>":feedMode==="following"?"<p class=\"small\">هێشتا هیچ کەسێکت شوێن نەکەوتووە، یان ئەوانە ڤیدیۆیان بڵاو نەکردووەتەوە.</p>":"<p class=\"small\">هێشتا ڤیدیۆیەک بڵاو نەکراوەتەوە. یەکەم ڤیدیۆت بڵاو بکەرەوە!</p>";return;}
   const liveHostIds=liveRows.map(x=>x.user_id).filter(id=>!profileMap.has(id));
   if(liveHostIds.length){const liveProfiles=await db.from("profiles").select("id,display_name,avatar_url").in("id",liveHostIds);if(liveProfiles.error)throw liveProfiles.error;(liveProfiles.data||[]).forEach(p=>profileMap.set(p.id,p));}
   for(const live of liveRows){
