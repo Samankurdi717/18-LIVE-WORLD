@@ -458,10 +458,16 @@ body.auth-required .bottom-nav{display:none!important}
 .feed-mode-tabs{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:10px auto 12px;padding:5px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.045)}
 .feed-mode-tabs button{flex:1;min-width:0;padding:10px 8px;border:0;border-radius:10px;background:transparent;color:#c9c9d5;font-weight:700;font-size:13px;cursor:pointer}
 .feed-mode-tabs button.selected{background:linear-gradient(135deg,#7b43d6,#b42b86);color:#fff;box-shadow:0 4px 16px rgba(135,55,190,.28)}
+.app-header{gap:5px;padding:6px 8px;min-height:54px}
+.app-header .feed-mode-tabs{flex:1;min-width:0;width:auto;margin:0;padding:3px;gap:2px;border:0;background:transparent}
+.app-header .feed-mode-tabs button{padding:8px 2px;font-size:11px;white-space:nowrap}
+.app-header .feed-mode-tabs button.selected{background:rgba(139,92,246,.28);border-bottom:2px solid var(--gold)}
 @media(max-width:700px){
- .feed-mode-tabs{position:fixed!important;top:57px!important;left:50%!important;transform:translateX(-50%)!important;width:min(96vw,600px)!important;height:38px!important;z-index:136!important;margin:0!important;padding:3px 7px!important;gap:3px!important;border:0!important;border-radius:0 0 15px 15px!important;background:rgba(5,6,14,.62)!important;backdrop-filter:blur(12px)!important}
- .feed-mode-tabs button{padding:7px 2px!important;font-size:11px!important;white-space:nowrap!important}
- .feed-mode-tabs button.selected{background:transparent!important;color:#fff!important;box-shadow:none!important;border-bottom:2px solid #fff!important;border-radius:0!important}
+ .app-header{gap:3px;padding:5px 6px;min-height:52px}
+ .app-header .feed-mode-tabs{position:static!important;left:auto!important;top:auto!important;transform:none!important;width:auto!important;height:auto!important;z-index:auto!important;border-radius:0!important;backdrop-filter:none!important}
+ .app-header .feed-mode-tabs button{font-size:10px!important;padding:7px 1px!important}
+ .app-header .header-actions{flex:0 0 37px}
+ .app-header .profile-menu-trigger{margin:0!important;padding:7px!important;width:35px;height:35px}
 }
 
 /* Profile feature panels */
@@ -509,11 +515,7 @@ body.auth-required .bottom-nav{display:none!important}
 <body>
 <div class="container">
 <header class="app-header">
- <div class="brand-mark">
-  <div class="brand-icon">🦅</div>
-  <div class="brand-copy"><h1>KURD HALO 🦅</h1><p data-i18n="tagline">لە کوردستانەوە بۆ هەموو جیهان</p></div>
-  <button class="icon-button" type="button" onclick="openMyProfile()" aria-label="پرۆفایل" title="پرۆفایل">👤</button>
- </div>
+
  <div class="header-actions">
   <button class="profile-menu-trigger" type="button" onclick="openProfileMenu()" aria-label="مێنیو" title="مێنیو">☰</button>
  </div>
@@ -651,10 +653,7 @@ body.auth-required .bottom-nav{display:none!important}
  
 <!-- ONE UNIFIED TIKTOK-STYLE VIDEO + LIVE HUB -->
 <section class="app-page unified-hub" id="unifiedHub">
- <div class="unified-heading">
-  <h2>🦅 KURD HALO</h2>
-  <p class="section-kicker" data-i18n="allVideos">هەموو ڤیدیۆکان لە یەک فیددا</p>
- </div>
+
  
  <div class="user-search-panel"><input id="userSearchInput" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()" data-i18n="searchButton">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
  <div class="feed-mode-tabs" id="feedModeTabs" role="tablist" aria-label="Main feed">
