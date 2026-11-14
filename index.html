@@ -707,6 +707,14 @@ body.auth-required .bottom-nav{display:none!important}
    <hr style="border-color:#ffffff20;margin:12px 0;">
    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><strong>📩 بانگهێشتەکانی PK</strong><button type="button" class="dark" onclick="refreshHaloPkInvites()">↻ نوێکردنەوە</button></div>
    <div id="haloPkInvites" style="display:grid;gap:8px;margin-top:8px;"><span style="font-size:12px;color:#aaa;">بانگهێشتەکان لێرە دەردەکەون.</span></div>
+   <div id="haloPkScoreboard" style="display:none;margin-top:12px;padding:12px;border:1px solid #f5c96a66;border-radius:14px;background:#17130b;color:#fff;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><strong>⚔️ ئەنجامی PK</strong><strong id="haloPkCountdown" style="color:#f5c96a;font-size:20px;">05:00</strong></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;text-align:center;">
+     <div style="padding:10px;background:#ffffff0d;border-radius:10px;"><div id="haloPkNameA">یاریزانی یەکەم</div><strong id="haloPkScoreA" style="display:block;font-size:26px;color:#f5c96a;">0</strong></div>
+     <div style="padding:10px;background:#ffffff0d;border-radius:10px;"><div id="haloPkNameB">یاریزانی دووەم</div><strong id="haloPkScoreB" style="display:block;font-size:26px;color:#f5c96a;">0</strong></div>
+    </div>
+    <p id="haloPkWinner" style="text-align:center;margin:10px 0 0;color:#f5c96a;font-weight:bold;"></p>
+   </div>
    <p id="haloPkStatus" role="status" aria-live="polite" style="font-size:12px;color:#f5c96a;line-height:1.7;"></p>
   </section>
  </details>
@@ -2083,9 +2091,10 @@ async function joinCall(){
  }
 }
  
-// KURD HALO PK — invitation flow. Split-screen and gift scoring are not enabled yet.
+// KURD HALO PK — invitations, scoreboard and five-minute countdown.
 let haloPkRealtimeChannel=null;
 let haloPkBattleId=null;
+let haloPkPollTimer=null;
 async function searchHaloPkUsers(){
  const input=document.getElementById("haloPkSearch"),box=document.getElementById("haloPkSearchResults"),status=document.getElementById("haloPkStatus");
  const term=(input?.value||"").trim();
@@ -2137,11 +2146,47 @@ async function refreshHaloPkInvites(){
    const {error:acceptError}=await db.rpc("halo_pk_accept",{p_battle_id:battle.id,p_live_session_id:haloLiveSessionId});
    if(acceptError){document.getElementById("haloPkStatus").textContent="پەسەندکردن سەرکەوتوو نەبوو: "+acceptError.message;accept.disabled=false;return;}
    haloPkBattleId=battle.id;
-   document.getElementById("haloPkStatus").textContent="✅ بانگهێشت پەسەند کرا و PK چالاک بوو. شاشەی دوولایەن و خاڵی دیاری هێشتا چالاک نەکراون.";
+   document.getElementById("haloPkStatus").textContent="✅ بانگهێشت پەسەند کرا. ئەنجام و کاتی PK لە خشتەکەدا دەردەکەون.";
    await refreshHaloPkInvites();
   };
   row.append(label,accept);box.append(row);
  });
+}
+async function refreshHaloPkScoreboard(){
+ const panel=document.getElementById("haloPkScoreboard");if(!panel||!currentUser)return;
+ if(!haloPkBattleId){
+  const {data:active,error:activeError}=await db.from("halo_pk_battles").select("id").eq("status","active").or("challenger_user_id.eq."+currentUser.id+",opponent_user_id.eq."+currentUser.id).order("created_at",{ascending:false}).limit(1);
+  if(activeError){document.getElementById("haloPkStatus").textContent="خوێندنەوەی PK سەرکەوتوو نەبوو: "+activeError.message;return;}
+  if(active?.length)haloPkBattleId=active[0].id;
+ }
+ if(!haloPkBattleId){panel.style.display="none";return;}
+ const {data:b,error}=await db.from("halo_pk_battles").select("id,challenger_user_id,opponent_user_id,status,challenger_score,opponent_score,starts_at,ends_at,winner_user_id").eq("id",haloPkBattleId).maybeSingle();
+ if(error||!b){document.getElementById("haloPkStatus").textContent=error?"خوێندنەوەی ئەنجامی PK: "+error.message:"PK نەدۆزرایەوە.";return;}
+ panel.style.display="block";
+ const ids=[b.challenger_user_id,b.opponent_user_id];
+ const {data:profiles}=await db.from("profiles").select("id,display_name").in("id",ids);
+ const names=new Map((profiles||[]).map(p=>[p.id,p.display_name||"یاریزان"]));
+ document.getElementById("haloPkNameA").textContent=names.get(b.challenger_user_id)||"یاریزانی یەکەم";
+ document.getElementById("haloPkNameB").textContent=names.get(b.opponent_user_id)||"یاریزانی دووەم";
+ document.getElementById("haloPkScoreA").textContent=Number(b.challenger_score||0).toLocaleString();
+ document.getElementById("haloPkScoreB").textContent=Number(b.opponent_score||0).toLocaleString();
+ const clock=document.getElementById("haloPkCountdown"),winner=document.getElementById("haloPkWinner");
+ if(b.status==="active"){
+  const left=Math.max(0,Math.ceil((new Date(b.ends_at).getTime()-Date.now())/1000));
+  clock.textContent=String(Math.floor(left/60)).padStart(2,"0")+":"+String(left%60).padStart(2,"0");
+  winner.textContent="⚔️ PK بەردەوامە";
+  if(left===0){
+   const {error:finishError}=await db.rpc("halo_pk_finish",{p_battle_id:b.id});
+   if(finishError)document.getElementById("haloPkStatus").textContent="کۆتاییهێنانی PK: "+finishError.message;
+   else setTimeout(refreshHaloPkScoreboard,700);
+  }
+ }else{
+  clock.textContent="00:00";
+  if(b.status==="finished"){
+   if(!b.winner_user_id)winner.textContent="🤝 یەکسان";
+   else winner.textContent="🏆 براوە: "+(names.get(b.winner_user_id)||"یاریزان");
+  }else winner.textContent="PK چالاک نییە";
+ }
 }
 async function setupHaloPkInvites(){
  if(!currentUser)return;
@@ -2150,11 +2195,18 @@ async function setupHaloPkInvites(){
   .on("postgres_changes",{event:"INSERT",schema:"public",table:"halo_pk_battles",filter:"opponent_user_id=eq."+currentUser.id},()=>refreshHaloPkInvites())
   .subscribe();
  await refreshHaloPkInvites();
+ await refreshHaloPkScoreboard();
+ if(haloPkPollTimer)clearInterval(haloPkPollTimer);
+ haloPkPollTimer=setInterval(()=>{refreshHaloPkInvites();refreshHaloPkScoreboard();},3000);
 }
 
 // LEAVE LIVE
 async function leaveCall(){
  try{
+  if(haloPkPollTimer){clearInterval(haloPkPollTimer);haloPkPollTimer=null;}
+  if(haloPkRealtimeChannel){try{await db.removeChannel(haloPkRealtimeChannel);}catch(_){}haloPkRealtimeChannel=null;}
+  haloPkBattleId=null;
+  const pkPanel=document.getElementById("haloPkScoreboard");if(pkPanel)pkPanel.style.display="none";
   await cleanupHaloHostGuestManager();
   await cleanupHaloLivePresence();
   const hostViewerCount=document.getElementById("haloHostViewerCount");if(hostViewerCount)hostViewerCount.remove();
