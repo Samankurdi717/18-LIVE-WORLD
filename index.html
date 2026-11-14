@@ -500,6 +500,7 @@ body.auth-required .bottom-nav{display:none!important}
 
 /* Always-visible Live shortcut for mobile and desktop */
 #haloLiveButton{position:fixed!important;top:112px!important;left:10px!important;z-index:190!important;display:flex!important;align-items:center!important;justify-content:center!important;min-height:40px!important;padding:8px 14px!important;border:1px solid #ff526e!important;border-radius:22px!important;background:rgba(125,12,38,.94)!important;color:#fff!important;font-size:13px!important;font-weight:800!important;box-shadow:0 4px 18px #0009!important;cursor:pointer!important}
+@media(max-width:700px){#unifiedHub>.feed-tabs{display:none!important}.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;height:66px!important}.bottom-nav button{font-size:9px!important}}
 </style>
 
 <script>self.ModelViewerElement=self.ModelViewerElement||{};self.ModelViewerElement.meshoptDecoderLocation='https://cdn.jsdelivr.net/npm/meshoptimizer/meshopt_decoder.js';</script>
@@ -513,7 +514,6 @@ body.auth-required .bottom-nav{display:none!important}
   <div class="brand-copy"><h1>KURD HALO 🦅</h1><p data-i18n="tagline">لە کوردستانەوە بۆ هەموو جیهان</p></div>
  </div>
  <div class="header-actions">
-  <button class="header-search" type="button" onclick="openSearch()" aria-label="Search" title="Search">⌕</button>
   <select id="language" aria-label="زمان / Language" title="زمان / Language" onchange="changeLanguage(this.value)">
    <option value="ku">کوردی</option><option value="fa">فارسی</option><option value="en">English</option><option value="ar">العربية</option><option value="tr">Türkçe</option><option value="fr">Français</option><option value="de">Deutsch</option>
   </select>
@@ -748,11 +748,11 @@ body.auth-required .bottom-nav{display:none!important}
 </section>
  
 <nav class="bottom-nav" id="mainBottomNav" aria-label="Main navigation">
- <button id="navHome" class="active" type="button" onclick="switchAppTab('home')"><span class="nav-icon">⌂</span><span data-i18n="navHome">Home</span></button>
- <button id="navFriends" type="button" onclick="switchAppTab('friends')"><span class="nav-icon">👥</span><span data-i18n="navFriends">Friends</span></button>
- <button id="navCreate" class="upload-main" type="button" onclick="openUpload()"><span class="nav-icon">＋</span><span data-i18n="navCreate">Create</span></button>
- <button id="navInbox" type="button" onclick="switchAppTab('inbox')"><span class="nav-icon">✉</span><span data-i18n="navInbox">Inbox</span></button>
- <button id="navProfile" type="button" onclick="openMyProfile()"><span class="nav-icon">👤</span><span data-i18n="navProfile">Profile</span></button>
+ <button id="navCommunity" class="active" type="button" onclick="setFeedMode('community');setActiveNav('navCommunity')"><span class="nav-icon">👥</span><span>Community</span></button>
+ <button id="navFollowing" type="button" onclick="setFeedMode('following');setActiveNav('navFollowing')"><span class="nav-icon">♡</span><span>Following</span></button>
+ <button id="navForYou" type="button" onclick="setFeedMode('forYou');setActiveNav('navForYou')"><span class="nav-icon">✨</span><span>For you</span></button>
+ <button id="navLive" type="button" onclick="setFeedMode('live');setActiveNav('navLive')"><span class="nav-icon">🔴</span><span>Live</span></button>
+ <button id="navSearch" type="button" onclick="openSearch()"><span class="nav-icon">⌕</span><span>Search</span></button>
 </nav>
  <button id="haloLiveButton" type="button" onclick="openLive()" aria-label="Open Live">🔴 Live</button>
 
@@ -779,7 +779,7 @@ function switchAppTab(tab){
  else if(tab==='friends'){setActiveNav('navFriends');const input=document.getElementById('userSearchInput');input?.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input?.focus(),180);}
  else if(tab==='inbox'){setActiveNav('navInbox');if(currentUser)loadInbox();else openAccount();}
 }
-function openSearch(){switchAppTab('friends');}
+function openSearch(){switchAppTab('friends');setActiveNav('navSearch');}
 function openLive(){switchAppTab('home');const live=document.getElementById('liveHub');if(live){live.open=true;live.scrollIntoView({behavior:'smooth',block:'start'});}}
 function openAccount(){setActiveNav('navProfile');document.getElementById('accountModal').classList.remove('hidden');}
 function closeAccount(){if(!currentUser)return;document.getElementById('accountModal').classList.add('hidden');}
