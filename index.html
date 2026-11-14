@@ -2162,7 +2162,7 @@ async function joinCall(){
  document.getElementById("channel").value=channel;
  try{
   document.getElementById("status").innerText="ئامادەکاری بۆ دەستپێکردنی لایڤ...";
-  const {error:staleError}=await db.from("live_sessions").update({status:"ended",ended_at:new Date().toISOString()}).eq("user_id",currentUser.id).eq("status","live");
+  const {error:staleError}=await db.from("live_sessions").update({status:"ended",ended_at:new Date().toISOString()}).eq("user_id",currentUser.id).in("status",["live","starting"]);
   if(staleError)throw staleError;
   const {data:startingLive,error:startingLiveError}=await db.from("live_sessions").insert({user_id:currentUser.id,channel:channel,title:"لایڤ",status:"starting"}).select("id").single();
   if(startingLiveError)throw startingLiveError;
