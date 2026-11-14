@@ -504,8 +504,7 @@ body.auth-required .bottom-nav{display:none!important}
 @keyframes haloGiftFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.08)}}
 @media(max-width:420px){.halo-gift-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.halo-gift-card{padding:7px 2px}}
 
-/* Always-visible floating Live shortcut on the side of the screen */
-#haloLiveButton{position:fixed!important;top:50%!important;right:8px!important;left:auto!important;transform:translateY(-50%)!important;z-index:190!important;display:flex!important;align-items:center!important;justify-content:center!important;min-height:46px!important;padding:10px 12px!important;border:1px solid #ff526e!important;border-radius:22px!important;background:rgba(125,12,38,.96)!important;color:#fff!important;font-size:13px!important;font-weight:800!important;box-shadow:0 4px 18px #0009!important;cursor:pointer!important}
+/* Floating Live shortcut removed as requested */
 @media(max-width:700px){.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;height:66px!important}.bottom-nav button{font-size:9px!important}}
 </style>
 
@@ -756,7 +755,7 @@ body.auth-required .bottom-nav{display:none!important}
  <button id="navInbox" type="button" onclick="switchAppTab('inbox')"><span class="nav-icon">✉</span><span>پەیامەکان</span></button>
  <button id="navProfile" type="button" onclick="openMyProfile()"><span class="nav-icon">👤</span><span>پرۆفایل</span></button>
 </nav>
- <button id="haloLiveButton" type="button" onclick="openLive()" aria-label="Open Live">🔴 لایڤ</button>
+
 
  
 </div>
