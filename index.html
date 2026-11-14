@@ -1889,6 +1889,12 @@ async function cleanupHaloGuestRole(){
 async function startHaloGuestRole(status){
  if(!haloViewerClient||haloGuestTracks.length)return;
  try{
+  const sessionToken=await getHaloAccessToken();
+  const response=await fetch(TOKEN_API+"?channel="+encodeURIComponent(haloViewerChannel)+"&uid="+haloViewerUid+"&role=publisher",{headers:{Authorization:"Bearer "+sessionToken}});
+  if(!response.ok)throw new Error("Publisher token بۆ میوان وەرنەگیرا.");
+  const tokenData=await response.json();
+  if(!tokenData.token)throw new Error("Publisher token نەدۆزرایەوە.");
+  await haloViewerClient.renewToken(tokenData.token);
   await haloViewerClient.setClientRole("host");
   haloGuestTracks=await AgoraRTC.createMicrophoneAndCameraTracks();
   await haloViewerClient.publish(haloGuestTracks);
@@ -2087,9 +2093,16 @@ async function cleanupHaloLiveChat(){
 // AGORA LIVE
 const AGORA_APP_ID="3b947b82132840c6942bbfa2045eac18";
 const TOKEN_API="https://18-live-world.vercel.app/token";
+async function getHaloAccessToken(){
+ const {data,error}=await db.auth.getSession();
+ if(error||!data.session?.access_token)throw new Error("تکایە دووبارە بچۆ ژوورەوە.");
+ return data.session.access_token;
+}
 let agoraClient=null,localTracks=[],cameraEnabled=true,micEnabled=true,currentCamera="user";
 let haloLiveSessionId=null;
 let haloViewerClient=null;
+let haloViewerUid=null;
+let haloViewerChannel=null;
 let haloViewerInlineCard=null;
 function showLiveViewer(){
  let panel=document.getElementById("haloLiveViewer");
@@ -2116,8 +2129,10 @@ async function joinLiveViewer(channel,title,inlineCard){
  status.textContent="پەیوەندی بە لایڤەوە...";
  try{
   const uid=Math.floor(Math.random()*1000000000)+1;
-  const response=await fetch(TOKEN_API+"?channel="+encodeURIComponent(channel)+"&uid="+uid);
+  const sessionToken=await getHaloAccessToken();
+  const response=await fetch(TOKEN_API+"?channel="+encodeURIComponent(channel)+"&uid="+uid+"&role=subscriber",{headers:{Authorization:"Bearer "+sessionToken}});
   if(!response.ok)throw new Error("Token API وەڵامی دروستی نەدا.");
+  haloViewerUid=uid;haloViewerChannel=channel;
   const tokenData=await response.json();if(!tokenData.token)throw new Error("Token نەدۆزرایەوە.");
   haloViewerClient=AgoraRTC.createClient({mode:"rtc",codec:"vp8"});
   haloViewerClient.on("user-published",async(user,mediaType)=>{
@@ -2149,6 +2164,9 @@ async function joinCall(){
   document.getElementById("status").innerText="ئامادەکاری بۆ دەستپێکردنی لایڤ...";
   const {error:staleError}=await db.from("live_sessions").update({status:"ended",ended_at:new Date().toISOString()}).eq("user_id",currentUser.id).eq("status","live");
   if(staleError)throw staleError;
+  const {data:startingLive,error:startingLiveError}=await db.from("live_sessions").insert({user_id:currentUser.id,channel:channel,title:"لایڤ",status:"starting"}).select("id").single();
+  if(startingLiveError)throw startingLiveError;
+  haloLiveSessionId=startingLive.id;
   agoraClient=AgoraRTC.createClient({mode:"rtc",codec:"vp8"});
   agoraClient.on("user-published",async(user,mediaType)=>{
    await agoraClient.subscribe(user,mediaType);
@@ -2162,16 +2180,17 @@ async function joinCall(){
   agoraClient.on("user-unpublished",(user)=>{const box=document.getElementById("remote-"+user.uid);if(box)box.remove();});
   agoraClient.on("user-left",(user)=>{const box=document.getElementById("remote-"+user.uid);if(box)box.remove();});
   const uid=Math.floor(Math.random()*1000000000)+1;
-  const response=await fetch(TOKEN_API+"?channel="+encodeURIComponent(channel)+"&uid="+uid);
+  const sessionToken=await getHaloAccessToken();
+  const response=await fetch(TOKEN_API+"?channel="+encodeURIComponent(channel)+"&uid="+uid+"&role=publisher",{headers:{Authorization:"Bearer "+sessionToken}});
   if(!response.ok)throw new Error("Token API وەڵامی دروستی نەدا.");
   const tokenData=await response.json();const token=tokenData.token;
   if(!token)throw new Error("Token نەدۆزرایەوە.");
   await agoraClient.join(AGORA_APP_ID,channel,token,uid);
   localTracks=await AgoraRTC.createMicrophoneAndCameraTracks();
   await agoraClient.publish(localTracks);localTracks[1].play("local");
-  const {data:liveRow,error:liveError}=await db.from("live_sessions").insert({user_id:currentUser.id,channel:channel,title:"لایڤ",status:"live"}).select("id").single();
-  if(liveError)throw liveError;
-  haloLiveSessionId=liveRow.id;
+  const {error:activateLiveError}=await db.from("live_sessions").update({status:"live",started_at:new Date().toISOString()}).eq("id",haloLiveSessionId).eq("user_id",currentUser.id);
+  if(activateLiveError)throw activateLiveError;
+  const liveRow={id:haloLiveSessionId};
   let hostViewerCount=document.getElementById("haloHostViewerCount");
   if(!hostViewerCount){hostViewerCount=document.createElement("span");hostViewerCount.id="haloHostViewerCount";hostViewerCount.style.cssText="display:inline-block;margin:0 8px;color:#f5c96a;font-weight:bold;";document.getElementById("status").insertAdjacentElement("afterend",hostViewerCount);}
   await setupHaloLivePresence(liveRow.id,hostViewerCount);
