@@ -1912,6 +1912,8 @@ async function startHaloGuestRole(status){
   status.textContent="نەتوانرا بچیتە سەر سەکۆ: "+String(e.message||e);
   if(haloGuestTracks.length){try{await haloViewerClient.unpublish(haloGuestTracks);}catch(_){}haloGuestTracks.forEach(t=>{try{t.stop();t.close();}catch(_){}});haloGuestTracks=[];}
   try{await haloViewerClient.setClientRole("audience");}catch(_){}
+  const guestStage=document.querySelector(".halo-live-viewer-stage");
+  if(guestStage){guestStage.querySelectorAll(".halo-guest-video-stage,.halo-guest-controls").forEach(node=>node.remove());}
  }
 }
 async function requestHaloGuestSeat(status,button){
