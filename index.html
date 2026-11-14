@@ -500,7 +500,7 @@ body.auth-required .bottom-nav{display:none!important}
 
 /* Always-visible Live shortcut for mobile and desktop */
 #haloLiveButton{position:fixed!important;top:112px!important;left:10px!important;z-index:190!important;display:flex!important;align-items:center!important;justify-content:center!important;min-height:40px!important;padding:8px 14px!important;border:1px solid #ff526e!important;border-radius:22px!important;background:rgba(125,12,38,.94)!important;color:#fff!important;font-size:13px!important;font-weight:800!important;box-shadow:0 4px 18px #0009!important;cursor:pointer!important}
-@media(max-width:700px){#unifiedHub>.feed-tabs{display:none!important}.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;height:66px!important}.bottom-nav button{font-size:9px!important}}
+@media(max-width:700px){.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;height:66px!important}.bottom-nav button{font-size:9px!important}}
 </style>
 
 <script>self.ModelViewerElement=self.ModelViewerElement||{};self.ModelViewerElement.meshoptDecoderLocation='https://cdn.jsdelivr.net/npm/meshoptimizer/meshopt_decoder.js';</script>
@@ -640,8 +640,6 @@ body.auth-required .bottom-nav{display:none!important}
  <button class="drawer-item" onclick="openProfileFeature('promote')"><span class="drawer-icon">📣</span><span data-halo-profile-label="promote">Promote</span><span class="drawer-arrow">‹</span></button>
  <div class="drawer-divider"></div>
  <button class="drawer-item" onclick="openProfileFeature('settings')"><span class="drawer-icon">⚙️</span><span data-halo-profile-label="settings">Settings and Privacy</span><span class="drawer-arrow">‹</span></button>
- <button class="drawer-item" onclick="openUpload();closeProfileMenu()"><span class="drawer-icon">＋</span><span>دروستکردن / Create</span><span class="drawer-arrow">‹</span></button>
- <button class="drawer-item" onclick="switchAppTab('inbox');closeProfileMenu()"><span class="drawer-icon">✉</span><span>پەیامەکان / Inbox</span><span class="drawer-arrow">‹</span></button>
  <button class="drawer-item logout-drawer" onclick="signOut()"><span class="drawer-icon">🚪</span><span data-i18n="logout">Log out</span></button>
 </aside>
 <div id="profileFeatureModal" class="account-modal hidden" onclick="if(event.target===this)closeProfileFeature()">
@@ -750,11 +748,11 @@ body.auth-required .bottom-nav{display:none!important}
 </section>
  
 <nav class="bottom-nav" id="mainBottomNav" aria-label="Main navigation">
- <button id="navCommunity" class="active" type="button" onclick="setFeedMode('community');setActiveNav('navCommunity')"><span class="nav-icon">👥</span><span>Community</span></button>
- <button id="navFollowing" type="button" onclick="setFeedMode('following');setActiveNav('navFollowing')"><span class="nav-icon">♡</span><span>Following</span></button>
- <button id="navForYou" type="button" onclick="setFeedMode('forYou');setActiveNav('navForYou')"><span class="nav-icon">✨</span><span>For you</span></button>
- <button id="navLive" type="button" onclick="setFeedMode('live');setActiveNav('navLive')"><span class="nav-icon">🔴</span><span>Live</span></button>
- <button id="navSearch" type="button" onclick="openSearch()"><span class="nav-icon">⌕</span><span>Search</span></button>
+ <button id="navHome" class="active" type="button" onclick="switchAppTab('home')"><span class="nav-icon">⌂</span><span>سەرەکی</span></button>
+ <button id="navFriends" type="button" onclick="switchAppTab('friends')"><span class="nav-icon">👥</span><span>هاوڕێکان</span></button>
+ <button id="navCreate" type="button" onclick="openUpload()"><span class="nav-icon">＋</span><span>دروستکردن</span></button>
+ <button id="navInbox" type="button" onclick="switchAppTab('inbox')"><span class="nav-icon">✉</span><span>پەیامەکان</span></button>
+ <button id="navProfile" type="button" onclick="openMyProfile()"><span class="nav-icon">👤</span><span>پرۆفایل</span></button>
 </nav>
  <button id="haloLiveButton" type="button" onclick="openLive()" aria-label="Open Live">🔴 Live</button>
 
