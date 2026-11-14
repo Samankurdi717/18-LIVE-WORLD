@@ -698,6 +698,17 @@ body.auth-required .bottom-nav{display:none!important}
    <div id="haloGiftPreview" class="halo-gift-preview">دیارییەک هەڵبژێرە بۆ بینینی نرخ و دابەشکردنی ٤٠٪ / ٦٠٪.</div>
    <p class="small">ئەمە کاتالۆگی دیارییەکانە؛ ناردنی ڕاستەقینە و کەمکردنەوەی باڵانس پێویستی بە خشتە و پاراستنی Supabase هەیە. تا ئەوە ئامادە نەبێت هیچ درهەمێک کەم ناکرێتەوە.</p>
   </details>
+  <section id="haloPkPanel" style="margin:12px 0;padding:13px;border:1px solid #f5c96a55;border-radius:16px;background:linear-gradient(135deg,#21182c,#111321);color:white;">
+   <h3 style="margin:0 0 8px;color:#f5c96a;">⚔️ KURD HALO — PK Challenge</h3>
+   <p style="font-size:12px;color:#c9c8d8;line-height:1.7;">لە کاتی لایڤدا ناوی هاوڕێک بگەڕێ و بانگهێشتی بکە. بۆ پەسەندکردنی بانگهێشت، بەرامبەرەکەت دەبێت لایڤی خۆی دەست پێکردبێت.</p>
+   <input id="haloPkSearch" type="search" placeholder="گەڕان بە ناوی هاوڕێ..." style="width:100%;padding:11px;border-radius:10px;background:#080914;color:white;border:1px solid #ffffff30;">
+   <button type="button" onclick="searchHaloPkUsers()">🔎 گەڕان</button>
+   <div id="haloPkSearchResults" style="display:grid;gap:7px;margin-top:8px;"></div>
+   <hr style="border-color:#ffffff20;margin:12px 0;">
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><strong>📩 بانگهێشتەکانی PK</strong><button type="button" class="dark" onclick="refreshHaloPkInvites()">↻ نوێکردنەوە</button></div>
+   <div id="haloPkInvites" style="display:grid;gap:8px;margin-top:8px;"><span style="font-size:12px;color:#aaa;">بانگهێشتەکان لێرە دەردەکەون.</span></div>
+   <p id="haloPkStatus" role="status" aria-live="polite" style="font-size:12px;color:#f5c96a;line-height:1.7;"></p>
+  </section>
  </details>
  
 </section>
@@ -2071,6 +2082,75 @@ async function joinCall(){
  }
 }
  
+// KURD HALO PK — invitation flow. Split-screen and gift scoring are not enabled yet.
+let haloPkRealtimeChannel=null;
+let haloPkBattleId=null;
+async function searchHaloPkUsers(){
+ const input=document.getElementById("haloPkSearch"),box=document.getElementById("haloPkSearchResults"),status=document.getElementById("haloPkStatus");
+ const term=(input?.value||"").trim();
+ if(!currentUser){status.textContent="سەرەتا بچۆ ژوورەوە.";return;}
+ if(term.length<2){status.textContent="لانیکەم دوو پیت بنووسە.";return;}
+ box.textContent="گەڕان...";
+ const safeTerm=term.replace(/[%_]/g,"");
+ const {data,error}=await db.from("profiles").select("id,display_name").ilike("display_name","%"+safeTerm+"%").neq("id",currentUser.id).limit(8);
+ if(error){box.textContent="گەڕان سەرکەوتوو نەبوو: "+error.message;return;}
+ box.innerHTML="";
+ if(!data?.length){box.textContent="هیچ بەکارهێنەرێک نەدۆزرایەوە.";return;}
+ data.forEach(user=>{
+  const row=document.createElement("div");row.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;background:#ffffff0d;border-radius:10px;";
+  const name=document.createElement("strong");name.textContent=user.display_name||"ئەندام";
+  const invite=document.createElement("button");invite.type="button";invite.textContent="⚔️ بانگهێشت";invite.style.cssText="margin:0;padding:7px 10px;font-size:11px;";
+  invite.onclick=()=>sendHaloPkChallenge(user.id,invite);row.append(name,invite);box.append(row);
+ });
+ status.textContent="ئەنجامی گەڕان: "+data.length;
+}
+async function sendHaloPkChallenge(opponentId,button){
+ const status=document.getElementById("haloPkStatus");
+ if(!currentUser){status.textContent="سەرەتا بچۆ ژوورەوە.";return;}
+ if(!haloLiveSessionId){status.textContent="پێویستە سەرەتا لایڤ دەست پێ بکەیت.";return;}
+ button.disabled=true;
+ try{
+  const {data,error}=await db.rpc("halo_pk_challenge",{p_live_session_id:haloLiveSessionId,p_opponent_user_id:opponentId});
+  if(error)throw error;
+  haloPkBattleId=data;status.textContent="✅ بانگهێشتی PK نێردرا. چاوەڕێی وەڵامی هاوڕێکەت بە.";
+  await refreshHaloPkInvites();
+ }catch(e){status.textContent="ناردنی بانگهێشت سەرکەوتوو نەبوو: "+(e.message||e);button.disabled=false;}
+}
+async function refreshHaloPkInvites(){
+ const box=document.getElementById("haloPkInvites");if(!box)return;
+ if(!currentUser){box.textContent="سەرەتا بچۆ ژوورەوە.";return;}
+ const {data,error}=await db.from("halo_pk_battles").select("id,challenger_user_id,created_at,status").eq("opponent_user_id",currentUser.id).eq("status","pending").order("created_at",{ascending:false}).limit(10);
+ if(error){box.textContent="خوێندنەوەی بانگهێشتەکان سەرکەوتوو نەبوو: "+error.message;return;}
+ box.innerHTML="";
+ if(!data?.length){box.textContent="هیچ بانگهێشتێکی چاوەڕوان نییە.";return;}
+ const ids=[...new Set(data.map(x=>x.challenger_user_id))];
+ const p=await db.from("profiles").select("id,display_name").in("id",ids);
+ const names=new Map((p.data||[]).map(x=>[x.id,x.display_name||"ئەندام"]));
+ data.forEach(battle=>{
+  const row=document.createElement("div");row.style.cssText="padding:9px;background:#ffffff0d;border-radius:10px;display:flex;flex-direction:column;gap:7px;";
+  const label=document.createElement("strong");label.textContent="⚔️ "+(names.get(battle.challenger_user_id)||"ئەندام")+" بانگهێشتی PK ـی کردوویت.";
+  const accept=document.createElement("button");accept.type="button";accept.textContent="پەسەندکردن";accept.style.cssText="margin:0;";
+  accept.onclick=async()=>{
+   if(!haloLiveSessionId){document.getElementById("haloPkStatus").textContent="بۆ پەسەندکردن، سەرەتا لایڤی خۆت دەست پێ بکە و دووبارە پەسەندکردن هەڵبژێرە.";return;}
+   accept.disabled=true;
+   const {error:acceptError}=await db.rpc("halo_pk_accept",{p_battle_id:battle.id,p_live_session_id:haloLiveSessionId});
+   if(acceptError){document.getElementById("haloPkStatus").textContent="پەسەندکردن سەرکەوتوو نەبوو: "+acceptError.message;accept.disabled=false;return;}
+   haloPkBattleId=battle.id;
+   document.getElementById("haloPkStatus").textContent="✅ بانگهێشت پەسەند کرا و PK چالاک بوو. شاشەی دوولایەن و خاڵی دیاری هێشتا چالاک نەکراون.";
+   await refreshHaloPkInvites();
+  };
+  row.append(label,accept);box.append(row);
+ });
+}
+async function setupHaloPkInvites(){
+ if(!currentUser)return;
+ if(haloPkRealtimeChannel){try{await db.removeChannel(haloPkRealtimeChannel);}catch(_){}}
+ haloPkRealtimeChannel=db.channel("halo-pk-invites-"+currentUser.id)
+  .on("postgres_changes",{event:"INSERT",schema:"public",table:"halo_pk_battles",filter:"opponent_user_id=eq."+currentUser.id},()=>refreshHaloPkInvites())
+  .subscribe();
+ await refreshHaloPkInvites();
+}
+
 // LEAVE LIVE
 async function leaveCall(){
  try{
