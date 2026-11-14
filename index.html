@@ -809,7 +809,7 @@ function changeLanguage(lang){
  localStorage.setItem("kurdHaloLanguage",lang);
  // Rebuild dynamic feed actions so their labels use the newly selected language.
  const feedElement=document.getElementById("feed");
- if(feedElement && typeof loadVideos==="function" && currentUser)loadVideos();
+ // Feed reload is triggered after authentication; avoid accessing currentUser before its initialization.
 }
 (function(){const saved=localStorage.getItem("kurdora_language")||localStorage.getItem("kurdstar_language")||"ku";document.getElementById("language").value=saved;changeLanguage(saved);})();
  
