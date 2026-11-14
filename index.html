@@ -26,7 +26,7 @@ body{
 }
 .container{max-width:620px;margin:0 auto;padding:0}
 .app-header{
- position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:center;
+ position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;
  gap:12px;padding:9px 14px;background:rgba(8,9,20,.72);backdrop-filter:blur(18px);
  border-bottom:1px solid var(--line)
 }
@@ -512,12 +512,9 @@ body.auth-required .bottom-nav{display:none!important}
  <div class="brand-mark">
   <div class="brand-icon">🦅</div>
   <div class="brand-copy"><h1>KURD HALO 🦅</h1><p data-i18n="tagline">لە کوردستانەوە بۆ هەموو جیهان</p></div>
+  <button class="icon-button" type="button" onclick="openMyProfile()" aria-label="پرۆفایل" title="پرۆفایل">👤</button>
  </div>
  <div class="header-actions">
-  <select id="language" aria-label="زمان / Language" title="زمان / Language" onchange="changeLanguage(this.value)">
-   <option value="ku">کوردی</option><option value="fa">فارسی</option><option value="en">English</option><option value="ar">العربية</option><option value="tr">Türkçe</option><option value="fr">Français</option><option value="de">Deutsch</option>
-  </select>
-  <button class="icon-button" type="button" onclick="openMyProfile()" aria-label="پرۆفایل">👤</button>
   <button class="profile-menu-trigger" type="button" onclick="openProfileMenu()" aria-label="مێنیو" title="مێنیو">☰</button>
  </div>
 </header>
@@ -630,6 +627,12 @@ body.auth-required .bottom-nav{display:none!important}
 <div id="profileMenuBackdrop" class="profile-drawer-backdrop hidden" onclick="closeProfileMenu()"></div>
 <aside id="profileDrawer" class="profile-drawer hidden" aria-label="Profile menu" dir="auto">
  <div class="drawer-head"><strong>🦅 KURD HALO</strong><button class="account-close" type="button" onclick="closeProfileMenu()">✕</button></div>
+ <div class="drawer-language" style="padding:10px 14px 4px">
+  <label for="language" style="display:block;color:var(--muted);font-size:12px;margin-bottom:4px">🌐 زمان / Language</label>
+  <select id="language" aria-label="زمان / Language" title="زمان / Language" onchange="changeLanguage(this.value)">
+   <option value="ku">کوردی</option><option value="fa">فارسی</option><option value="en">English</option><option value="ar">العربية</option><option value="tr">Türkçe</option><option value="fr">Français</option><option value="de">Deutsch</option>
+  </select>
+ </div>
  <button class="drawer-item" onclick="openProfileFeature('balance')"><span class="drawer-icon">💰</span><span data-halo-profile-label="balance">Balance</span><span class="drawer-arrow">‹</span></button>
  <button class="drawer-item" onclick="openProfileFeature('activity')"><span class="drawer-icon">📊</span><span data-halo-profile-label="activity">Activity Center</span><span class="drawer-arrow">‹</span></button>
  <button class="drawer-item" onclick="openProfileFeature('offline')"><span class="drawer-icon">📥</span><span data-halo-profile-label="offline">Offline Videos</span><span class="drawer-arrow">‹</span></button>
