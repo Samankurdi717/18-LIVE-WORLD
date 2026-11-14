@@ -863,11 +863,8 @@ function switchAppTab(tab){
  else if(tab==='friends'){setActiveNav('navFriends');const input=document.getElementById('userSearchInput');input?.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input?.focus(),180);}
  else if(tab==='inbox'){setActiveNav('navInbox');if(currentUser)loadInbox();else openAccount();}
 }
-function openSearch(){switchAppTab('friends');setActiveNav('navSearch');}
-function openLive(){switchAppTab('home');setFeedMode('live');const live=document.getElementById('liveHub');if(live){live.open=true;live.scrollIntoView({behavior:'smooth',block:'start'});}}
 function openAccount(){setActiveNav('navProfile');document.getElementById('accountModal').classList.remove('hidden');}
 function closeAccount(){if(!currentUser)return;document.getElementById('accountModal').classList.add('hidden');}
-function openUpload(){if(!currentUser){openAccount();return;}switchAppTab('home');setActiveNav('navCreate');const drawer=document.getElementById('uploadDrawer');drawer.open=true;drawer.scrollIntoView({behavior:'smooth',block:'center'});}
 function openShareVideo(videoId){if(!currentUser){alert('بۆ ناردنی ڤیدیۆ سەرەتا بچۆ ژوورەوە.');openAccount();return;}const picker=document.getElementById('dmVideoFile');if(picker)picker.value='';activeDmUser=null;pendingSharedVideoId=videoId;switchAppTab('inbox');dmStatus('هاوڕێیەک هەڵبژێرە، پاشان ڤیدیۆکەی بۆ بنێرە.');}
 // LANGUAGE DICTIONARY
 const translations={
@@ -2873,6 +2870,7 @@ function openUpload(){
 }
 function openLive(){
  switchAppTab('home');
+ setFeedMode('live');
  const live=document.getElementById('liveHub');
  if(live){live.open=true;live.scrollIntoView({behavior:'smooth',block:'center'});}
 }
