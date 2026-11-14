@@ -530,16 +530,40 @@ body.auth-required .bottom-nav{display:none!important}
  .app-header .header-actions{position:absolute!important;right:8px!important;top:5px!important}
 }
 
-/* KURD HALO: feed tabs live in the real header row for reliable taps */
+/* KURD HALO: four full-width tabs on row one; menu below on the left */
 @media(max-width:700px){
- .app-header{display:flex!important;align-items:center!important;justify-content:space-between!important;z-index:99999!important;overflow:visible!important}
- .app-header>#feedModeTabs{position:static!important;inset:auto!important;transform:none!important;flex:1 1 auto!important;width:auto!important;max-width:none!important;height:auto!important;margin:0 6px!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:space-around!important;gap:1px!important;z-index:100000!important;pointer-events:auto!important;background:transparent!important;backdrop-filter:none!important;overflow:visible!important}
- .app-header>#feedModeTabs button{flex:1 1 0!important;min-width:0!important;margin:0!important;padding:8px 1px!important;font-size:clamp(8px,2.65vw,11px)!important;white-space:nowrap!important;line-height:1.15!important;pointer-events:auto!important}
- .app-header{position:sticky!important;padding:0!important;min-height:58px!important;box-sizing:border-box!important}
- .app-header>#feedModeTabs{position:absolute!important;left:52px!important;right:5px!important;top:50%!important;transform:translateY(-50%)!important;width:auto!important;max-width:none!important;min-width:0!important;margin:0!important;padding:0!important;display:flex!important;flex-wrap:nowrap!important;direction:ltr!important;justify-content:space-between!important;gap:0!important;overflow:visible!important}
- .app-header>#feedModeTabs button{display:block!important;flex:1 1 25%!important;width:25%!important;min-width:0!important;max-width:25%!important;margin:0!important;padding:7px 0!important;font-size:clamp(7px,2.35vw,10px)!important;text-align:center!important;white-space:nowrap!important;letter-spacing:-.25px!important;box-sizing:border-box!important}
- .app-header .header-actions{position:absolute!important;left:7px!important;right:auto!important;top:50%!important;transform:translateY(-50%)!important;flex:0 0 38px!important;width:38px!important;z-index:100001!important}
- .app-header .profile-menu-trigger{width:38px!important;height:38px!important;padding:0!important;margin:0!important}
+ .app-header{
+  position:sticky!important;top:0!important;display:block!important;
+  width:100%!important;height:94px!important;min-height:94px!important;
+  box-sizing:border-box!important;padding:0!important;margin:0!important;
+  overflow:visible!important;z-index:99999!important
+ }
+ .app-header>#feedModeTabs{
+  position:absolute!important;top:3px!important;left:5px!important;right:5px!important;
+  width:auto!important;max-width:none!important;height:42px!important;min-width:0!important;
+  margin:0!important;padding:0!important;display:flex!important;flex-direction:row!important;
+  flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;
+  gap:0!important;direction:ltr!important;overflow:visible!important;
+  background:transparent!important;border:0!important;z-index:100000!important;
+  pointer-events:auto!important
+ }
+ .app-header>#feedModeTabs button{
+  display:block!important;position:static!important;flex:1 1 25%!important;
+  width:25%!important;min-width:0!important;max-width:25%!important;height:38px!important;
+  margin:0!important;padding:5px 0!important;box-sizing:border-box!important;
+  font-size:clamp(8px,2.8vw,11px)!important;line-height:1.1!important;
+  text-align:center!important;white-space:nowrap!important;letter-spacing:0!important;
+  overflow:visible!important;pointer-events:auto!important
+ }
+ .app-header .header-actions{
+  position:absolute!important;left:8px!important;right:auto!important;
+  top:49px!important;transform:none!important;width:38px!important;height:38px!important;
+  margin:0!important;padding:0!important;z-index:100001!important
+ }
+ .app-header .profile-menu-trigger{
+  display:block!important;width:38px!important;height:38px!important;
+  margin:0!important;padding:0!important
+ }
 }
 </style>
 
