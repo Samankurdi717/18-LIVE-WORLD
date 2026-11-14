@@ -23,7 +23,7 @@ app.get("/", (req, res) => {
 // Verify every token request against Supabase Auth.
 async function requireSupabaseUser(req, res, next) {
   const header = String(req.headers.authorization || "");
-  const match = header.match(/^Bearer\\s+(.+)$/i);
+  const match = header.match(/^Bearer\s+(.+)$/i);
   if (!match) {
     return res.status(401).json({ error: "Sign-in required" });
   }
