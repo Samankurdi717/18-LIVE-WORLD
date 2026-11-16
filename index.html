@@ -1752,7 +1752,7 @@ async function loadVideos(){
   memberItems.forEach(item=>{
    const videoUrl=db.storage.from("videos").getPublicUrl(item.storage_path).data.publicUrl;
    const card=document.createElement("article");card.className="feed-card";
-   const video=document.createElement("video");video.src=videoUrl;video.controls=false;video.playsInline=true;video.preload="metadata";video.loop=true;video.muted=!haloFeedSoundEnabled;
+   const video=document.createElement("video");video.dataset.src=videoUrl;video.controls=false;video.playsInline=true;video.preload="none";video.loop=true;video.muted=!haloFeedSoundEnabled;
    const videoTime=document.createElement("div");videoTime.className="feed-time";videoTime.style.cssText="position:absolute;display:block!important;visibility:visible!important;opacity:1!important;z-index:2147483000!important;top:auto!important;left:auto!important;right:12px!important;bottom:151px!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:#fff!important;font-size:10px!important;font-weight:600!important;line-height:1!important;white-space:nowrap!important;direction:ltr!important;text-align:right!important;pointer-events:none!important;text-shadow:0 1px 3px #000!important;";videoTime.textContent="00:00 / --:--";
    const formatVideoTime=seconds=>{if(!Number.isFinite(seconds)||seconds<0)return "--:--";const total=Math.floor(seconds);const hours=Math.floor(total/3600);const minutes=Math.floor((total%3600)/60);const secs=total%60;return hours?hours+":"+String(minutes).padStart(2,"0")+":"+String(secs).padStart(2,"0"):String(minutes).padStart(2,"0")+":"+String(secs).padStart(2,"0");};
    const seekBar=document.createElement("input");seekBar.type="range";seekBar.className="feed-seek";seekBar.min="0";seekBar.max="1000";seekBar.step="1";seekBar.value="0";seekBar.setAttribute("aria-label","پێش و دواخستنی ڤیدیۆ");
@@ -1806,7 +1806,7 @@ async function loadVideos(){
   });
   if(window.kurdStarFeedObserver)window.kurdStarFeedObserver.disconnect();
   window.kurdStarFeedObserver=new IntersectionObserver(entries=>{
-   entries.forEach(entry=>{const v=entry.target.querySelector("video");if(!v)return;if(entry.isIntersecting&&entry.intersectionRatio>=0.65){v.muted=!haloFeedSoundEnabled;if(!v.ended&&v.dataset.playbackCompleted!=="true")v.play().catch(()=>{});}else{v.pause();}});
+   entries.forEach(entry=>{const v=entry.target.querySelector("video");if(!v)return;if(entry.isIntersecting&&entry.intersectionRatio>=0.65){if(!v.src&&v.dataset.src){v.src=v.dataset.src;v.load();}v.muted=!haloFeedSoundEnabled;if(!v.ended&&v.dataset.playbackCompleted!=="true")v.play().catch(()=>{});}else{v.pause();}});
   },{root:feed,threshold:[0,0.65,1]});
   updateFeedSoundButtons();
   feed.querySelectorAll(".feed-card").forEach(card=>window.kurdStarFeedObserver.observe(card));
