@@ -3078,6 +3078,119 @@ function openLive(){
 })();
 </script>
 
+
+<script>
+/* KURD HALO — KURDISH GAMES HUB */
+(function(){
+ const style=document.createElement('style');
+ style.textContent=`
+  #kurdGamesEntry{margin:12px 0;padding:16px;border:1px solid #8b713d;border-radius:18px;background:linear-gradient(135deg,#171a19,#242016);color:#f4ead5}
+  #kurdGamesEntry h2{margin:0 0 8px;color:#e9c36d}
+  .kh-game-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .kh-game-card{min-width:0;padding:13px 9px;border-radius:14px;border:1px solid #79623b;background:#211e18;color:#fff;text-align:center}
+  .kh-game-card strong{display:block;color:#f0ce7d;margin:5px 0}
+  .kh-game-card small{display:block;color:#cfc3ad;line-height:1.5}
+  .kh-game-page{padding:16px 13px 105px;min-height:70vh;color:#f5ead7}
+  .kh-game-page.hidden{display:none!important}
+  .kh-game-hero{padding:22px 15px;border-radius:19px;text-align:center;border:1px solid #8c713e;background:linear-gradient(145deg,#263329,#151a17 70%)}
+  .kh-game-hero h1{color:#e9c879;margin:8px 0;font-size:26px}
+  .kh-game-panel{margin-top:13px;padding:15px;border-radius:16px;background:#191a17;border:1px solid #665735}
+  .kh-game-page button{padding:11px 14px;border-radius:11px;border:1px solid #b18a43;background:#b18a43;color:#17130c;font-weight:800;margin:5px 3px}
+  .kh-game-muted{color:#c8bdab;font-size:13px;line-height:1.7}
+  #khQuizAnswers button{display:block;width:100%;text-align:right;margin:8px 0;background:#28271f;color:#f5ead7;border-color:#76623d}
+  #khQuizAnswers button:disabled{opacity:1}
+  #khQuizFeedback{min-height:28px;color:#e8c879;font-weight:bold}
+ `;
+ document.head.appendChild(style);
+ const home=document.getElementById('unifiedHub');
+ const nav=document.getElementById('mainBottomNav');
+ if(!home||!nav)return;
+ const entry=document.createElement('section');
+ entry.id='kurdGamesEntry';
+ entry.innerHTML=`
+  <h2>🎮 یارییەکانی KURD HALO</h2>
+  <p class="kh-game-muted">هەر یارییەک بە کەش و ڕەنگی تایبەتی خۆی.</p>
+  <div class="kh-game-grid">
+   <button class="kh-game-card" type="button" onclick="switchAppTab('klawen')"><span style="font-size:27px">🧶</span><strong>کڵاوێن</strong><small>کوردەواری و نەریتی کوردی</small></button>
+   <button class="kh-game-card" type="button" onclick="switchAppTab('quiz')"><span style="font-size:27px">🌍</span><strong>پرسیار و وەڵام</strong><small>زانیاریی گشتی بۆ هەموو جیهان</small></button>
+  </div>`;
+ const konkan=document.getElementById('konkanEntry');
+ home.insertBefore(entry,konkan||home.firstChild);
+
+ const klawen=document.createElement('section');
+ klawen.id='klawenPage';klawen.className='kh-game-page hidden';
+ klawen.innerHTML=`
+  <div class="kh-game-hero"><div>🧵 KURD HALO • کلتووری کوردی</div><h1>کڵاوێن</h1><p>یارییەکی بە ڕەنگ و نەریتی کوردی</p><div style="font-size:34px">🧶 🏺 🌿</div></div>
+  <div class="kh-game-panel"><h3>🏡 ژووری کڵاوێن</h3><p class="kh-game-muted">دیزاینی تایبەت بە کوردەواری، نەخش و ڕەنگی جل‌وبەرگی کوردی. یاسا و شێوازی تەواوی یاری پێش جێبەجێکردنی یاریی ڕاستەقینە دەبێت لەگەڵت پشتڕاست بکرێتەوە.</p><div><button type="button" onclick="klawenPlayerChoice(2)">٢ یاریزان</button><button type="button" onclick="klawenPlayerChoice(4)">٤ یاریزان</button></div><p id="klawenStatus" class="kh-game-muted">ژمارەی یاریزان هەڵبژێرە. ئەم قۆناغە تەنها پێشانگای دیزاینە.</p></div>
+  <button type="button" style="width:100%" onclick="switchAppTab('home')">↩ گەڕانەوە بۆ سەرەکی</button>`;
+ nav.parentNode.insertBefore(klawen,nav);
+
+ const quiz=document.createElement('section');
+ quiz.id='khQuizPage';quiz.className='kh-game-page hidden';
+ quiz.innerHTML=`
+  <div class="kh-game-hero"><div>🌍 KURD HALO • زانیاریی گشتی</div><h1>پرسیار و وەڵام</h1><p>تاقیکردنەوەی زانیارییەکانت</p>🌐 📚 🧠</div>
+  <div class="kh-game-panel"><div id="khQuizProgress" class="kh-game-muted">پرسیاری ١ لە ٥</div><h3 id="khQuizQuestion">ئامادەیت؟</h3><div id="khQuizAnswers"></div><div id="khQuizFeedback" aria-live="polite"></div><button id="khQuizNext" type="button" onclick="khQuizNext()" disabled>پرسیاری داهاتوو</button><div id="khQuizScore" class="kh-game-muted"></div></div>
+  <button type="button" style="width:100%" onclick="switchAppTab('home')">↩ گەڕانەوە بۆ سەرەکی</button>`;
+ nav.parentNode.insertBefore(quiz,nav);
+
+ const questions=[
+  {q:'پایتەختی فەرەنسا کامەیە؟',a:['پاریس','ڕۆما','مادرید','بەرلین'],c:0},
+  {q:'گەورەترین هەسارەی خۆرەتاو کامەیە؟',a:['زوحەل','زەوی','موشتەری','مەریخ'],c:2},
+  {q:'ئاو لە ئاستی دەریادا لە چەند پلەی سیلیزی دەکوڵێت؟',a:['٥٠','٧٥','١٠٠','١٢٠'],c:2},
+  {q:'کام وڵات بەرامبەر بە ژاپۆن لە ڕۆژهەڵاتی ئاسیا نییە؟',a:['کۆریای باشوور','چین','ئیتاڵیا','ڤێتنام'],c:2},
+  {q:'کامەیان زمانێکی پرۆگرامسازییە؟',a:['HTML','Python','HTTP','Wi-Fi'],c:1}
+ ];
+ let qi=0,score=0,answered=false;
+ function renderQuiz(){
+  const q=questions[qi];answered=false;
+  document.getElementById('khQuizProgress').textContent='پرسیاری '+(qi+1)+' لە '+questions.length;
+  document.getElementById('khQuizQuestion').textContent=q.q;
+  document.getElementById('khQuizFeedback').textContent='';
+  document.getElementById('khQuizScore').textContent='';
+  const answers=document.getElementById('khQuizAnswers');answers.innerHTML='';
+  q.a.forEach((a,i)=>{const b=document.createElement('button');b.type='button';b.textContent=a;b.onclick=()=>choose(i);answers.appendChild(b);});
+  const next=document.getElementById('khQuizNext');next.disabled=true;next.textContent=qi===questions.length-1?'بینینی ئەنجام':'پرسیاری داهاتوو';
+ }
+ function choose(i){
+  if(answered)return;answered=true;
+  const q=questions[qi],buttons=[...document.querySelectorAll('#khQuizAnswers button')];
+  buttons.forEach((b,index)=>{b.disabled=true;if(index===q.c)b.style.borderColor='#69a878';if(index===i&&i!==q.c)b.style.borderColor='#d66b62';});
+  if(i===q.c){score++;document.getElementById('khQuizFeedback').textContent='👏 وەڵامی ڕاستە!';}
+  else document.getElementById('khQuizFeedback').textContent='وەڵامی ڕاست: '+q.a[q.c];
+  document.getElementById('khQuizNext').disabled=false;
+ }
+ window.khQuizNext=function(){
+  if(!answered)return;
+  if(qi<questions.length-1){qi++;renderQuiz();return;}
+  document.getElementById('khQuizQuestion').textContent='تەواو بوو! 🎉';
+  document.getElementById('khQuizAnswers').innerHTML='';
+  document.getElementById('khQuizProgress').textContent='کۆتایی یاری';
+  document.getElementById('khQuizFeedback').textContent='';
+  document.getElementById('khQuizScore').textContent='ئەنجامەکەت: '+score+' لە '+questions.length;
+  const next=document.getElementById('khQuizNext');next.textContent='دووبارە دەستپێکردن';next.onclick=()=>{qi=0;score=0;renderQuiz();};
+ };
+ window.klawenPlayerChoice=function(n){const el=document.getElementById('klawenStatus');if(el)el.textContent=n+' یاریزان هەڵبژێردرا. ئەمە هێشتا پێشانگای ڕووکارییە؛ یاسای کڵاوێن پێش دروستکردنی یاریی تەواو پێویستی بە پشتڕاستکردنەوە هەیە.';};
+ renderQuiz();
+ const oldSwitch=window.switchAppTab;
+ window.switchAppTab=function(tab){
+  klawen.classList.toggle('hidden',tab!=='klawen');
+  quiz.classList.toggle('hidden',tab!=='quiz');
+  if(tab==='klawen'||tab==='quiz'){
+   document.getElementById('profilePage')?.classList.add('hidden');
+   document.getElementById('unifiedHub')?.classList.add('hidden');
+   document.getElementById('inboxHub')?.classList.remove('active');
+   document.getElementById('soundHub')?.classList.add('hidden');
+   document.getElementById('konkanPage')?.classList.add('hidden');
+   document.querySelectorAll('#mainBottomNav button').forEach(b=>b.classList.remove('active'));
+   (tab==='klawen'?klawen:quiz).scrollIntoView({behavior:'smooth',block:'start'});
+   return;
+  }
+  klawen.classList.add('hidden');quiz.classList.add('hidden');
+  return oldSwitch.apply(this,arguments);
+ };
+})();
+</script>
+
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
