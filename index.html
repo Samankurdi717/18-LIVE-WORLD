@@ -2960,6 +2960,123 @@ function openLive(){
 
 </script>
 
+
+<script>
+/* KURD HALO — YARI KONKAN LOBBY */
+(function(){
+  const style=document.createElement('style');
+  style.textContent=`
+    #konkanEntry{margin:12px 0 18px;padding:17px;border:1px solid rgba(214,166,58,.55);border-radius:20px;background:linear-gradient(135deg,#241b12,#101018 70%);box-shadow:0 12px 30px #0005}
+    #konkanEntry h2{margin:0 0 6px;color:#f0c66a;letter-spacing:1px}
+    #konkanEntry p{color:#ddd0b5;font-size:13px}
+    #konkanEntry button,#konkanPage button{border:1px solid #b88d39;border-radius:12px;padding:11px 14px;background:#b88d39;color:#17110a;font-weight:800}
+    #konkanPage{padding:14px 12px 100px;min-height:70vh;color:#f7ead0}
+    #konkanPage.hidden{display:none!important}
+    .konkan-hero{padding:22px 15px;border:1px solid #9c7436;border-radius:20px;text-align:center;background:linear-gradient(145deg,#382817,#17120e 65%,#101018)}
+    .konkan-hero h1{font-family:Georgia,serif;letter-spacing:2px;color:#f4ca70;margin:5px 0;font-size:28px}
+    .konkan-panel{margin-top:13px;padding:15px;border-radius:17px;background:#171611;border:1px solid #6c532d}
+    .konkan-panel h3{margin:0 0 9px;color:#f0c66a}
+    .konkan-table{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
+    .konkan-seat{padding:13px 5px;text-align:center;border:1px solid #826332;border-radius:13px;background:#282016;color:#f4e3c2;font-size:13px}
+    .konkan-center{grid-column:1/-1;text-align:center;padding:18px 8px;border-radius:14px;background:radial-gradient(ellipse,#584020,#21170e);border:1px solid #b88d39;color:#f4d58c}
+    .konkan-coins{font-size:27px;letter-spacing:4px}
+    #konkanPage input[type=file]{width:100%;margin:8px 0;color:#eee}
+    #konkanRadioAudio{width:100%;margin-top:10px}
+    #konkanPage .konkan-muted{font-size:12px;color:#c9bda8;line-height:1.6}
+    #konkanPage .konkan-actions{display:flex;gap:8px;flex-wrap:wrap}
+    #konkanPage .konkan-actions button{flex:1;min-width:125px}
+  `;
+  document.head.appendChild(style);
+
+  const home=document.getElementById('unifiedHub');
+  const nav=document.getElementById('mainBottomNav');
+  if(!home||!nav)return;
+
+  const entry=document.createElement('section');
+  entry.id='konkanEntry';
+  entry.innerHTML=`
+    <div style="font-size:12px;color:#d7b66d">🏛️ قاوەخانەی کوردیی هەولێر</div>
+    <h2>YARI KONKAN</h2>
+    <p>کۆنکان بە ڕۆحی کوردەواری، مێزی هاوڕێیان و ڕادیۆی گۆرانیی کوردی</p>
+    <button type="button" onclick="switchAppTab('games')">🎲 چوونە ژووری کۆنکان</button>
+  `;
+  const toolbar=home.querySelector('.feed-toolbar');
+  if(toolbar)home.insertBefore(entry,toolbar);
+
+  const page=document.createElement('section');
+  page.id='konkanPage';
+  page.className='app-page hidden';
+  page.innerHTML=`
+    <div class="konkan-hero">
+      <div style="font-size:12px;color:#d7b66d">قاوەخانەی کۆنی هەولێر • KURD HALO</div>
+      <h1>YARI KONKAN</h1>
+      <div style="color:#e6d4b1">یارییەک بە ڕەنگ و ڕۆحی کوردستان</div>
+      <div class="konkan-coins" aria-label="سکەی مەجازی">🪙 🪙 🪙</div>
+      <div class="konkan-muted">سکەکان تەنها نیشانەی مەجازیی ناو ئەپن؛ هیچ پارەی ڕاستەقینە یان قمارێک نییە.</div>
+    </div>
+    <div class="konkan-panel">
+      <h3>🫖 مێزی کۆنکان</h3>
+      <div class="konkan-table">
+        <div class="konkan-seat">👤 یاریزانی ١<br>تۆ</div>
+        <div class="konkan-seat">👤 یاریزانی ٢<br>شوێنی هاوڕێ</div>
+        <div class="konkan-center">🪙 مێزی کۆنکان<br><strong>یاسای هەولێر</strong><br><span class="konkan-muted">ژووری یارییەکە لە قۆناغی دروستکردندایە</span></div>
+        <div class="konkan-seat">👤 یاریزانی ٣<br>شوێنی یاریزان</div>
+        <div class="konkan-seat">👤 یاریزانی ٤<br>شوێنی هاوڕێ</div>
+      </div>
+      <div class="konkan-actions">
+        <button type="button" onclick="konkanRoomNotice()">➕ دروستکردنی ژوور</button>
+        <button type="button" onclick="konkanRoomNotice()">🤝 بانگهێشتکردنی هاوڕێ</button>
+      </div>
+      <p id="konkanRoomStatus" class="konkan-muted" aria-live="polite">ئەمە ڕووکاری سەرەتاییە؛ ژووری ئۆنلاین و یاسای تەواوی یاری هێشتا پێویستی بە جێبەجێکردنی قۆناغی داهاتوو هەیە.</p>
+    </div>
+    <div class="konkan-panel">
+      <h3>📻 ڕادیۆی گۆرانیی کۆنی کوردی</h3>
+      <p class="konkan-muted">فایلی گۆرانییەک کە مۆڵەتی بەکارهێنانی هەیە لە مۆبایلەکەت هەڵبژێرە و لێی گوێ بگرە. بۆ ڕادیۆی هاوبەش، دەبێت کتێبخانەی گۆرانییە مۆڵەتپێدراوەکان ئامادە بکرێت.</p>
+      <input id="konkanRadioFile" type="file" accept="audio/*">
+      <audio id="konkanRadioAudio" controls preload="none"></audio>
+      <div class="konkan-muted" id="konkanRadioStatus">گۆرانی هەڵنەبژێردراوە.</div>
+    </div>
+    <button type="button" style="width:100%;margin-top:14px" onclick="switchAppTab('home')">↩ گەڕانەوە بۆ سەرەکی</button>
+  `;
+  nav.parentNode.insertBefore(page,nav);
+
+  const previousSwitch=window.switchAppTab;
+  window.switchAppTab=function(tab){
+    page.classList.toggle('hidden',tab!=='games');
+    if(tab==='games'){
+      document.getElementById('profilePage')?.classList.add('hidden');
+      document.getElementById('unifiedHub')?.classList.add('hidden');
+      document.getElementById('inboxHub')?.classList.remove('active');
+      document.getElementById('soundHub')?.classList.add('hidden');
+      document.querySelectorAll('#mainBottomNav button').forEach(b=>b.classList.remove('active'));
+      page.scrollIntoView({behavior:'smooth',block:'start'});
+      return;
+    }
+    return previousSwitch.apply(this,arguments);
+  };
+
+  window.konkanRoomNotice=function(){
+    const status=document.getElementById('konkanRoomStatus');
+    if(status)status.textContent='ژووری ئۆنلاین هێشتا چالاک نییە. لە قۆناغی داهاتوودا بە شێوەی ڕاستەقینەی هاوبەش دروستی دەکەین.';
+  };
+
+  const picker=document.getElementById('konkanRadioFile');
+  const player=document.getElementById('konkanRadioAudio');
+  const status=document.getElementById('konkanRadioStatus');
+  let localAudioUrl=null;
+  picker?.addEventListener('change',function(){
+    const file=this.files&&this.files[0];
+    if(!file)return;
+    if(!file.type.startsWith('audio/')){if(status)status.textContent='تکایە فایلێکی دەنگ هەڵبژێرە.';return;}
+    if(localAudioUrl)URL.revokeObjectURL(localAudioUrl);
+    localAudioUrl=URL.createObjectURL(file);
+    player.src=localAudioUrl;
+    if(status)status.textContent='ئەم گۆرانییە تەنها لە مۆبایلی تۆ پەخش دەکرێت: '+file.name;
+    player.play().catch(()=>{});
+  });
+})();
+</script>
+
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
