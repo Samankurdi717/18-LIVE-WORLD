@@ -2433,6 +2433,7 @@ async function switchCamera(){
 // ===============================
  
 let soundLibraryCache = [];
+let soundLibraryLoaded = false;
  
 function soundPublicUrl(path) {
   return db.storage.from('sounds').getPublicUrl(path).data.publicUrl;
@@ -2451,6 +2452,10 @@ function escapeSoundText(value) {
 async function loadSounds(showStatus = false) {
   const list = document.getElementById('soundLibraryList');
   if (!list) return;
+  if (!showStatus && soundLibraryLoaded) {
+    renderSoundLibrary(soundLibraryCache);
+    return;
+  }
  
   if (showStatus) {
     list.innerHTML = '<p>دەنگەکان نوێ دەکرێنەوە...</p>';
@@ -2490,6 +2495,7 @@ async function loadSounds(showStatus = false) {
     }));
  
     renderSoundLibrary(soundLibraryCache);
+    soundLibraryLoaded = true;
  
     const select = document.getElementById('librarySoundSelect');
  
@@ -2688,6 +2694,7 @@ async function deleteSound(sound) {
       <button type="button" id="createKurdHaloSound" onclick="createKurdHaloOriginalSound()">🎼 دروستکردنی دەنگی کوردی</button>
       <hr>
       <h3>🎧 هەموو دەنگەکان</h3>
+      <button type="button" id="refreshSoundLibrary" onclick="loadSounds(true)">↻ نوێکردنەوەی دەنگەکان</button>
       <div id="soundLibraryList"><p>دەنگەکان بار دەکرێن...</p></div>
     `;
     nav.parentNode.insertBefore(hub, nav);
@@ -2704,7 +2711,7 @@ async function deleteSound(sound) {
       document.getElementById('inboxHub')?.classList.remove('active');
       document.querySelectorAll('#mainBottomNav button').forEach(b => b.classList.remove('active'));
       document.getElementById('navSound')?.classList.add('active');
-      if (typeof loadSounds === 'function') loadSounds(true);
+      if (typeof loadSounds === 'function') loadSounds(false);
       return;
     }
  
