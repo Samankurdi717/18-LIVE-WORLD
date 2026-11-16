@@ -1448,6 +1448,42 @@ async function openProfileFeature(key){
    };
    refresh.addEventListener('click',loadWallet);
    await loadWallet();
+   const historyPanel=document.createElement('section');
+   historyPanel.style.cssText='margin-top:16px;padding:13px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)';
+   const historyTitle=document.createElement('h4');
+   historyTitle.textContent='📜 مێژووی جووڵەی درهەم';
+   historyTitle.style.cssText='color:var(--gold);margin:0 0 10px';
+   const historyList=document.createElement('div');
+   historyList.style.cssText='display:grid;gap:9px';
+   const historyStatus=document.createElement('p');
+   historyStatus.className='small';
+   historyStatus.textContent='مێژوو بار دەکرێت...';
+   historyPanel.append(historyTitle,historyStatus,historyList);
+   content.append(historyPanel);
+   const loadLedger=async()=>{
+    historyStatus.textContent='مێژوو بار دەکرێت...';historyList.replaceChildren();
+    try{
+     const {data:entries,error}=await db.from('halo_wallet_ledger').select('amount,entry_type,description,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(20);
+     if(error)throw error;
+     if(!entries||!entries.length){historyStatus.textContent='هێشتا هیچ جووڵەیەکی درهەم تۆمار نەکراوە.';return;}
+     historyStatus.textContent='دوایین '+entries.length+' جووڵە';
+     const labels={game_reward:'پاداشتی یاری',purchase:'کڕینی درهەم',spend:'خەرجکردن',refund:'گەڕاندنەوەی پارە',admin_adjustment:'ڕێکخستنی هەژمار'};
+     entries.forEach(entry=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:10px';
+      const details=document.createElement('div');details.style.cssText='min-width:0;display:grid;gap:3px';
+      const name=document.createElement('strong');name.style.fontSize='13px';name.textContent=labels[entry.entry_type]||'جووڵەی درهەم';
+      const desc=document.createElement('span');desc.className='small';desc.textContent=entry.description||new Date(entry.created_at).toLocaleString();
+      const date=document.createElement('span');date.className='small';date.textContent=new Date(entry.created_at).toLocaleString();
+      details.append(name,desc,date);
+      const amountNode=document.createElement('strong');amountNode.style.cssText='white-space:nowrap;color:'+(entry.entry_type==='spend'?'#ff8a8a':'#f5c96a');
+      const numericAmount=Number(entry.amount||0);
+      amountNode.textContent=(entry.entry_type==='spend'?'-':'+')+Math.abs(numericAmount).toLocaleString('en-US')+' 🪙';
+      row.append(details,amountNode);historyList.append(row);
+     });
+    }catch(e){historyStatus.textContent='نەتوانرا مێژووی درهەم بار بکرێت: '+String(e.message||e);}
+   };
+   await loadLedger();
    const info=document.createElement('p');info.className='small';info.style.marginTop='14px';info.textContent='درهەم دراوی مەجازی ناو KURD HALO ـە. دەتوانرێت بە ڕێگای پارەدانی یاسایی و پشتڕاستکراو بکڕدرێت، بەڵام نابێت بە پارەی ڕاستەقینە بگۆڕدرێتەوە یان بۆ دەرەوە بگوازرێتەوە. پاداشتی بردنەوەش تەنها لە دوای چالاککردنی سیستەمی یاری و دژە-فێڵ دەدرێت.';
    content.append(info);
   }
