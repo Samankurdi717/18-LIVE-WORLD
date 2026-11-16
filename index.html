@@ -1421,10 +1421,13 @@ async function openProfileFeature(key){
    const levelNote=document.createElement('p');levelNote.className='small';levelNote.textContent='XP: 0 — بۆ ئاستی داهاتوو 100 XP پێویستە.';
    levelPanel.append(levelTitle,levelTrack,levelNote);content.append(levelPanel);
    const shopPanel=document.createElement('div');shopPanel.style.cssText='margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.025)';
-   const shopTitle=document.createElement('h4');shopTitle.style.cssText='margin:0 0 8px;color:#f5c96a';shopTitle.textContent='🛍️ فرۆشگای درهەم';
-   const shopNote=document.createElement('p');shopNote.className='small';shopNote.textContent='پاکێجی درهەم، VIP و جوانکاریی تایبەت بۆ داهاتی KURD HALO لەم بەشەدا ڕێکدەخرێن.';
-   const shopPending=document.createElement('p');shopPending.className='small';shopPending.textContent='⏳ کڕینی بە پارەی ڕاستەقینە هێشتا چالاک نییە؛ پێویستی بە دەروازەی پارەدانی پارێزراو و پشتڕاستکردنەوەی داواکاری هەیە.';
-   shopPanel.append(shopTitle,shopNote,shopPending);content.append(shopPanel);
+   const shopTitle=document.createElement('h4');shopTitle.style.cssText='margin:0 0 8px;color:#f5c96a';shopTitle.textContent='🛍️ فرۆشگای درهەم — ١٠ پاکێج';
+   const shopNote=document.createElement('p');shopNote.className='small';shopNote.textContent='نرخە پێشنیارکراوەکان بە دیناری عێراقی؛ پاکێجی گەورەتر درهەمی زیاتر دەدات.';
+   const packGrid=document.createElement('div');packGrid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin:12px 0';
+   const derhamPacks=[['2,000','100'],['3,000','160'],['5,000','280'],['10,000','600'],['15,000','930'],['25,000','1,600'],['50,000','3,300'],['75,000','5,050'],['100,000','6,900'],['150,000','10,500']];
+   derhamPacks.forEach((pack,i)=>{const card=document.createElement('div');card.style.cssText='padding:11px 8px;border:1px solid '+(i===7?'#f5c96a':'var(--line)')+';border-radius:12px;text-align:center;background:'+(i===7?'rgba(245,201,106,.09)':'rgba(255,255,255,.025)');const coins=document.createElement('strong');coins.style.cssText='display:block;color:#f5c96a;font-size:17px';coins.textContent=pack[1]+' 🪙';const price=document.createElement('span');price.style.cssText='display:block;margin-top:5px;font-size:13px;font-weight:700';price.textContent=pack[0]+' د.ع';const label=document.createElement('span');label.className='small';label.textContent=i===7?'بەهای باش':'پاکێجی '+(i+1);card.append(coins,price,label);packGrid.append(card);});
+   const shopPending=document.createElement('p');shopPending.className='small';shopPending.textContent='⏳ ئەم نرخانە پێشنیارن و کڕین هێشتا چالاک نییە. پێش وەرگرتنی پارە دەبێت هەژماری بازرگانی، دەروازەی پارەدانی فەرمی، پشتڕاستکردنەوەی پارەدان و تۆمارکردنی داواکارییەکان تەواو بکرێن.';
+   shopPanel.append(shopTitle,shopNote,packGrid,shopPending);content.append(shopPanel);
    const status=document.createElement('p');status.className='small';status.textContent='باڵانس بار دەکرێت...';content.append(status);
    const refresh=document.createElement('button');refresh.type='button';refresh.className='dark';refresh.textContent='🔄 نوێکردنەوەی باڵانس';content.append(refresh);
    const loadWallet=async()=>{
