@@ -611,6 +611,35 @@ body.auth-required .bottom-nav{display:none!important}
  .app-header .profile-menu-trigger{display:flex!important;align-items:center!important;justify-content:center!important;width:40px!important;height:40px!important;min-width:40px!important;margin:0!important;padding:0!important;font-size:25px!important;line-height:1!important;visibility:visible!important;opacity:1!important}
 }
 
+
+/* KURD HALO FIX: make Konkan page independently scrollable on mobile */
+@media(max-width:700px){
+  #konkanPage:not(.hidden){
+    display:block!important;
+    position:fixed!important;
+    top:96px!important;
+    right:0!important;
+    bottom:62px!important;
+    left:0!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:14px 12px 28px!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+    z-index:140!important;
+    background:#090a16!important;
+    box-sizing:border-box!important;
+  }
+}
+@media(min-width:701px){
+  #konkanPage:not(.hidden){overflow:visible;min-height:70vh;padding-bottom:110px}
+}
 </style>
 
 <script>self.ModelViewerElement=self.ModelViewerElement||{};self.ModelViewerElement.meshoptDecoderLocation='https://cdn.jsdelivr.net/npm/meshoptimizer/meshopt_decoder.js';</script>
