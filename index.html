@@ -1418,7 +1418,7 @@ async function openProfileFeature(key){
    levelTitle.append(levelName,levelValue);
    const levelTrack=document.createElement('div');levelTrack.style.cssText='height:9px;margin:12px 0 8px;border-radius:20px;background:#343344;overflow:hidden';
    const levelFill=document.createElement('div');levelFill.style.cssText='width:0%;height:100%;background:linear-gradient(90deg,#f5c96a,#8b5cf6);border-radius:20px';levelTrack.append(levelFill);
-   const levelNote=document.createElement('p');levelNote.className='small';levelNote.textContent='ئاستەکان لە ١ تا ٥٠٠ دەبن؛ خاڵ و پاداشتی پلەبەرزکردنەوە لە قۆناغی داهاتوودا بە سیستەمی پشتەوە چالاک دەکرێن.';
+   const levelNote=document.createElement('p');levelNote.className='small';levelNote.textContent='XP: 0 — بۆ ئاستی داهاتوو 100 XP پێویستە.';
    levelPanel.append(levelTitle,levelTrack,levelNote);content.append(levelPanel);
    const shopPanel=document.createElement('div');shopPanel.style.cssText='margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.025)';
    const shopTitle=document.createElement('h4');shopTitle.style.cssText='margin:0 0 8px;color:#f5c96a';shopTitle.textContent='🛍️ فرۆشگای درهەم';
@@ -1430,12 +1430,14 @@ async function openProfileFeature(key){
    const loadWallet=async()=>{
     refresh.disabled=true;status.textContent='باڵانس بار دەکرێت...';
     try{
-     const {data:wallet,error}=await db.from('halo_wallets').select('balance').eq('user_id',currentUser.id).maybeSingle();
+     const {data:wallet,error}=await db.from('halo_wallets').select('balance,xp,level').eq('user_id',currentUser.id).maybeSingle();
      if(error)throw error;
      const value=Number(wallet?.balance||0);
      if(!Number.isFinite(value))throw new Error('نرخی باڵانس دروست نییە.');
      amount.textContent=value.toLocaleString('en-US');
-     status.textContent=wallet?'باڵانسی هەژمارەکەت بە سەرکەوتوویی خوێندرایەوە.':'هێشتا وۆڵێتێک بۆ ئەم هەژمارە دروست نەکراوە؛ باڵانس 0 پیشان دەدرێت.';
+     const xp=Math.max(0,Number(wallet?.xp||0));const level=Math.min(500,Math.max(1,Number(wallet?.level||1)));const currentFloor=(level-1)*(level-1)*100;const nextFloor=level*level*100;const progress=level>=500?100:Math.max(0,Math.min(100,((xp-currentFloor)/(nextFloor-currentFloor))*100));
+     levelValue.textContent=level.toLocaleString('en-US')+' / 500';levelFill.style.width=progress+'%';levelNote.textContent='XP: '+xp.toLocaleString('en-US')+' — '+(level>=500?'گەیشتیتە بەرزترین ئاست!':'تا ئاستی '+(level+1)+'، '+Math.max(0,nextFloor-xp).toLocaleString('en-US')+' XP ماوە.');
+     status.textContent=wallet?'باڵانس و ئاستی هەژمارەکەت بە سەرکەوتوویی خوێندرایەوە.':'هێشتا وۆڵێتێک بۆ ئەم هەژمارە دروست نەکراوە؛ باڵانس 0 پیشان دەدرێت.';
     }catch(e){
      amount.textContent='—';
      status.textContent='نەتوانرا باڵانس بخوێندرێتەوە: '+String(e.message||e);
