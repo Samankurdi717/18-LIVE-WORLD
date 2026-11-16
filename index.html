@@ -3000,8 +3000,9 @@ function openLive(){
     <p>کۆنکان بە ڕۆحی کوردەواری، مێزی هاوڕێیان و ڕادیۆی گۆرانیی کوردی</p>
     <button type="button" onclick="switchAppTab('games')">🎲 چوونە ژووری کۆنکان</button>
   `;
-  const toolbar=home.querySelector('.feed-toolbar');
-  if(toolbar)home.insertBefore(entry,toolbar);
+  /* Put the Konkan entry at the very top of the home screen so it is not hidden by feed layout. */
+  home.insertBefore(entry,home.firstChild);
+  entry.style.display='block';
 
   const page=document.createElement('section');
   page.id='konkanPage';
