@@ -1411,6 +1411,20 @@ async function openProfileFeature(key){
    const amount=document.createElement('div');amount.style.cssText='font-size:30px;font-weight:800;color:var(--gold);margin:10px 0';amount.textContent='⏳ ...';
    const unit=document.createElement('p');unit.className='small';unit.textContent='درهەمی مەجازی';
    walletPanel.append(label,amount,unit);content.append(walletPanel);
+   const levelPanel=document.createElement('div');levelPanel.style.cssText='margin-top:12px;padding:15px;border:1px solid rgba(245,201,106,.35);border-radius:15px;background:rgba(255,255,255,.035)';
+   const levelTitle=document.createElement('div');levelTitle.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:800;color:#f5c96a';
+   const levelName=document.createElement('span');levelName.textContent='🏆 ئاستی یاریزان';
+   const levelValue=document.createElement('strong');levelValue.textContent='1 / 500';
+   levelTitle.append(levelName,levelValue);
+   const levelTrack=document.createElement('div');levelTrack.style.cssText='height:9px;margin:12px 0 8px;border-radius:20px;background:#343344;overflow:hidden';
+   const levelFill=document.createElement('div');levelFill.style.cssText='width:0%;height:100%;background:linear-gradient(90deg,#f5c96a,#8b5cf6);border-radius:20px';levelTrack.append(levelFill);
+   const levelNote=document.createElement('p');levelNote.className='small';levelNote.textContent='ئاستەکان لە ١ تا ٥٠٠ دەبن؛ خاڵ و پاداشتی پلەبەرزکردنەوە لە قۆناغی داهاتوودا بە سیستەمی پشتەوە چالاک دەکرێن.';
+   levelPanel.append(levelTitle,levelTrack,levelNote);content.append(levelPanel);
+   const shopPanel=document.createElement('div');shopPanel.style.cssText='margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.025)';
+   const shopTitle=document.createElement('h4');shopTitle.style.cssText='margin:0 0 8px;color:#f5c96a';shopTitle.textContent='🛍️ فرۆشگای درهەم';
+   const shopNote=document.createElement('p');shopNote.className='small';shopNote.textContent='پاکێجی درهەم، VIP و جوانکاریی تایبەت بۆ داهاتی KURD HALO لەم بەشەدا ڕێکدەخرێن.';
+   const shopPending=document.createElement('p');shopPending.className='small';shopPending.textContent='⏳ کڕینی بە پارەی ڕاستەقینە هێشتا چالاک نییە؛ پێویستی بە دەروازەی پارەدانی پارێزراو و پشتڕاستکردنەوەی داواکاری هەیە.';
+   shopPanel.append(shopTitle,shopNote,shopPending);content.append(shopPanel);
    const status=document.createElement('p');status.className='small';status.textContent='باڵانس بار دەکرێت...';content.append(status);
    const refresh=document.createElement('button');refresh.type='button';refresh.className='dark';refresh.textContent='🔄 نوێکردنەوەی باڵانس';content.append(refresh);
    const loadWallet=async()=>{
@@ -1429,7 +1443,7 @@ async function openProfileFeature(key){
    };
    refresh.addEventListener('click',loadWallet);
    await loadWallet();
-   const info=document.createElement('p');info.className='small';info.style.marginTop='14px';info.textContent='ئەم دراوە تەنها دراوی مەجازی ناو ئەپەکەیە؛ پارەی ڕاستەقینە نییە، نە دەتوانرێت بگوازرێتەوە و نە بە پارەی ڕاستەقینە بگۆڕدرێت.';
+   const info=document.createElement('p');info.className='small';info.style.marginTop='14px';info.textContent='درهەم دراوی مەجازی ناو KURD HALO ـە. دەتوانرێت بە ڕێگای پارەدانی یاسایی و پشتڕاستکراو بکڕدرێت، بەڵام نابێت بە پارەی ڕاستەقینە بگۆڕدرێتەوە یان بۆ دەرەوە بگوازرێتەوە. پاداشتی بردنەوەش تەنها لە دوای چالاککردنی سیستەمی یاری و دژە-فێڵ دەدرێت.';
    content.append(info);
   }
  }else if(key==='offline'){
