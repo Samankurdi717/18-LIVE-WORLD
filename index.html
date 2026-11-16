@@ -754,11 +754,11 @@ body.auth-required .bottom-nav{display:none!important}
  <details class="upload-drawer" id="uploadDrawer">
   <summary data-i18n="uploadTitle">⬆️ بڵاوکردنەوەی ڤیدیۆ</summary>
   <p data-i18n="chooseVideo">ڤیدیۆیەک لە گەلەری مۆبایلەکەت هەڵبژێرە</p>
-  <input type="file" id="videoFile" accept="video/*">
+  <input type="file" id="videoFile" accept="video/*">\n  <p class="small">قەبارەی سەرەتایی تا 200MB؛ ڤیدیۆی گەورەتر لە 48MB پێش بارکردن کۆمپریس دەکرێت.</p>
   <textarea id="caption" rows="2" placeholder="دەربارەی ڤیدیۆکەت بنووسە..."></textarea>
   <button onclick="uploadVideo()" data-i18n="uploadButton">⬆️ بارکردنی ڤیدیۆ</button>
   <p id="uploadStatus"></p>
-  <p class="small" data-i18n="videoLimit">قەبارەی ڤیدیۆ نابێت لە 50MB زیاتر بێت.</p>
+  <p class="small" data-i18n="videoLimit">قەبارەی ڤیدیۆی بارکراو نابێت لە 50MB زیاتر بێت.</p>
  </details>
  <details class="live-inline" id="liveHub">
   <summary class="live-inline-title"><span class="live-dot"></span><strong data-i18n="liveTitle">🔴 لایڤ لە هەمان فید</strong></summary>
@@ -1471,51 +1471,77 @@ async function openProfileFeature(key){
 }
 function closeProfileFeature(){document.getElementById('profileFeatureModal').classList.add('hidden');}
  
+// Compress a local video before upload when it exceeds the Free bucket limit.
+async function haloCompressVideo(file,status){
+ const limit=48*1024*1024;
+ if(file.size<=limit)return file;
+ if(file.size>200*1024*1024)throw new Error("قەبارەی ڤیدیۆ نابێت لە 200MB زیاتر بێت.");
+ if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)throw new Error("ئەم وێبگەڕە کۆمپریسکردنی ڤیدیۆ پشتگیری ناکات. Chromeی نوێ تاقی بکەرەوە.");
+ const video=document.createElement("video"),url=URL.createObjectURL(file);
+ let recorder=null,stream=null,raf=0;
+ video.playsInline=true;video.preload="metadata";
+ try{
+  video.src=url;
+  await new Promise((ok,no)=>{video.onloadedmetadata=ok;video.onerror=()=>no(new Error("نەتوانرا ڤیدیۆکە بخوێندرێتەوە."));video.load();});
+  if(!Number.isFinite(video.duration)||video.duration<=0)throw new Error("ماوەی ڤیدیۆکە نەزانرا.");
+  const canvas=document.createElement("canvas"),scale=Math.min(1,1280/Math.max(video.videoWidth,video.videoHeight));
+  canvas.width=Math.max(2,Math.round(video.videoWidth*scale/2)*2);canvas.height=Math.max(2,Math.round(video.videoHeight*scale/2)*2);
+  const ctx=canvas.getContext("2d",{alpha:false});if(!ctx)throw new Error("ئامادەکاری کۆمپریسکردن سەرکەوتوو نەبوو.");
+  const vstream=canvas.captureStream(24),astream=typeof video.captureStream==="function"?video.captureStream():null;
+  stream=new MediaStream([...vstream.getVideoTracks(),...(astream?astream.getAudioTracks():[])]);
+  const bitrate=Math.max(300000,Math.min(1400000,Math.floor(limit*8/video.duration*.86)));
+  const mime=["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"].find(x=>MediaRecorder.isTypeSupported(x));
+  if(!mime)throw new Error("فۆرماتی کۆمپریسکردن پشتگیری ناکرێت.");
+  const chunks=[];
+  recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:bitrate,audioBitsPerSecond:96000});
+  const stopped=new Promise((ok,no)=>{recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};recorder.onerror=()=>no(new Error("هەڵە لە کۆمپریسکردنی ڤیدیۆ."));recorder.onstop=ok;});
+  const draw=()=>{if(video.ended||video.paused)return;ctx.drawImage(video,0,0,canvas.width,canvas.height);status.innerText="کۆمپریسکردنی ڤیدیۆ... "+Math.min(99,Math.round(video.currentTime/video.duration*100))+"٪";raf=requestAnimationFrame(draw);};
+  video.muted=false;video.volume=1;recorder.start(1000);await video.play();draw();
+  await new Promise(ok=>{video.onended=ok;});
+  if(recorder.state!=="inactive")recorder.stop();await stopped;
+  const blob=new Blob(chunks,{type:"video/webm"});
+  if(!blob.size)throw new Error("کۆمپریسکردن بەرهەمی نەدا.");
+  if(blob.size>50*1024*1024)throw new Error("ڤیدیۆکە دوای کۆمپریسکردنیش لە 50MB گەورەترە؛ ڤیدیۆیەکی کورتتر هەڵبژێرە.");
+  return new File([blob],(file.name.replace(/\.[^.]+$/,"")||"video")+".webm",{type:"video/webm"});
+ }finally{
+  cancelAnimationFrame(raf);if(recorder&&recorder.state!=="inactive"){try{recorder.stop();}catch(e){}}
+  if(stream)stream.getTracks().forEach(t=>t.stop());video.pause();video.removeAttribute("src");video.load();URL.revokeObjectURL(url);
+ }
+}
+
 // UPLOAD VIDEO ONLY
 async function uploadVideo(){
  if(haloVideoUploadInProgress)return;
  if(!currentUser){alert("بۆ بارکردنی ڤیدیۆ سەرەتا بچۆ ژوورەوە.");return;}
- const fileInput=document.getElementById("videoFile");
- const captionInput=document.getElementById("caption");
- const status=document.getElementById("uploadStatus");
- const file=fileInput&&fileInput.files?fileInput.files[0]:null;
- const caption=captionInput?captionInput.value.trim():"";
- if(!status)return;
- if(!file){status.innerText="تکایە ڤیدیۆیەک هەڵبژێرە.";return;}
- const rawExtension=(file.name.split(".").pop()||"").toLowerCase();
- const allowedExtensions=["mp4","webm","mov","m4v","3gp","ogg"];
- const extension=allowedExtensions.includes(rawExtension)?rawExtension:"mp4";
- if(file.type&&!file.type.startsWith("video/")){status.innerText="فایلەکە ڤیدیۆ نییە.";return;}
- if(!file.type&&!allowedExtensions.includes(rawExtension)){status.innerText="فۆرماتی ئەم فایلە پشتگیری ناکرێت.";return;}
- if(file.size<=0){status.innerText="فایلەکە بەتاڵە؛ تکایە ڤیدیۆیەکی تر هەڵبژێرە.";return;}
- if(file.size>50*1024*1024){status.innerText="قەبارەی ڤیدیۆ نابێت لە 50MB زیاتر بێت.";return;}
+ const fileInput=document.getElementById("videoFile"),captionInput=document.getElementById("caption"),status=document.getElementById("uploadStatus");
+ const original=fileInput&&fileInput.files?fileInput.files[0]:null,caption=captionInput?captionInput.value.trim():"";
+ if(!status)return;if(!original){status.innerText="تکایە ڤیدیۆیەک هەڵبژێرە.";return;}
+ const ext=(original.name.split(".").pop()||"").toLowerCase(),allowed=["mp4","webm","mov","m4v","3gp","ogg"];
+ if(original.type&&!original.type.startsWith("video/")){status.innerText="فایلەکە ڤیدیۆ نییە.";return;}
+ if(!original.type&&!allowed.includes(ext)){status.innerText="فۆرماتی ئەم فایلە پشتگیری ناکرێت.";return;}
+ if(!original.size){status.innerText="فایلەکە بەتاڵە.";return;}
+ if(original.size>200*1024*1024){status.innerText="قەبارەی ڤیدیۆ نابێت لە 200MB زیاتر بێت.";return;}
  haloVideoUploadInProgress=true;
- const uploadButton=document.querySelector('button[onclick="uploadVideo()"]');
- if(uploadButton){uploadButton.disabled=true;uploadButton.dataset.originalText=uploadButton.textContent;uploadButton.textContent="⏳ تکایە چاوەڕێ بکە...";}
- let uploadedPath=null;
+ const btn=document.querySelector('button[onclick="uploadVideo()"]');
+ if(btn){btn.disabled=true;btn.dataset.originalText=btn.textContent;btn.textContent="⏳ تکایە چاوەڕێ بکە...";}
+ let path=null;
  try{
+  const file=await haloCompressVideo(original,status);
+  const extension=file.type==="video/webm"?"webm":(allowed.includes((file.name.split(".").pop()||"").toLowerCase())?(file.name.split(".").pop()||"mp4").toLowerCase():"mp4");
+  if(file.size>50*1024*1024)throw new Error("سنووری بارکردن 50MBە.");
   status.innerText="ڤیدیۆکە بار دەکرێت...";
-  const uniqueId=(window.crypto&&typeof window.crypto.randomUUID==="function")?window.crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,10);
-  uploadedPath=currentUser.id+"/videos/"+uniqueId+"."+extension;
-  const contentType=file.type&&file.type.startsWith("video/")?file.type:"video/mp4";
-  const {error:uploadError}=await db.storage.from("videos").upload(uploadedPath,file,{contentType,upsert:false,cacheControl:"3600"});
-  if(uploadError)throw uploadError;
-  const {error:dbError}=await db.from("videos").insert({user_id:currentUser.id,storage_path:uploadedPath,caption});
-  if(dbError)throw dbError;
-  uploadedPath=null;
-  status.innerText="ڤیدیۆکەت بە سەرکەوتوویی بڵاوکرایەوە. ⭐";
-  if(fileInput)fileInput.value="";
-  if(captionInput)captionInput.value="";
-  await loadVideos();
+  const id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+  path=currentUser.id+"/videos/"+id+"."+extension;
+  const type=file.type&&file.type.startsWith("video/")?file.type:(extension==="webm"?"video/webm":"video/mp4");
+  const {error:up}=await db.storage.from("videos").upload(path,file,{contentType:type,upsert:false,cacheControl:"3600"});if(up)throw up;
+  const {error:ins}=await db.from("videos").insert({user_id:currentUser.id,storage_path:path,caption});if(ins)throw ins;
+  path=null;status.innerText="ڤیدیۆکەت بە سەرکەوتوویی بڵاوکرایەوە. ⭐";
+  if(fileInput)fileInput.value="";if(captionInput)captionInput.value="";await loadVideos();
  }catch(e){
-  if(uploadedPath){try{await db.storage.from("videos").remove([uploadedPath]);}catch(cleanupError){console.warn("Video upload cleanup failed:",cleanupError);}}
+  if(path){try{await db.storage.from("videos").remove([path]);}catch(clean){console.warn(clean);}}
   status.innerText="هەڵە: "+String(e&&e.message?e.message:"نەتوانرا ڤیدیۆکە باربکرێت.");
- }finally{
-  haloVideoUploadInProgress=false;
-  if(uploadButton){uploadButton.disabled=false;uploadButton.textContent=uploadButton.dataset.originalText||"⬆️ بارکردنی ڤیدیۆ";}
- }
+ }finally{haloVideoUploadInProgress=false;if(btn){btn.disabled=false;btn.textContent=btn.dataset.originalText||"⬆️ بارکردنی ڤیدیۆ";}}
 }
- 
 // COMMENTS PANEL
 async function openVideoComments(videoId,onCommentAdded){
  const modal=document.createElement("div");modal.className="comments-modal";
