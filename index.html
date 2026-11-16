@@ -1428,6 +1428,32 @@ async function openProfileFeature(key){
    derhamPacks.forEach((pack,i)=>{const card=document.createElement('div');card.style.cssText='padding:11px 8px;border:1px solid '+(i===7?'#f5c96a':'var(--line)')+';border-radius:12px;text-align:center;background:'+(i===7?'rgba(245,201,106,.09)':'rgba(255,255,255,.025)');const coins=document.createElement('strong');coins.style.cssText='display:block;color:#f5c96a;font-size:17px';coins.textContent=pack[1]+' 🪙';const price=document.createElement('span');price.style.cssText='display:block;margin-top:5px;font-size:13px;font-weight:700';price.textContent=pack[0]+' د.ع';const label=document.createElement('span');label.className='small';label.textContent=i===7?'بەهای باش':'پاکێجی '+(i+1);card.append(coins,price,label);packGrid.append(card);});
    const shopPending=document.createElement('p');shopPending.className='small';shopPending.textContent='⏳ ئەم نرخانە پێشنیارن و کڕین هێشتا چالاک نییە. پێش وەرگرتنی پارە دەبێت هەژماری بازرگانی، دەروازەی پارەدانی فەرمی، پشتڕاستکردنەوەی پارەدان و تۆمارکردنی داواکارییەکان تەواو بکرێن.';
    shopPanel.append(shopTitle,shopNote,packGrid,shopPending);content.append(shopPanel);
+   const dailyPanel=document.createElement('section');
+   dailyPanel.style.cssText='margin-top:14px;padding:16px;border:1px solid #d6ad55;border-radius:16px;background:linear-gradient(145deg,rgba(245,201,106,.15),rgba(255,255,255,.025));text-align:center';
+   const dailyTitle=document.createElement('h3');dailyTitle.style.cssText='margin:0 0 7px;color:#f5c96a';dailyTitle.textContent='🎡 خولی شانسیی ڕۆژانە';
+   const dailyText=document.createElement('p');dailyText.className='small';dailyText.textContent='هەر ڕۆژ جارێک بیسووڕێنەوە و ٥، ١٠، ٢٠، ٥٠ یان ١٠٠ دەرھەم بەدەست بهێنە.';
+   const dailyWheel=document.createElement('div');dailyWheel.textContent='🎡';dailyWheel.style.cssText='font-size:64px;line-height:1.4;margin:6px 0;transition:transform 1.8s cubic-bezier(.12,.75,.2,1)';
+   const dailyButton=document.createElement('button');dailyButton.type='button';dailyButton.textContent='🎁 بسووڕێنەوە و پاداشت وەربگرە';
+   const dailyStatus=document.createElement('p');dailyStatus.className='small';dailyStatus.textContent='پاداشتی ڕۆژانە چاوەڕێتە!';
+   dailyPanel.append(dailyTitle,dailyText,dailyWheel,dailyButton,dailyStatus);content.append(dailyPanel);
+   dailyButton.addEventListener('click',async()=>{
+    dailyButton.disabled=true;dailyStatus.textContent='خولەکە دەسووڕێتەوە...';
+    dailyWheel.style.transform='rotate(1440deg)';
+    try{
+     const {data:sessionData,error:sessionError}=await db.auth.getSession();
+     if(sessionError||!sessionData.session)throw new Error('تکایە دووبارە بچۆ ژوورەوە.');
+     const response=await fetch(SUPABASE_URL+'/functions/v1/daily-spin',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+sessionData.session.access_token},body:'{}'});
+     const result=await response.json();
+     if(!response.ok)throw new Error(result.error||'پاداشت وەرنەگیرا.');
+     dailyStatus.textContent='🎉 پیرۆزە! '+Number(result.reward).toLocaleString('en-US')+' دەرھەم بردیتەوە.';
+     amount.textContent=Number(result.balance).toLocaleString('en-US');
+     dailyButton.textContent='✅ پاداشتی ئەمڕۆت وەرگرت';
+    }catch(e){
+     dailyStatus.textContent=String(e.message||e);
+     dailyButton.disabled=false;
+     dailyWheel.style.transform='rotate(0deg)';
+    }
+   });
    const status=document.createElement('p');status.className='small';status.textContent='باڵانس بار دەکرێت...';content.append(status);
    const refresh=document.createElement('button');refresh.type='button';refresh.className='dark';refresh.textContent='🔄 نوێکردنەوەی باڵانس';content.append(refresh);
    const loadWallet=async()=>{
