@@ -2984,6 +2984,14 @@ function openLive(){
     .konkan-panel h3{margin:0 0 9px;color:#f0c66a}
     .konkan-table{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
     .konkan-seat{padding:13px 5px;text-align:center;border:1px solid #826332;border-radius:13px;background:#282016;color:#f4e3c2;font-size:13px}
+    .konkan-seat small{display:inline-block;margin-top:5px;color:#e5c979;font-size:11px}
+    .konkan-seat.team-a{border-color:#d3a93e;background:linear-gradient(145deg,#3a2b12,#211a10)}
+    .konkan-seat.team-b{border-color:#4d9bd0;background:linear-gradient(145deg,#142b3b,#171a20)}
+    .konkan-team-note{margin:10px 0;padding:10px;border-radius:12px;background:#252116;color:#f2d68c;text-align:center;font-size:12px;line-height:1.8}
+    .konkan-room-code{margin-top:12px;padding:13px;border:1px dashed #d6b15e;border-radius:13px;text-align:center;background:#241d11}
+    .konkan-room-code strong{display:block;font-size:25px;letter-spacing:4px;color:#f5d47f;margin:7px}
+    .konkan-room-code span{font-size:12px;color:#e4d4b2}
+    #konkanPage .konkan-room-code button{margin-top:5px}
     .konkan-center{grid-column:1/-1;text-align:center;padding:18px 8px;border-radius:14px;background:radial-gradient(ellipse,#584020,#21170e);border:1px solid #b88d39;color:#f4d58c}
     .konkan-coins{font-size:27px;letter-spacing:4px}
     #konkanPage input[type=file]{width:100%;margin:8px 0;color:#eee}
@@ -3023,18 +3031,25 @@ function openLive(){
     </div>
     <div class="konkan-panel">
       <h3>🫖 مێزی کۆنکان</h3>
+      <div class="konkan-team-note">🟡 تیمی A: تۆ + یاریزانی ٤ &nbsp; | &nbsp; 🔵 تیمی B: یاریزانی ٢ + یاریزانی ٣</div>
       <div class="konkan-table">
-        <div class="konkan-seat">👤 یاریزانی ١<br>تۆ</div>
-        <div class="konkan-seat">👤 یاریزانی ٢<br>شوێنی هاوڕێ</div>
-        <div class="konkan-center">🪙 مێزی کۆنکان<br><strong>یاسای هەولێر</strong><br><span class="konkan-muted">ژووری یارییەکە لە قۆناغی دروستکردندایە</span></div>
-        <div class="konkan-seat">👤 یاریزانی ٣<br>شوێنی یاریزان</div>
-        <div class="konkan-seat">👤 یاریزانی ٤<br>شوێنی هاوڕێ</div>
+        <div class="konkan-seat team-a">🟡 یاریزانی ١<br><strong>تۆ</strong><br><small>تیمی A</small></div>
+        <div class="konkan-seat team-b">🔵 یاریزانی ٢<br><strong>شوێنی بەرامبەر</strong><br><small>تیمی B</small></div>
+        <div class="konkan-center">🪙 مێزی کۆنکان<br><strong>یاسای هەولێر</strong><br><span class="konkan-muted">٤ یاریزان • ٢ تیم • هاوبەشی دوو کەسی</span></div>
+        <div class="konkan-seat team-b">🔵 یاریزانی ٣<br><strong>شوێنی بەرامبەر</strong><br><small>تیمی B</small></div>
+        <div class="konkan-seat team-a">🟡 یاریزانی ٤<br><strong>هاوتیمی تۆ</strong><br><small>تیمی A</small></div>
       </div>
       <div class="konkan-actions">
-        <button type="button" onclick="konkanRoomNotice()">➕ دروستکردنی ژوور</button>
-        <button type="button" onclick="konkanRoomNotice()">🤝 بانگهێشتکردنی هاوڕێ</button>
+        <button type="button" onclick="konkanCreateRoom()">➕ دروستکردنی کۆدی ژوور</button>
+        <button type="button" onclick="konkanInviteFriend()">🤝 بانگهێشتکردنی هاوڕێ</button>
       </div>
-      <p id="konkanRoomStatus" class="konkan-muted" aria-live="polite">ئەمە ڕووکاری سەرەتاییە؛ ژووری ئۆنلاین و یاسای تەواوی یاری هێشتا پێویستی بە جێبەجێکردنی قۆناغی داهاتوو هەیە.</p>
+      <div id="konkanRoomCodeBox" class="konkan-room-code hidden">
+        <span>کۆدی ژوور</span>
+        <strong id="konkanRoomCode"></strong>
+        <button type="button" class="konkan-copy" onclick="konkanCopyRoomCode()">📋 کۆپیکردنی کۆد</button>
+      </div>
+      <p id="konkanRoomStatus" class="konkan-muted" aria-live="polite">تۆ و یاریزانی ٤ هاوتیمین؛ یاریزانی ٢ و ٣ تیمی بەرامبەرن. کۆدی ژوور بۆ بانگهێشت دروست بکە.</p>
+      <p class="konkan-muted">تێبینی: لەم قۆناغەدا کۆدی بانگهێشت لەسەر ئەم ئامێرە دروست دەبێت؛ پەیوەندیی ئۆنلاین و هاوکاتکردنی یاریزانان هێشتا جێبەجێ نەکراوە.</p>
     </div>
     <div class="konkan-panel">
       <h3>📻 ڕادیۆی گۆرانیی کۆنی کوردی</h3>
@@ -3062,9 +3077,36 @@ function openLive(){
     return previousSwitch.apply(this,arguments);
   };
 
-  window.konkanRoomNotice=function(){
+  let activeKonkanRoomCode='';
+  window.konkanCreateRoom=function(){
+    activeKonkanRoomCode='KH-'+Math.random().toString(36).slice(2,7).toUpperCase();
+    const code=document.getElementById('konkanRoomCode');
+    const box=document.getElementById('konkanRoomCodeBox');
     const status=document.getElementById('konkanRoomStatus');
-    if(status)status.textContent='ژووری ئۆنلاین هێشتا چالاک نییە. لە قۆناغی داهاتوودا بە شێوەی ڕاستەقینەی هاوبەش دروستی دەکەین.';
+    if(code)code.textContent=activeKonkanRoomCode;
+    if(box)box.classList.remove('hidden');
+    if(status)status.textContent='کۆدی ژوور دروست کرا. ئەم کۆدە بۆ ناساندنی ژوورەکەیە؛ هێشتا ژووری ئۆنلاین هاوکات نییە.';
+  };
+  window.konkanCopyRoomCode=function(){
+    if(!activeKonkanRoomCode)return;
+    const status=document.getElementById('konkanRoomStatus');
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(activeKonkanRoomCode).then(()=>{
+        if(status)status.textContent='کۆدی ژوور کۆپی کرا: '+activeKonkanRoomCode;
+      }).catch(()=>{if(status)status.textContent='کۆدەکە: '+activeKonkanRoomCode+' — تکایە دەستی کۆپی بکە.';});
+    }else if(status){status.textContent='کۆدەکە: '+activeKonkanRoomCode+' — تکایە دەستی کۆپی بکە.';}
+  };
+  window.konkanInviteFriend=async function(){
+    const status=document.getElementById('konkanRoomStatus');
+    if(!activeKonkanRoomCode){window.konkanCreateRoom();}
+    const inviteText='با لە KURD HALO کۆنکان یاری بکەین. کۆدی ژوور: '+activeKonkanRoomCode;
+    if(navigator.share){
+      try{await navigator.share({title:'بانگهێشت بۆ کۆنکان',text:inviteText});}
+      catch(e){if(e.name!=='AbortError'&&status)status.textContent=inviteText;}
+    }else{
+      window.konkanCopyRoomCode();
+      if(status)status.textContent=inviteText+' — کۆدەکەش بۆت کۆپی کرا ئەگەر مۆبایلەکەت پشتگیری بکات.';
+    }
   };
 
   const picker=document.getElementById('konkanRadioFile');
