@@ -3001,6 +3001,14 @@ function openLive(){
 (function(){
   const style=document.createElement('style');
   style.textContent=`
+    .konkan-mode-picker{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+    .konkan-mode-card{padding:0!important;margin:0!important;overflow:hidden;border:2px solid #75603c!important;border-radius:16px!important;background:#17140f!important;color:#fff!important;text-align:center;box-shadow:0 8px 22px #0007!important}
+    .konkan-mode-card.selected{border-color:#f4ca70!important;box-shadow:0 0 0 2px #f4ca7044,0 10px 25px #0008!important}
+    .konkan-mode-card img{display:block;width:100%;height:112px;object-fit:cover}
+    .konkan-mode-card strong{display:block;padding:9px 5px 2px;color:#f4d58c;font-size:15px}
+    .konkan-mode-card small{display:block;padding:0 6px 10px;color:#d4c6aa;font-size:11px}
+    .konkan-mode-note{margin:0 0 12px;padding:9px;border-radius:11px;background:#252116;color:#f2d68c;text-align:center;font-size:12px;line-height:1.7}
+    @media(max-width:360px){.konkan-mode-card img{height:88px}}
     #konkanEntry{margin:12px 0 18px;padding:17px;border:1px solid rgba(214,166,58,.55);border-radius:20px;background:linear-gradient(135deg,#241b12,#101018 70%);box-shadow:0 12px 30px #0005}
     #konkanEntry h2{margin:0 0 6px;color:#f0c66a;letter-spacing:1px}
     #konkanEntry p{color:#ddd0b5;font-size:13px}
@@ -3051,6 +3059,17 @@ function openLive(){
   page.id='konkanPage';
   page.className='app-page hidden';
   page.innerHTML=`
+    <div class="konkan-mode-picker" aria-label="هەڵبژاردنی یاسای کۆنکان">
+      <button type="button" class="konkan-mode-card selected" id="konkanModeErbil" onclick="konkanSelectMode('erbil')">
+        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Citadel_of_Erbil.jpg?width=1000" alt="قەڵای هەولێر">
+        <strong>کۆنکانی هەولێر</strong><small>یاسای تایبەت بە هەولێر</small>
+      </button>
+      <button type="button" class="konkan-mode-card" id="konkanModeSlemani" onclick="konkanSelectMode('slemani')">
+        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Sulaimaniya_Amusement_Park.jpg?width=1000" alt="پارکی ئازادی سلێمانی">
+        <strong>کۆنکانی سلێمانی</strong><small>یاسای تایبەت بە سلێمانی</small>
+      </button>
+    </div>
+    <div class="konkan-mode-note" id="konkanModeNote">هەڵبژێردراو: کۆنکانی هەولێر — وێنەی قەڵای هەولێر</div>
     <div class="konkan-hero">
       <div style="font-size:12px;color:#d7b66d">قاوەخانەی کۆنی هەولێر • KURD HALO</div>
       <h1>YARI KONKAN</h1>
@@ -3064,7 +3083,7 @@ function openLive(){
       <div class="konkan-table">
         <div class="konkan-seat team-a">🟡 یاریزانی ١<br><strong>تۆ</strong><br><small>تیمی A</small></div>
         <div class="konkan-seat team-b">🔵 یاریزانی ٢<br><strong>شوێنی بەرامبەر</strong><br><small>تیمی B</small></div>
-        <div class="konkan-center">🪙 مێزی کۆنکان<br><strong>یاسای هەولێر</strong><br><span class="konkan-muted">٤ یاریزان • ٢ تیم • هاوبەشی دوو کەسی</span></div>
+        <div class="konkan-center">🪙 مێزی کۆنکان<br><strong id="konkanRuleLabel">یاسای هەولێر</strong><br><span class="konkan-muted">٤ یاریزان • ٢ تیم • هاوبەشی دوو کەسی</span></div>
         <div class="konkan-seat team-b">🔵 یاریزانی ٣<br><strong>شوێنی بەرامبەر</strong><br><small>تیمی B</small></div>
         <div class="konkan-seat team-a">🟡 یاریزانی ٤<br><strong>هاوتیمی تۆ</strong><br><small>تیمی A</small></div>
       </div>
@@ -3106,6 +3125,21 @@ function openLive(){
     return previousSwitch.apply(this,arguments);
   };
 
+  let activeKonkanMode='erbil';
+  window.konkanSelectMode=function(mode){
+    activeKonkanMode=mode==='slemani'?'slemani':'erbil';
+    const erbil=document.getElementById('konkanModeErbil');
+    const slemani=document.getElementById('konkanModeSlemani');
+    erbil?.classList.toggle('selected',activeKonkanMode==='erbil');
+    slemani?.classList.toggle('selected',activeKonkanMode==='slemani');
+    const label=document.getElementById('konkanRuleLabel');
+    const note=document.getElementById('konkanModeNote');
+    const title=activeKonkanMode==='erbil'?'یاسای هەولێر':'یاسای سلێمانی';
+    if(label)label.textContent=title;
+    if(note)note.textContent=activeKonkanMode==='erbil'?'هەڵبژێردراو: کۆنکانی هەولێر — وێنەی قەڵای هەولێر':'هەڵبژێردراو: کۆنکانی سلێمانی — وێنەی پارکی ئازادی';
+    const status=document.getElementById('konkanRoomStatus');
+    if(status)status.textContent='شێوازی '+title+' هەڵبژێردرا. یاساکانی ئەم دوو شێوازە لە یەکدی جیا دەهێڵدرێنەوە.';
+  };
   let activeKonkanRoomCode='';
   window.konkanCreateRoom=function(){
     activeKonkanRoomCode='KH-'+Math.random().toString(36).slice(2,7).toUpperCase();
