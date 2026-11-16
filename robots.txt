@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://samankurdi717.github.io/18-LIVE-WORLD/sitemap.xml
