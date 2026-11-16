@@ -2410,7 +2410,8 @@ async function switchCamera(){
  let selectedHaloGift=null;
  function haloGiftVisual(g,large=false){
   const url=haloGiftModelUrl(g);
-  return url?'<model-viewer class="halo-gift-model" src="'+url+'" loading="lazy" reveal="auto" disable-zoom autoplay auto-rotate rotation-per-second="24deg" shadow-intensity="0.8" interaction-prompt="none" aria-label="'+g.name+' 3D"></model-viewer>':'<span class="'+(large?'big ':'')+'halo-gift-emoji">'+g.emoji+'</span>';
+  const motion=large?'autoplay auto-rotate rotation-per-second="24deg"':'';
+  return url?'<model-viewer class="halo-gift-model" src="'+url+'" loading="lazy" reveal="auto" disable-zoom '+motion+' shadow-intensity="0.8" interaction-prompt="none" aria-label="'+g.name+' 3D"></model-viewer>':'<span class="'+(large?'big ':'')+'halo-gift-emoji">'+g.emoji+'</span>';
  }
  function renderHaloGifts(){
   const grid=document.getElementById('haloGiftGrid');if(!grid)return;
