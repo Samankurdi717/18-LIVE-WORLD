@@ -1,0 +1,22 @@
+{
+  "id": "./",
+  "name": "KURD HALO — کورد هەڵۆ",
+  "short_name": "KURD HALO",
+  "description": "کۆمەڵگەی کوردی بۆ ڤیدیۆ و پەیوەندی",
+  "lang": "ku",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080914",
+  "theme_color": "#080914",
+  "icons": [
+    {
+      "src": "./halo-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
