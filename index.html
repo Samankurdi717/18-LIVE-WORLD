@@ -3127,13 +3127,13 @@ function openLive(){
       <div class="konkan-team-note">🟡 تیمی A: تۆ + یاریزانی ٤ &nbsp; | &nbsp; 🔵 تیمی B: یاریزانی ٢ + یاریزانی ٣</div>
       <div class="konkan-match-options" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:14px 0">
         <button type="button" id="konkanQuickMatch" class="konkan-mode-card selected" onclick="konkanChooseMatchType('quick')" style="padding:14px;text-align:right">
-          <strong>⚡ یاریی خۆکار</strong><small style="display:block;margin-top:6px">کەمترین ٢ یاریزانی ڕاستەقینە؛ هەر یاریزانێک هاوتیمی ڕۆبۆتێکی دەبێت.</small>
+          <strong>⚡ یاریی خۆکار</strong><small style="display:block;margin-top:6px">٤ یاریزانی ڕاستەقینە؛ دوو تیمی دوو کەسی. ڕۆبۆت لە شوێنی یاریزانی ڕاستەقینە دانانرێت.</small>
         </button>
         <button type="button" id="konkanPrivateMatch" class="konkan-mode-card" onclick="konkanChooseMatchType('private')" style="padding:14px;text-align:right">
           <strong>🤝 یاری لەگەڵ هاوڕێکان</strong><small style="display:block;margin-top:6px">ژوورێک دروست بکە و ٣ هاوڕێ بانگهێشت بکە.</small>
         </button>
       </div>
-      <div id="konkanMatchInfo" class="konkan-mode-note" aria-live="polite">یاریی خۆکار: دوو یاریزانی ڕاستەقینە + دوو ڕۆبۆتی هاوتیم. بەردەوامبوونی یاری بە ڕۆبۆت لە کاتی دەرچوونی یاریزان.</div>
+      <div id="konkanMatchInfo" class="konkan-mode-note" aria-live="polite">یاریی خۆکار: تەنها بە ٤ یاریزانی ڕاستەقینە و دوو تیمی دوو کەسی دەست پێدەکات.</div>
       <div class="konkan-table">
         <div class="konkan-seat team-a">🟡 یاریزانی ١<br><strong>تۆ</strong><br><small>تیمی A</small></div>
         <div class="konkan-seat team-b">🔵 یاریزانی ٢<br><strong>شوێنی بەرامبەر</strong><br><small>تیمی B</small></div>
@@ -3264,8 +3264,8 @@ function openLive(){
     document.getElementById('konkanPrivateMatch')?.classList.toggle('selected',activeKonkanMatchType==='private');
     const info=document.getElementById('konkanMatchInfo');
     const status=document.getElementById('konkanRoomStatus');
-    if(info)info.textContent=activeKonkanMatchType==='quick'?'یاریی خۆکار: کەمترین ٢ یاریزانی ڕاستەقینە؛ هەر یاریزانێک لەگەڵ ڕۆبۆتێک دەبێت. ئەگەر ٣ یاریزان هەبن، یەک ڕۆبۆت و ئەگەر ٤ یاریزان هەبن، بێ ڕۆبۆت یاری دەکرێت.':'یاری تایبەت: ٤ هاوڕێ لە یەک ژووردا؛ ئەگەر یاریزانێک دەرچوو، ڕۆبۆت جێگەی دەگرێتەوە.';
-    if(status)status.textContent=activeKonkanMatchType==='quick'?'شێوازی یاریی خۆکار هەڵبژێردرا. بۆ کارکردنی ڕاستەقینەی ئۆنلاین، سیستەمی هاوتاکردنی یاریزانان و ژووری Supabase دەبێت چالاک بکرێت.':'شێوازی ژووری تایبەت هەڵبژێردرا. کۆدی ژوور دەتوانیت بۆ هاوڕێکانت بنێریت؛ بەستنی ئۆنلاین هێشتا پێویستی بە پشتەوەی ژوورەکە هەیە.';
+    if(info)info.textContent=activeKonkanMatchType==='quick'?'یاریی خۆکار: چاوەڕێی ٤ یاریزانی ڕاستەقینە دەکات؛ دوو تیمی دوو کەسی. ڕۆبۆت جێگەی یاریزان ناگرێتەوە.':'یاری تایبەت: تۆ و ٣ هاوڕێ لە یەک ژووردا؛ ٤ یاریزان و ٢ تیمی دوو کەسی.';
+    if(status)status.textContent=activeKonkanMatchType==='quick'?'شێوازی یاریی خۆکار هەڵبژێردرا؛ پێویستی بە ٤ یاریزانی ڕاستەقینە هەیە. هاوتاکردنی ئۆنلاین هێشتا جێبەجێ نەکراوە.':'شێوازی ژووری تایبەت هەڵبژێردرا؛ کۆدی ژوور بۆ تۆ و ٣ هاوڕێیە. بەستنی ئۆنلاین هێشتا جێبەجێ نەکراوە.';
   };
   let activeKonkanRoomCode='';
   window.konkanCreateRoom=function(){
