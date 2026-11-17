@@ -82,6 +82,8 @@ alter table public.dm_messages drop constraint if exists dm_no_self_message;
 alter table public.dm_messages add constraint dm_no_self_message check (sender_id<>recipient_id);
 alter table public.dm_messages drop constraint if exists dm_content_length;
 alter table public.dm_messages add constraint dm_content_length check (content is null or length(content)<=2000);
+-- Remove the original text-or-feed-video constraint so gallery-only messages are valid.
+alter table public.dm_messages drop constraint if exists dm_has_content_or_video;
 alter table public.dm_messages drop constraint if exists dm_has_content_video_or_media;
 alter table public.dm_messages add constraint dm_has_content_video_or_media check (
   (content is not null and length(trim(content))>0) or video_id is not null or media_path is not null
