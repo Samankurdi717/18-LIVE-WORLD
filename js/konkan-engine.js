@@ -142,7 +142,7 @@
       for (let k = 0; k < tiles.length; k++) {
         const n = start + k;
         if (n <= 13) seq.push(n);
-        else if (n === 14) seq.push(1); // 12-13-1 is valid; wrap only at the end.
+        else if (start === 12 && k === 2 && tiles.length === 3) seq.push(1); // Only 12-13-1 is a valid high-Ace run.
         else break;
       }
       if (seq.length === tiles.length && seq.includes(1) && seq[0] >= 10) sequences.push(seq);
