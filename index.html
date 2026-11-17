@@ -1428,50 +1428,6 @@ async function openProfileFeature(key){
    derhamPacks.forEach((pack,i)=>{const card=document.createElement('div');card.style.cssText='padding:11px 8px;border:1px solid '+(i===7?'#f5c96a':'var(--line)')+';border-radius:12px;text-align:center;background:'+(i===7?'rgba(245,201,106,.09)':'rgba(255,255,255,.025)');const coins=document.createElement('strong');coins.style.cssText='display:block;color:#f5c96a;font-size:17px';coins.textContent=pack[1]+' 🪙';const price=document.createElement('span');price.style.cssText='display:block;margin-top:5px;font-size:13px;font-weight:700';price.textContent=pack[0]+' د.ع';const label=document.createElement('span');label.className='small';label.textContent=i===7?'بەهای باش':'پاکێجی '+(i+1);card.append(coins,price,label);packGrid.append(card);});
    const shopPending=document.createElement('p');shopPending.className='small';shopPending.textContent='⏳ ئەم نرخانە پێشنیارن و کڕین هێشتا چالاک نییە. پێش وەرگرتنی پارە دەبێت هەژماری بازرگانی، دەروازەی پارەدانی فەرمی، پشتڕاستکردنەوەی پارەدان و تۆمارکردنی داواکارییەکان تەواو بکرێن.';
    shopPanel.append(shopTitle,shopNote,packGrid,shopPending);content.append(shopPanel);
-   const dailyPanel=document.createElement('section');
-   dailyPanel.style.cssText='margin-top:14px;padding:16px;border:1px solid #d6ad55;border-radius:16px;background:linear-gradient(145deg,rgba(245,201,106,.15),rgba(255,255,255,.025));text-align:center';
-   const dailyTitle=document.createElement('h3');dailyTitle.style.cssText='margin:0 0 7px;color:#f5c96a';dailyTitle.textContent='🎡 خولی شانسیی ڕۆژانە';
-   const dailyText=document.createElement('p');dailyText.className='small';dailyText.textContent='هەر ڕۆژ جارێک بیسووڕێنەوە و ٥، ١٠، ٢٠، ٥٠ یان ١٠٠ دەرھەم بەدەست بهێنە.';
-   const dailyWheel=document.createElement('div');dailyWheel.textContent='🎡';dailyWheel.style.cssText='font-size:64px;line-height:1.4;margin:6px 0;transition:transform 1.8s cubic-bezier(.12,.75,.2,1)';
-   const dailyButton=document.createElement('button');dailyButton.type='button';dailyButton.textContent='🎁 بسووڕێنەوە و پاداشت وەربگرە';
-   const dailyStatus=document.createElement('p');dailyStatus.className='small';dailyStatus.textContent='پاداشتی ڕۆژانە چاوەڕێتە!';
-   const nextSpinInfo=document.createElement('p');nextSpinInfo.className='small';nextSpinInfo.style.cssText='color:var(--gold);margin:6px 0 0';
-   const baghdadParts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
-   const baghdadToday=baghdadParts.find(p=>p.type==='year').value+'-'+baghdadParts.find(p=>p.type==='month').value+'-'+baghdadParts.find(p=>p.type==='day').value;
-   nextSpinInfo.textContent='خولی داهاتوو: دوای ١٢ی شەوی ئەمڕۆ';
-   dailyPanel.append(dailyTitle,dailyText,dailyWheel,dailyButton,dailyStatus,nextSpinInfo);content.append(dailyPanel);
-   dailyButton.addEventListener('click',async()=>{
-    dailyButton.disabled=true;dailyStatus.textContent='خولەکە دەسووڕێتەوە...';
-    dailyWheel.style.transform='rotate(1440deg)';
-    try{
-     const {data:sessionData,error:sessionError}=await db.auth.getSession();
-     if(sessionError||!sessionData.session)throw new Error('تکایە دووبارە بچۆ ژوورەوە.');
-     const response=await fetch(SUPABASE_URL+'/functions/v1/daily-spin',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+sessionData.session.access_token},body:'{}'});
-     const result=await response.json();
-     if(!response.ok)throw new Error(result.error||'پاداشت وەرنەگیرا.');
-     dailyStatus.textContent='🎉 پیرۆزە! '+Number(result.reward).toLocaleString('en-US')+' دەرھەم بردیتەوە.';
-     amount.textContent=Number(result.balance).toLocaleString('en-US');
-     dailyButton.textContent='✅ پاداشتی ئەمڕۆت وەرگرت';
-     nextSpinInfo.textContent='⏰ خولی داهاتوو: سبەی لە ١٢ی شەو';
-     await loadLedger();
-    }catch(e){
-     dailyStatus.textContent=String(e.message||e);
-     dailyButton.disabled=false;
-     dailyWheel.style.transform='rotate(0deg)';
-    }
-   });
-   const checkDailySpin=async()=>{
-    try{
-     const {data:claimed,error}=await db.from('halo_daily_spins').select('reward_date,reward_amount').eq('user_id',currentUser.id).eq('reward_date',baghdadToday).maybeSingle();
-     if(error)throw error;
-     if(claimed){
-      dailyButton.disabled=true;dailyButton.textContent='✅ پاداشتی ئەمڕۆت وەرگرت';
-      dailyStatus.textContent='🎉 ئەمڕۆ '+Number(claimed.reward_amount).toLocaleString('en-US')+' دەرھەم وەرگرتووە.';
-      nextSpinInfo.textContent='⏰ خولی داهاتوو: سبەی لە ١٢ی شەو';
-     }
-    }catch(e){nextSpinInfo.textContent='نەتوانرا کاتی خولی داهاتوو بخوێندرێتەوە.';}
-   };
-   await checkDailySpin();
    const status=document.createElement('p');status.className='small';status.textContent='باڵانس بار دەکرێت...';content.append(status);
    const refresh=document.createElement('button');refresh.type='button';refresh.className='dark';refresh.textContent='🔄 نوێکردنەوەی باڵانس';content.append(refresh);
    const loadWallet=async()=>{
@@ -3207,6 +3163,14 @@ function openLive(){
       <p id="konkanRoomStatus" class="konkan-muted" aria-live="polite">تۆ و یاریزانی ٤ هاوتیمین؛ یاریزانی ٢ و ٣ تیمی بەرامبەرن. کۆدی ژوور بۆ بانگهێشت دروست بکە.</p>
       <p class="konkan-muted">تێبینی: لەم قۆناغەدا کۆدی بانگهێشت لەسەر ئەم ئامێرە دروست دەبێت؛ پەیوەندیی ئۆنلاین و هاوکاتکردنی یاریزانان هێشتا جێبەجێ نەکراوە.</p>
     </div>
+    <div class="konkan-panel" id="konkanDailySpinPanel" style="text-align:center;border-color:#d6ad55;background:linear-gradient(145deg,#302314,#171611)">
+      <h3>🎡 خولی شانسیی ڕۆژانەی کۆنکان</h3>
+      <p class="konkan-muted">تەنها لە بەشی کۆنکان؛ هەر ڕۆژ جارێک. پاداشت: ٥، ١٠، ٢٠، ٥٠ یان ١٠٠ دەرھەمی مەجازی.</p>
+      <div id="konkanDailyWheel" style="font-size:64px;line-height:1.4;margin:8px 0;transition:transform 1.8s cubic-bezier(.12,.75,.2,1)">🎡</div>
+      <button type="button" id="konkanDailySpinButton">🎁 بسووڕێنەوە و پاداشت وەربگرە</button>
+      <p class="konkan-muted" id="konkanDailySpinStatus" aria-live="polite">پاداشتی کۆنکان چاوەڕێتە!</p>
+      <p class="konkan-muted" id="konkanDailySpinNext" style="color:#f4ca70">هەر ڕۆژ دوای ١٢ی شەوی هەولێر نوێ دەبێتەوە.</p>
+    </div>
     <div class="konkan-panel">
       <h3>📻 ڕادیۆی گۆرانیی کۆنی کوردی</h3>
       <p class="konkan-muted">فایلی گۆرانییەک کە مۆڵەتی بەکارهێنانی هەیە لە مۆبایلەکەت هەڵبژێرە و لێی گوێ بگرە. بۆ ڕادیۆی هاوبەش، دەبێت کتێبخانەی گۆرانییە مۆڵەتپێدراوەکان ئامادە بکرێت.</p>
@@ -3217,6 +3181,63 @@ function openLive(){
     <button type="button" style="width:100%;margin-top:14px" onclick="switchAppTab('home')">↩ گەڕانەوە بۆ سەرەکی</button>
   `;
   nav.parentNode.insertBefore(page,nav);
+
+  // Daily reward belongs to YARI KONKAN only, while the wallet keeps its transaction history.
+  const konkanSpinButton=document.getElementById('konkanDailySpinButton');
+  const konkanSpinWheel=document.getElementById('konkanDailyWheel');
+  const konkanSpinStatus=document.getElementById('konkanDailySpinStatus');
+  const konkanSpinNext=document.getElementById('konkanDailySpinNext');
+  const getBaghdadDate=()=>{
+    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+    return parts.find(p=>p.type==='year').value+'-'+parts.find(p=>p.type==='month').value+'-'+parts.find(p=>p.type==='day').value;
+  };
+  const refreshKonkanSpin=async()=>{
+    try{
+      const {data:sessionData,error:sessionError}=await db.auth.getSession();
+      if(sessionError||!sessionData.session){
+        konkanSpinStatus.textContent='بۆ وەرگرتنی پاداشت، سەرەتا بچۆ ژوورەوە.';
+        return;
+      }
+      const {data:claimed,error}=await db.from('halo_daily_spins')
+        .select('reward_date,reward_amount')
+        .eq('user_id',sessionData.session.user.id)
+        .eq('reward_date',getBaghdadDate())
+        .maybeSingle();
+      if(error)throw error;
+      if(claimed){
+        konkanSpinButton.disabled=true;
+        konkanSpinButton.textContent='✅ پاداشتی ئەمڕۆت وەرگرت';
+        konkanSpinStatus.textContent='🎉 ئەمڕۆ '+Number(claimed.reward_amount).toLocaleString('en-US')+' دەرھەم لە کۆنکان بردووەتەوە.';
+        konkanSpinNext.textContent='⏰ خولی داهاتوو: سبەی دوای ١٢ی شەوی هەولێر';
+      }
+    }catch(e){
+      konkanSpinStatus.textContent='نەتوانرا دۆخی خولی ڕۆژانە بخوێندرێتەوە.';
+    }
+  };
+  konkanSpinButton?.addEventListener('click',async()=>{
+    konkanSpinButton.disabled=true;
+    konkanSpinStatus.textContent='خولی شانسی کۆنکان دەسووڕێتەوە...';
+    konkanSpinWheel.style.transform='rotate(1440deg)';
+    try{
+      const {data:sessionData,error:sessionError}=await db.auth.getSession();
+      if(sessionError||!sessionData.session)throw new Error('تکایە سەرەتا بچۆ ژوورەوە.');
+      const response=await fetch(SUPABASE_URL+'/functions/v1/daily-spin',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+sessionData.session.access_token},
+        body:'{}'
+      });
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||'پاداشت وەرنەگیرا.');
+      konkanSpinStatus.textContent='🎉 پیرۆزە! '+Number(result.reward).toLocaleString('en-US')+' دەرھەم لە کۆنکان بردیتەوە.';
+      konkanSpinButton.textContent='✅ پاداشتی ئەمڕۆت وەرگرت';
+      konkanSpinNext.textContent='⏰ خولی داهاتوو: سبەی دوای ١٢ی شەوی هەولێر';
+    }catch(e){
+      konkanSpinStatus.textContent=String(e.message||e);
+      konkanSpinButton.disabled=false;
+      konkanSpinWheel.style.transform='rotate(0deg)';
+    }
+  });
+  refreshKonkanSpin();
 
   const previousSwitch=window.switchAppTab;
   window.switchAppTab=function(tab){
