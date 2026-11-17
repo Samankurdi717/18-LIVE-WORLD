@@ -59,14 +59,21 @@
     </div>
     <div id="khRoomCodeDisplay" class="kh-code kh-hidden"></div>
     <div class="kh-board" aria-label="شوێنی چوار یاریزان">
-      <div class="kh-seat a top" id="khSeat2"><strong>شوێنی ٢</strong><small>تیمی بەرامبەر</small></div>
-      <div class="kh-seat b left" id="khSeat3"><strong>شوێنی ٣</strong><small>تیمی بەرامبەر</small></div>
+      <div class="kh-seat a top" id="khSeat3"><strong>شوێنی ٣</strong><small>تیمی A • بەرامبەر تۆ</small></div>
+      <div class="kh-seat b left" id="khSeat4"><strong>شوێنی ٤</strong><small>تیمی B</small></div>
       <div class="kh-center">🀄<br><strong>کۆنکانی هەولێر</strong><br><small id="khPlayerCount">٠ / ٤ یاریزان</small></div>
-      <div class="kh-seat b right" id="khSeat4"><strong>شوێنی ٤</strong><small>هاوتیمی تۆ</small></div>
+      <div class="kh-seat b right" id="khSeat2"><strong>شوێنی ٢</strong><small>تیمی B</small></div>
       <div class="kh-seat a bottom" id="khSeat1"><strong>شوێنی ١</strong><small>تۆ / سەرکردە</small></div>
     </div>
     <div id="khLobbyStatus" class="kh-status" aria-live="polite">یاریی خێرا هەڵبژێرە یان ژوورێکی تایبەت دروست بکە. بۆ چوونە یاری پێویستە بچیتە ژوورەوە.</div>
+    <button type="button" class="kh-hidden" id="khStartRound">🀄 دەستپێکردن و دابەشکردنی کاشییەکان</button>
     <button type="button" class="secondary kh-hidden" id="khRefreshRoom">🔄 نوێکردنەوەی ژوور</button>
+    <div id="khGameBoard" class="kh-hidden" style="margin-top:14px;padding:13px;border:1px solid #b78b3d;border-radius:16px;background:#17130e">
+      <h3 style="margin:0 0 8px;color:#f3cc78;text-align:center">مێزی یاری • کاپ و دەستی تۆ</h3>
+      <div id="khRoundInfo" class="kh-status"></div>
+      <div id="khYourHand" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center"></div>
+      <p class="kh-sub">کاشییەکانی دەستی تۆ تەنها بۆ خۆت دەردەکەون؛ دەستی یاریزانانی تر شاراوەیە.</p>
+    </div>
   `;
   const daily = document.getElementById('konkanDailySpinPanel');
   if (daily && daily.parentNode === page) page.insertBefore(panel, daily);
@@ -75,6 +82,8 @@
   const $ = id => document.getElementById(id);
   let activeRoomId = null;
   let activeRoomCode = null;
+  let activeUserId = null;
+  let activeHostId = null;
   let realtimeChannel = null;
   let busy = false;
 
@@ -102,7 +111,7 @@
       if (p) {
         const me = window.khKonkanUserId && p.user_id === window.khKonkanUserId;
         el.innerHTML = '<strong>' + (me ? 'تۆ' : 'یاریزانی ' + n) + '</strong><small>' +
-          (n === 1 ? 'تیمی A • سەرکردە' : n === 4 ? 'تیمی A • هاوتیم' : n === 2 ? 'تیمی B' : 'تیمی B') +
+          (n === 1 ? 'تیمی A • سەرکردە' : n === 3 ? 'تیمی A • بەرامبەر' : 'تیمی B') +
           '</small><span style="font-size:18px">👤</span>';
       } else {
         el.innerHTML = '<strong>شوێنی ' + n + '</strong><small>' + (n === 1 ? 'سەرکردە' : n === 4 ? 'هاوتیمی شوێنی ١' : 'چاوەڕێی یاریزان') + '</small><span style="font-size:18px;opacity:.45">＋</span>';
@@ -116,18 +125,49 @@
       .select('user_id,seat_no,team_no,joined_at').eq('room_id', activeRoomId).order('seat_no');
     if (error) throw error;
     paintSeats(players || []);
-    if ((players || []).length === 4) {
-      status('✅ چوار یاریزانی ڕاستەقینە کۆبوونەتەوە. تیمی A: شوێنی ١ و ٤؛ تیمی B: شوێنی ٢ و ٣. ئامادەی قۆناغی دابەشکردنی کاشییەکان.');
+    const {data: roomMeta, error: roomError} = await db.from('halo_konkan_rooms').select('host_id,status').eq('id',activeRoomId).single();
+    if (roomError) throw roomError;
+    activeHostId = roomMeta.host_id;
+    const full = (players || []).length === 4;
+    $('khStartRound').classList.toggle('kh-hidden', !(full && activeHostId === activeUserId && roomMeta.status === 'waiting'));
+    if (full) {
+      status(activeHostId === activeUserId ? '✅ چوار یاریزان ئامادەن. تیمی A: شوێنی ١ و ٣؛ تیمی B: شوێنی ٢ و ٤. دوگمەی دەستپێکردن دابگرە.' : '✅ چوار یاریزان کۆبوونەتەوە. چاوەڕێی دەستپێکردنی سەرکردەی ژوورەکە بە.');
     } else {
       status('چاوەڕێی یاریزانانی تر... ' + (players || []).length + ' لە ٤ شوێن پڕە. هیچ بۆتێک زیاد ناکرێت.');
     }
   }
+  async function loadRound() {
+    if (!activeRoomId || !activeUserId) return;
+    const {data: rounds,error: roundError}=await db.from('halo_konkan_rounds')
+      .select('id,cap,joker_identity,captain_id,current_turn_id,draw_count,status,created_at')
+      .eq('room_id',activeRoomId).order('created_at',{ascending:false}).limit(1);
+    if(roundError) throw roundError;
+    if(!rounds || !rounds.length) return;
+    const round=rounds[0];
+    const {data: handRow,error: handError}=await db.from('halo_konkan_round_hands')
+      .select('tiles').eq('round_id',round.id).eq('user_id',activeUserId).single();
+    if(handError) throw handError;
+    const cap=round.cap;
+    const joker=round.joker_identity;
+    $('khRoundInfo').textContent='کاپ: '+cap.number+' / '+cap.color+' • ناسنامەی جوکەر: '+joker.number+' / '+joker.color+' • کاشیی ماوە: '+round.draw_count+' • '+(round.captain_id===activeUserId?'تۆ سەرکردەیت':'سەرکردەی ئەم دەورە یاریزانێکی ترە');
+    $('khYourHand').innerHTML=(handRow.tiles||[]).map(tile=>{
+      const label=tile.kind==='joker'?'🃏':tile.kind==='antique'?'🏛️':String(tile.number);
+      const color=tile.kind==='number'?tile.color:tile.kind;
+      return '<span style="min-width:31px;padding:9px 5px;border-radius:8px;background:linear-gradient(160deg,#fff7df,#d8c49b);border:1px solid #a88d5c;color:'+(color==='red'?'#c32626':color==='blue'?'#1767b3':color==='yellow'?'#987000':'#222')+';font-weight:900;text-align:center">'+label+'</span>';
+    }).join('');
+    $('khGameBoard').classList.remove('kh-hidden');
+    $('khStartRound').classList.add('kh-hidden');
+  }
+
   async function watchRoom(roomId) {
     activeRoomId = roomId;
     if (realtimeChannel) await db.removeChannel(realtimeChannel);
     realtimeChannel = db.channel('kh-konkan-room-' + roomId)
       .on('postgres_changes',{event:'*',schema:'public',table:'halo_konkan_room_players',filter:'room_id=eq.'+roomId},() => {
         refreshRoom().catch(showError);
+      })
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'halo_konkan_rounds',filter:'room_id=eq.'+roomId},() => {
+        loadRound().catch(showError);
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'halo_konkan_rooms',filter:'id=eq.'+roomId},() => {
         refreshRoom().catch(showError);
@@ -136,6 +176,7 @@
     $('khRoomCodeDisplay').textContent = activeRoomCode || '';
     $('khRoomCodeDisplay').classList.toggle('kh-hidden', !activeRoomCode);
     await refreshRoom();
+    await loadRound();
   }
   async function enterRoom(rpcName, args) {
     if (busy) return;
@@ -143,6 +184,7 @@
     try {
       const user = await getUser();
       window.khKonkanUserId = user.id;
+      activeUserId = user.id;
       const { data, error } = await db.rpc(rpcName, args || {});
       if (error) throw error;
       activeRoomId = data.room_id;
@@ -163,6 +205,17 @@
     enterRoom('halo_konkan_join_private_room',{p_code:code});
   });
   $('khRefreshRoom').addEventListener('click', () => refreshRoom().catch(showError));
+  $('khStartRound').addEventListener('click', async () => {
+    if (!activeRoomId || busy) return;
+    setBusy(true);
+    try {
+      const {data,error}=await db.rpc('halo_konkan_start_round',{p_room_id:activeRoomId});
+      if(error) throw error;
+      await loadRound();
+      status('🎉 کاشییەکان بە سەرکەوتوویی لە سێرڤەری یاری دابەش کران.');
+    } catch(error) { showError(error); }
+    finally { setBusy(false); }
+  });
   $('khRoomCodeInput').addEventListener('input', function () {
     this.value = this.value.replace(/[^a-z0-9]/gi,'').toUpperCase().slice(0,6);
   });
