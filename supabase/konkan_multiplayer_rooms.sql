@@ -43,7 +43,7 @@ create policy "KonKan players can read room members"
 on public.halo_konkan_room_players for select to authenticated
 using (exists (
   select 1 from public.halo_konkan_room_players mine
-  where mine.room_id = room_id and mine.user_id = auth.uid()
+  where mine.room_id = halo_konkan_room_players.room_id and mine.user_id = auth.uid()
 ));
 
 create or replace function public.halo_konkan_make_code()
@@ -51,7 +51,7 @@ returns text language plpgsql volatile set search_path=public as $$
 declare v_code text;
 begin
   loop
-    v_code := upper(substr(encode(gen_random_bytes(5),'hex'),1,6));
+    v_code := upper(substr(md5(random()::text || clock_timestamp()::text),1,6));
     exit when not exists (select 1 from public.halo_konkan_rooms where room_code=v_code);
   end loop;
   return v_code;
@@ -109,7 +109,6 @@ begin
   select r.* into v_room
     from public.halo_konkan_rooms r
    where r.mode='quick' and r.status='waiting'
-     and exists(select 1 from public.halo_konkan_room_players p where p.room_id=r.id and p.user_id<>v_user)
      and not exists(select 1 from public.halo_konkan_room_players p where p.room_id=r.id and p.user_id=v_user)
      and (select count(*) from public.halo_konkan_room_players p where p.room_id=r.id)<4
    order by r.created_at
