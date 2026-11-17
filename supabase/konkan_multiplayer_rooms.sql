@@ -242,6 +242,7 @@ declare
   v_i integer;
   v_j integer;
   v_len integer;
+  v_cap_index integer;
 begin
   if v_user is null then raise exception 'تکایە بچۆ ژوورەوە.'; end if;
   select * into v_room from public.halo_konkan_rooms where id=p_room_id for update;
@@ -266,9 +267,11 @@ begin
     select jsonb_build_object('id','antique-1','kind','antique','value',null)
   ) x;
 
-  v_len:=jsonb_array_length(v_deck);
-  v_cap:=v_deck->(v_len-1);
-  v_deck:=v_deck-(v_len-1);
+  select (e.ordinality-1)::integer into v_cap_index
+  from jsonb_array_elements(v_deck) with ordinality as e(value,ordinality)
+  where e.value->>'kind'='number' order by e.ordinality desc limit 1;
+  v_cap:=v_deck->v_cap_index;
+  v_deck:=v_deck-v_cap_index;
   v_joker_color:=v_cap->>'color';
   if v_joker_color is null then raise exception 'کاپی نادروست هەڵبژێردرا.'; end if;
   v_joker_number:=case when (v_cap->>'number')::integer=1 then 13 else (v_cap->>'number')::integer-1 end;
