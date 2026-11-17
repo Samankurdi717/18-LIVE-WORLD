@@ -30,21 +30,23 @@ create index if not exists halo_konkan_players_user_idx
 alter table public.halo_konkan_rooms enable row level security;
 alter table public.halo_konkan_room_players enable row level security;
 
+create or replace function public.halo_konkan_is_member(p_room_id uuid)
+returns boolean language sql stable security definer set search_path=public,auth as $
+  select exists(
+    select 1 from public.halo_konkan_room_players p
+    where p.room_id=p_room_id and p.user_id=auth.uid()
+  );
+$;
+
 drop policy if exists "KonKan room members can read room" on public.halo_konkan_rooms;
 create policy "KonKan room members can read room"
 on public.halo_konkan_rooms for select to authenticated
-using (exists (
-  select 1 from public.halo_konkan_room_players p
-  where p.room_id = id and p.user_id = auth.uid()
-));
+using (public.halo_konkan_is_member(id));
 
 drop policy if exists "KonKan players can read room members" on public.halo_konkan_room_players;
 create policy "KonKan players can read room members"
 on public.halo_konkan_room_players for select to authenticated
-using (exists (
-  select 1 from public.halo_konkan_room_players mine
-  where mine.room_id = halo_konkan_room_players.room_id and mine.user_id = auth.uid()
-));
+using (public.halo_konkan_is_member(room_id));
 
 create or replace function public.halo_konkan_make_code()
 returns text language plpgsql volatile set search_path=public as $$
@@ -145,6 +147,8 @@ end;
 $$;
 
 revoke all on function public.halo_konkan_make_code() from public;
+revoke all on function public.halo_konkan_is_member(uuid) from public;
+grant execute on function public.halo_konkan_is_member(uuid) to authenticated;
 revoke all on function public.halo_konkan_create_private_room() from public;
 revoke all on function public.halo_konkan_join_private_room(text) from public;
 revoke all on function public.halo_konkan_quick_match() from public;
