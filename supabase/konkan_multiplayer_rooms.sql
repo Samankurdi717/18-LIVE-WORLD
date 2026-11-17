@@ -114,7 +114,7 @@ begin
      and not exists(select 1 from public.halo_konkan_room_players p where p.room_id=r.id and p.user_id=v_user)
      and (select count(*) from public.halo_konkan_room_players p where p.room_id=r.id)<4
    order by r.created_at
-   for update skip locked limit 1;
+   limit 1 for update skip locked;
   if not found then
     insert into public.halo_konkan_rooms(room_code,mode,host_id)
     values(public.halo_konkan_make_code(),'quick',v_user) returning * into v_room;
