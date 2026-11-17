@@ -36,14 +36,14 @@
  page.innerHTML=`
   <div class="khq-hero"><div>KURD HALO • 🌍</div><h1>پێشبڕکێی پرسیار و وەڵام</h1><p class="khq-muted">زمانەکەت هەڵبژێرە، پاشان یاری دەست پێبکە</p></div>
   <div class="khq-panel" id="khqSetup">
-   <h3>🌐 زمانی پرسیار و دەنگ</h3>
+   <h3>🌐 زمانی نووسینی پرسیار</h3>
    <div class="khq-lang-grid">
     <button class="khq-lang selected" data-lang="ku">کوردی</button><button class="khq-lang" data-lang="fa">فارسی</button>
     <button class="khq-lang" data-lang="ar">العربية</button><button class="khq-lang" data-lang="en">English</button>
    </div>
-   <p class="khq-muted">زمانی هەڵبژێردراو تەنها بۆ خۆتە؛ بەشداربووانی تر دەتوانن زمانی جیاواز هەڵبژێرن.</p>
+   <p class="khq-muted">زمانی هەڵبژێردراو تەنها بۆ خۆتە؛ بەشداربووانی تر دەتوانن زمانی جیاواز هەڵبژێرن. هەموو پرسیار و وەڵامەکان تەنها بە نووسینن.</p>
    <button class="khq-btn primary" id="khqStart">▶ یاریی تاقیکردنەوە بە تەنیا</button><hr><h3>👥 پێشبڕکێی گرووپی</h3><input id="khqNickname" type="text" maxlength="40" placeholder="ناوی یاریزان"><button class="khq-btn" id="khqCreateRoom">➕ دروستکردنی ژووری پێشبڕکێ</button><input id="khqRoomCode" type="text" maxlength="6" placeholder="کۆدی ژوور"><button class="khq-btn" id="khqJoinRoom">🔑 چوونە ناو ژوور</button><div class="khq-muted" id="khqRoomStatus" aria-live="polite"></div><div id="khqLobby" class="hidden"><h3 id="khqRoomTitle"></h3><div id="khqPlayers" class="khq-muted"></div><button class="khq-btn primary hidden" id="khqHostStart">🚦 دەستپێکردنی پێشبڕکێ</button></div>
-   <p class="khq-muted" id="khqVoiceNote" aria-live="polite">پرسیار و هەڵبژاردەکان بە دەنگ دەخوێندرێنەوە ئەگەر مۆبایلەکەت پشتگیری زمانی هەڵبژێردراو بکات.</p>
+   <p class="khq-muted" id="khqVoiceNote" aria-live="polite">هیچ دەنگێک یان خوێندنەوەیەکی خۆکار نییە؛ هەموو شتێک تەنها بە نووسین پیشان دەدرێت.</p>
   </div>
   <div class="khq-panel hidden" id="khqGame">
    <div class="khq-muted" id="khqCategory"></div><div class="khq-muted" id="khqProgress"></div>
@@ -72,17 +72,7 @@
  const langs={ku:{voice:'ku-IQ',dir:'rtl'},fa:{voice:'fa-IR',dir:'rtl'},ar:{voice:'ar-SA',dir:'rtl'},en:{voice:'en-US',dir:'ltr'}};
  let lang='ku',deck=[],index=0,score=0,answered=false,timer=null,seconds=12;
  const $=id=>document.getElementById(id);
- function speak(text){
-  if(!('speechSynthesis'in window)){ $('khqVoiceNote').textContent='خوێندنەوەی دەنگ لەم وێبگەڕەدا بەردەست نییە؛ پرسیارەکان بە نووسین دەرکەون.';return; }
-  speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);u.lang=langs[lang].voice;u.rate=0.92;
-  const voices=speechSynthesis.getVoices();
-  const prefix=lang==='ku'?'ku':lang;
-  const v=voices.find(x=>x.lang.toLowerCase().startsWith(prefix));
-  if(v)u.voice=v;
-  else if(lang==='ku')$('khqVoiceNote').textContent='دەنگی کوردی لە مۆبایلەکەتدا نەدۆزرایەوە؛ پرسیارەکە بە نووسینیش پیشان دەدرێت.';
-  speechSynthesis.speak(u);
- }
+ function speak(text){ return; }
  document.querySelectorAll('.khq-lang').forEach(b=>b.addEventListener('click',()=>{lang=b.dataset.lang;document.querySelectorAll('.khq-lang').forEach(x=>x.classList.toggle('selected',x===b));page.dir=langs[lang].dir;}));
  function mix(a){return a.map(x=>({x,r:Math.random()})).sort((a,b)=>a.r-b.r).map(o=>o.x);}
  function start(){clearInterval(timer);score=0;index=0;deck=mix(bank);$('khqSetup').classList.add('hidden');$('khqResult').classList.add('hidden');$('khqGame').classList.remove('hidden');render();}
