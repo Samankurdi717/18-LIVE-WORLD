@@ -3166,7 +3166,18 @@ function openLive(){
     <div class="konkan-panel" id="konkanDailySpinPanel" style="text-align:center;border-color:#d6ad55;background:linear-gradient(145deg,#302314,#171611)">
       <h3>🎡 خولی شانسیی ڕۆژانەی کۆنکان</h3>
       <p class="konkan-muted">تەنها لە بەشی کۆنکان؛ هەر ڕۆژ جارێک. پاداشت: ٥، ١٠، ٢٠، ٥٠ یان ١٠٠ دەرھەمی مەجازی.</p>
-      <div id="konkanDailyWheel" style="font-size:64px;line-height:1.4;margin:8px 0;transition:transform 1.8s cubic-bezier(.12,.75,.2,1)">🎡</div>
+      <div style="position:relative;width:260px;height:260px;max-width:88vw;margin:14px auto 18px">
+        <div style="position:absolute;z-index:2;top:-7px;left:50%;transform:translateX(-50%);font-size:30px;line-height:1">🔻</div>
+        <div id="konkanDailyWheel" style="width:100%;height:100%;border-radius:50%;overflow:hidden;border:5px solid #f4ca70;box-shadow:0 0 0 4px #5a421e,0 8px 22px #0009;transition:transform 1.8s cubic-bezier(.12,.75,.2,1);background:conic-gradient(#a85d22 0deg 18deg,#f4ca70 18deg 36deg,#28745c 36deg 54deg,#b83e36 54deg 72deg,#a85d22 72deg 90deg,#f4ca70 90deg 108deg,#28745c 108deg 126deg,#b83e36 126deg 144deg,#a85d22 144deg 162deg,#f4ca70 162deg 180deg,#28745c 180deg 198deg,#b83e36 198deg 216deg,#a85d22 216deg 234deg,#f4ca70 234deg 252deg,#28745c 252deg 270deg,#b83e36 270deg 288deg,#a85d22 288deg 306deg,#f4ca70 306deg 324deg,#28745c 324deg 342deg,#b83e36 342deg 360deg);position:relative">
+          <div style="position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;align-items:center;justify-items:center;pointer-events:none">
+            <span style="font-size:25px;font-weight:900;color:#fff;text-shadow:0 2px 4px #000;transform:translate(12px,12px)">٥</span>
+            <span style="font-size:25px;font-weight:900;color:#fff;text-shadow:0 2px 4px #000;transform:translate(-12px,12px)">١٠</span>
+            <span style="font-size:25px;font-weight:900;color:#fff;text-shadow:0 2px 4px #000;transform:translate(12px,-12px)">٢٠</span>
+            <span style="font-size:25px;font-weight:900;color:#fff;text-shadow:0 2px 4px #000;transform:translate(-12px,-12px)">٥٠</span>
+          </div>
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:50%;background:radial-gradient(circle,#fff2b5,#b67a25);border:4px solid #fff0bd;display:flex;align-items:center;justify-content:center;color:#38220b;font-weight:900;font-size:18px;box-shadow:0 2px 8px #0008">١٠٠</div>
+        </div>
+      </div>
       <button type="button" id="konkanDailySpinButton">🎁 بسووڕێنەوە و پاداشت وەربگرە</button>
       <p class="konkan-muted" id="konkanDailySpinStatus" aria-live="polite">پاداشتی کۆنکان چاوەڕێتە!</p>
       <p class="konkan-muted" id="konkanDailySpinNext" style="color:#f4ca70">هەر ڕۆژ دوای ١٢ی شەوی هەولێر نوێ دەبێتەوە.</p>
