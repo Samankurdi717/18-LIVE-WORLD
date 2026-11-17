@@ -1435,7 +1435,11 @@ async function openProfileFeature(key){
    const dailyWheel=document.createElement('div');dailyWheel.textContent='🎡';dailyWheel.style.cssText='font-size:64px;line-height:1.4;margin:6px 0;transition:transform 1.8s cubic-bezier(.12,.75,.2,1)';
    const dailyButton=document.createElement('button');dailyButton.type='button';dailyButton.textContent='🎁 بسووڕێنەوە و پاداشت وەربگرە';
    const dailyStatus=document.createElement('p');dailyStatus.className='small';dailyStatus.textContent='پاداشتی ڕۆژانە چاوەڕێتە!';
-   dailyPanel.append(dailyTitle,dailyText,dailyWheel,dailyButton,dailyStatus);content.append(dailyPanel);
+   const nextSpinInfo=document.createElement('p');nextSpinInfo.className='small';nextSpinInfo.style.cssText='color:var(--gold);margin:6px 0 0';
+   const baghdadParts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+   const baghdadToday=baghdadParts.find(p=>p.type==='year').value+'-'+baghdadParts.find(p=>p.type==='month').value+'-'+baghdadParts.find(p=>p.type==='day').value;
+   nextSpinInfo.textContent='خولی داهاتوو: دوای ١٢ی شەوی ئەمڕۆ';
+   dailyPanel.append(dailyTitle,dailyText,dailyWheel,dailyButton,dailyStatus,nextSpinInfo);content.append(dailyPanel);
    dailyButton.addEventListener('click',async()=>{
     dailyButton.disabled=true;dailyStatus.textContent='خولەکە دەسووڕێتەوە...';
     dailyWheel.style.transform='rotate(1440deg)';
@@ -1448,12 +1452,26 @@ async function openProfileFeature(key){
      dailyStatus.textContent='🎉 پیرۆزە! '+Number(result.reward).toLocaleString('en-US')+' دەرھەم بردیتەوە.';
      amount.textContent=Number(result.balance).toLocaleString('en-US');
      dailyButton.textContent='✅ پاداشتی ئەمڕۆت وەرگرت';
+     nextSpinInfo.textContent='⏰ خولی داهاتوو: سبەی لە ١٢ی شەو';
+     await loadLedger();
     }catch(e){
      dailyStatus.textContent=String(e.message||e);
      dailyButton.disabled=false;
      dailyWheel.style.transform='rotate(0deg)';
     }
    });
+   const checkDailySpin=async()=>{
+    try{
+     const {data:claimed,error}=await db.from('halo_daily_spins').select('reward_date,reward_amount').eq('user_id',currentUser.id).eq('reward_date',baghdadToday).maybeSingle();
+     if(error)throw error;
+     if(claimed){
+      dailyButton.disabled=true;dailyButton.textContent='✅ پاداشتی ئەمڕۆت وەرگرت';
+      dailyStatus.textContent='🎉 ئەمڕۆ '+Number(claimed.reward_amount).toLocaleString('en-US')+' دەرھەم وەرگرتووە.';
+      nextSpinInfo.textContent='⏰ خولی داهاتوو: سبەی لە ١٢ی شەو';
+     }
+    }catch(e){nextSpinInfo.textContent='نەتوانرا کاتی خولی داهاتوو بخوێندرێتەوە.';}
+   };
+   await checkDailySpin();
    const status=document.createElement('p');status.className='small';status.textContent='باڵانس بار دەکرێت...';content.append(status);
    const refresh=document.createElement('button');refresh.type='button';refresh.className='dark';refresh.textContent='🔄 نوێکردنەوەی باڵانس';content.append(refresh);
    const loadWallet=async()=>{
@@ -1493,7 +1511,7 @@ async function openProfileFeature(key){
      if(error)throw error;
      if(!entries||!entries.length){historyStatus.textContent='هێشتا هیچ جووڵەیەکی درهەم تۆمار نەکراوە.';return;}
      historyStatus.textContent='دوایین '+entries.length+' جووڵە';
-     const labels={game_reward:'پاداشتی یاری',purchase:'کڕینی درهەم',spend:'خەرجکردن',refund:'گەڕاندنەوەی پارە',admin_adjustment:'ڕێکخستنی هەژمار'};
+     const labels={game_reward:'پاداشتی یاری',daily_reward:'پاداشتی خولی شانسی',purchase:'کڕینی درهەم',spend:'خەرجکردن',refund:'گەڕاندنەوەی پارە',admin_adjustment:'ڕێکخستنی هەژمار'};
      entries.forEach(entry=>{
       const row=document.createElement('div');
       row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:10px';
