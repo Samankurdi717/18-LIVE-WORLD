@@ -70,12 +70,33 @@
  {cat:'قارەی ئەمریکا / قاره آمریکا / The Americas',correct:2,ku:{q:'ڕووباری ئەمازۆن بە زۆری لە کام وڵاتدا دەڕوات؟',a:['پێرو','کۆلۆمبیا','بەرازیل','چیلی']},fa:{q:'رود آمازون بیشتر در کدام کشور جریان دارد؟',a:['پرو','کلمبیا','برزیل','شیلی']},ar:{q:'في أي دولة يجري معظم نهر الأمازون؟',a:['بيرو','كولومبيا','البرازيل','تشيلي']},en:{q:'In which country does most of the Amazon River flow?',a:['Peru','Colombia','Brazil','Chile']}}
  ];
  const langs={ku:{voice:'ku-IQ',dir:'rtl'},fa:{voice:'fa-IR',dir:'rtl'},ar:{voice:'ar-SA',dir:'rtl'},en:{voice:'en-US',dir:'ltr'}};
- let lang='ku',deck=[],index=0,score=0,answered=false,timer=null,seconds=12;
+ let lang='ku',deck=[],index=0,score=0,answered=false,timer=null,seconds=12,questionBank=bank;
  const $=id=>document.getElementById(id);
  function speak(text){ return; }
  document.querySelectorAll('.khq-lang').forEach(b=>b.addEventListener('click',()=>{lang=b.dataset.lang;document.querySelectorAll('.khq-lang').forEach(x=>x.classList.toggle('selected',x===b));page.dir=langs[lang].dir;}));
  function mix(a){return a.map(x=>({x,r:Math.random()})).sort((a,b)=>a.r-b.r).map(o=>o.x);}
- function start(){clearInterval(timer);score=0;index=0;deck=mix(bank);$('khqSetup').classList.add('hidden');$('khqResult').classList.add('hidden');$('khqGame').classList.remove('hidden');render();}
+ async function start(){
+  clearInterval(timer);score=0;index=0;questionBank=bank;
+  if(typeof db!=='undefined' && db && currentUser){
+   try{
+    const {data,error}=await db.from('kh_quiz_bank')
+      .select('id,category,translations,correct_option')
+      .eq('status','published');
+    if(!error && Array.isArray(data) && data.length){
+     questionBank=data.map(row=>({
+      id:row.id,cat:row.category,correct:Number(row.correct_option),
+      ku:row.translations.ku,fa:row.translations.fa,
+      ar:row.translations.ar,en:row.translations.en
+     })).filter(item=>['ku','fa','ar','en'].every(k=>
+      item[k] && typeof item[k].q==='string' && Array.isArray(item[k].a) && item[k].a.length===4
+     ));
+     if(!questionBank.length)questionBank=bank;
+    }
+   }catch(e){console.warn('KURD HALO question bank fallback:',e);}
+  }
+  deck=mix(questionBank);
+  $('khqSetup').classList.add('hidden');$('khqResult').classList.add('hidden');$('khqGame').classList.remove('hidden');render();
+ }
  function render(){
   clearInterval(timer);answered=false;seconds=12;
   const item=deck[index],t=item[lang],opts=t.a.map((label,i)=>({label,correct:i===item.correct}));
