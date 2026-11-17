@@ -42,7 +42,7 @@
     <button class="khq-lang" data-lang="ar">العربية</button><button class="khq-lang" data-lang="en">English</button>
    </div>
    <p class="khq-muted">زمانی هەڵبژێردراو تەنها بۆ خۆتە؛ بەشداربووانی تر دەتوانن زمانی جیاواز هەڵبژێرن.</p>
-   <button class="khq-btn primary" id="khqStart">▶ دەستپێکردنی یاری</button>
+   <button class="khq-btn primary" id="khqStart">▶ یاریی تاقیکردنەوە بە تەنیا</button><hr><h3>👥 پێشبڕکێی گرووپی</h3><input id="khqNickname" type="text" maxlength="40" placeholder="ناوی یاریزان"><button class="khq-btn" id="khqCreateRoom">➕ دروستکردنی ژووری پێشبڕکێ</button><input id="khqRoomCode" type="text" maxlength="6" placeholder="کۆدی ژوور"><button class="khq-btn" id="khqJoinRoom">🔑 چوونە ناو ژوور</button><div class="khq-muted" id="khqRoomStatus" aria-live="polite"></div><div id="khqLobby" class="hidden"><h3 id="khqRoomTitle"></h3><div id="khqPlayers" class="khq-muted"></div><button class="khq-btn primary hidden" id="khqHostStart">🚦 دەستپێکردنی پێشبڕکێ</button></div>
    <p class="khq-muted" id="khqVoiceNote" aria-live="polite">پرسیار و هەڵبژاردەکان بە دەنگ دەخوێندرێنەوە ئەگەر مۆبایلەکەت پشتگیری زمانی هەڵبژێردراو بکات.</p>
   </div>
   <div class="khq-panel hidden" id="khqGame">
@@ -110,6 +110,114 @@
  }
  function next(){if(!answered)return;if(index<deck.length-1){index++;render();return;}clearInterval(timer);$('khqGame').classList.add('hidden');$('khqResult').classList.remove('hidden');$('khqFinalScore').textContent=score+' / '+(deck.length*10)+' خاڵ';}
  $('khqStart').addEventListener('click',start);$('khqNext').addEventListener('click',next);$('khqAgain').addEventListener('click',start);
+
+ // Multiplayer room: every participant keeps their own display language.
+ let groupRoomId=null,groupRoomCode='',groupHost=false,groupRoom=null,groupPlayers=[],groupChannel=null,groupTicker=null,groupAdvanceTimer=null,groupAnswered=false;
+ function groupName(){try{return ($('khqNickname').value||currentUser?.user_metadata?.first_name||currentUser?.email?.split('@')[0]||'Player').trim().slice(0,40)||'Player';}catch(e){return 'Player';}}
+ function roomStatus(msg){$('khqRoomStatus').textContent=msg;}
+ async function enterRoom(id,code,host){
+  groupRoomId=id;groupRoomCode=code;groupHost=host;
+  $('khqLobby').classList.remove('hidden');$('khqRoomTitle').textContent='ژووری پێشبڕکێ: '+code;
+  $('khqSetup').classList.add('hidden');$('khqGame').classList.add('hidden');$('khqResult').classList.add('hidden');
+  await refreshGroupRoom();
+  if(groupChannel)db.removeChannel(groupChannel);
+  groupChannel=db.channel('khq-room-'+id)
+   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'kh_quiz_rooms',filter:'id=eq.'+id},payload=>{groupRoom=payload.new;onGroupRoomUpdate();})
+   .on('postgres_changes',{event:'*',schema:'public',table:'kh_quiz_players',filter:'room_id=eq.'+id},()=>refreshGroupPlayers())
+   .subscribe();
+ }
+ async function refreshGroupPlayers(){
+  if(!groupRoomId)return;
+  const {data,error}=await db.from('kh_quiz_players').select('user_id,nickname,language,score').eq('room_id',groupRoomId).order('score',{ascending:false});
+  if(error){roomStatus('هەڵە لە خوێندنەوەی یاریزانان: '+error.message);return;}
+  groupPlayers=data||[];
+  $('khqPlayers').innerHTML=groupPlayers.map((p,i)=>'<div>'+(i+1)+'. '+escapeRoomText(p.nickname)+' — '+({ku:'کوردی',fa:'فارسی',ar:'عەرەبی',en:'English'}[p.language]||p.language)+' — ⭐ '+p.score+'</div>').join('');
+  const me=groupPlayers.find(p=>p.user_id===currentUser?.id);
+  if(me)$('khqScore').textContent='⭐ '+me.score+' خاڵ';
+  $('khqHostStart').classList.toggle('hidden',!groupHost||!groupRoom||groupRoom.status!=='waiting');
+  $('khqHostStart').disabled=groupPlayers.length<2;
+ }
+ function escapeRoomText(value){const d=document.createElement('div');d.textContent=value||'';return d.innerHTML;}
+ async function refreshGroupRoom(){
+  if(!groupRoomId)return;
+  const {data,error}=await db.from('kh_quiz_rooms').select('*').eq('id',groupRoomId).single();
+  if(error){roomStatus('هەڵە: '+error.message);return;}
+  groupRoom=data;await refreshGroupPlayers();onGroupRoomUpdate();
+ }
+ async function createGroupRoom(){
+  if(!currentUser){roomStatus('بۆ بەشداری، سەرەتا بچۆ ژوورەوە.');return;}
+  roomStatus('ژووری پێشبڕکێ دروست دەکرێت...');
+  const {data,error}=await db.rpc('kh_quiz_create_room',{p_language:lang,p_nickname:groupName()});
+  if(error){roomStatus('هەڵە: '+error.message+' — پێویستە SQLی پێشبڕکێ لە Supabase جێبەجێ بکرێت.');return;}
+  const row=Array.isArray(data)?data[0]:data;
+  await enterRoom(row.room_id,row.room_code,true);roomStatus('ژوور دروست کرا. کۆدەکە بۆ هاوڕێکانت بنێرە.');
+ }
+ async function joinGroupRoom(){
+  if(!currentUser){roomStatus('بۆ بەشداری، سەرەتا بچۆ ژوورەوە.');return;}
+  const code=$('khqRoomCode').value.trim().toUpperCase();
+  if(!code){roomStatus('کۆدی ژوور بنووسە.');return;}
+  roomStatus('چوونە ناو ژوور...');
+  const {data,error}=await db.rpc('kh_quiz_join_room',{p_code:code,p_language:lang,p_nickname:groupName()});
+  if(error){roomStatus('نەتوانرا بچیتە ژوورەوە: '+error.message);return;}
+  await enterRoom(data,code,false);roomStatus('بە سەرکەوتوویی چوویتە ناو ژوور.');
+ }
+ async function hostStartGroup(){
+  if(!groupRoomId||!groupHost)return;
+  const order=mix(bank.map((_,i)=>i));
+  const {error}=await db.rpc('kh_quiz_start_room',{p_room_id:groupRoomId,p_question_order:order});
+  if(error){roomStatus('نەتوانرا پێشبڕکێ دەست پێبکات: '+error.message);return;}
+  await refreshGroupRoom();
+ }
+ function onGroupRoomUpdate(){
+  if(!groupRoom)return;
+  if(groupRoom.status==='active')renderGroupQuestion();
+  if(groupRoom.status==='finished')showGroupResults();
+  if(groupRoom.status==='waiting')refreshGroupPlayers();
+ }
+ function renderGroupQuestion(){
+  if(!groupRoom||groupRoom.status!=='active')return;
+  clearInterval(groupTicker);clearTimeout(groupAdvanceTimer);
+  $('khqLobby').classList.add('hidden');$('khqSetup').classList.add('hidden');$('khqResult').classList.add('hidden');$('khqGame').classList.remove('hidden');
+  const qid=groupRoom.question_order[groupRoom.question_index],item=bank[qid],t=item[lang];
+  const shuffled=mix(t.a.map((label,original)=>({label,original})));
+  groupAnswered=false;
+  $('khqCategory').textContent=item.cat;$('khqProgress').textContent='پرسیاری '+(groupRoom.question_index+1)+' لە '+groupRoom.question_order.length+' • ژوور '+groupRoomCode;
+  $('khqQuestion').textContent=t.q;$('khqAnswers').innerHTML='';$('khqFeedback').textContent='';$('khqNext').classList.add('hidden');
+  shuffled.forEach(o=>{const b=document.createElement('button');b.className='khq-btn';b.textContent=o.label;b.addEventListener('click',()=>submitGroupAnswer(o.original,b));$('khqAnswers').appendChild(b);});
+  speak(t.q+'. '+shuffled.map((o,i)=>(i+1)+'. '+o.label).join('. '));
+  const started=Date.parse(groupRoom.question_started_at);
+  function tick(){
+   const left=Math.max(0,12-Math.floor((Date.now()-started)/1000));
+   $('khqTimer').textContent=String(left);$('khqBar').firstElementChild.style.width=(left/12*100)+'%';
+   if(left===0){
+    clearInterval(groupTicker);
+    [...$('khqAnswers').children].forEach(b=>{b.disabled=true;});
+    const right=t.a[item.correct];$('khqFeedback').textContent=lang==='en'?'Correct answer: '+right:lang==='fa'?'پاسخ درست: '+right:lang==='ar'?'الإجابة الصحيحة: '+right:'وەڵامی ڕاست: '+right;
+    speak($('khqFeedback').textContent);
+    if(groupHost)groupAdvanceTimer=setTimeout(async()=>{const {error}=await db.rpc('kh_quiz_next_question',{p_room_id:groupRoomId});if(error)roomStatus(error.message);},1800);
+   }
+  }
+  tick();groupTicker=setInterval(tick,250);
+ }
+ async function submitGroupAnswer(original,button){
+  if(groupAnswered)return;groupAnswered=true;
+  [...$('khqAnswers').children].forEach(b=>b.disabled=true);
+  const {data,error}=await db.rpc('kh_quiz_submit_answer',{p_room_id:groupRoomId,p_question_index:groupRoom.question_index,p_selected_option:original});
+  if(error){$('khqFeedback').textContent='وەڵام تۆمار نەکرا: '+error.message;return;}
+  const row=Array.isArray(data)?data[0]:data;
+  $('khqFeedback').textContent=lang==='en'?'Answer submitted':lang==='fa'?'پاسخ ثبت شد':lang==='ar'?'تم تسجيل الإجابة':'وەڵامەکەت تۆمار کرا';
+  await refreshGroupPlayers();
+ }
+ async function showGroupResults(){
+  clearInterval(groupTicker);clearTimeout(groupAdvanceTimer);
+  await refreshGroupPlayers();$('khqGame').classList.add('hidden');$('khqLobby').classList.add('hidden');$('khqResult').classList.remove('hidden');
+  $('khqFinalScore').textContent=groupPlayers.map((p,i)=>(i+1)+'. '+p.nickname+' — '+p.score+' ⭐').join(' | ');
+  $('khqAgain').classList.add('hidden');
+ }
+ $('khqCreateRoom').addEventListener('click',createGroupRoom);
+ $('khqJoinRoom').addEventListener('click',joinGroupRoom);
+ $('khqHostStart').addEventListener('click',hostStartGroup);
+
  const oldSwitch=window.switchAppTab;
  window.switchAppTab=function(tab){
   page.classList.toggle('hidden',tab!=='quiz');
