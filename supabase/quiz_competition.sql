@@ -138,7 +138,7 @@ begin
  insert into public.kh_quiz_answers(room_id,user_id,question_index,selected_option,is_correct,points)
  values(p_room_id,auth.uid(),p_question_index,p_selected_option,v_ok,v_points)
  on conflict(room_id,user_id,question_index) do nothing;
- if not found then
+ if found then
    update public.kh_quiz_players set score=score+v_points where room_id=p_room_id and user_id=auth.uid();
  end if;
  return query select v_ok,v_correct,v_points;
