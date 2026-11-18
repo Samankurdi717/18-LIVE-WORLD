@@ -628,6 +628,24 @@ body.auth-required .bottom-nav{display:none!important}
 .create-menu-option small{font-size:10px;line-height:1.5;color:#c4c2d0;text-align:center}
 .create-menu-cancel{width:100%;margin-top:12px;border:1px solid #ffffff20;border-radius:13px;background:#ffffff0b;color:#fff;padding:11px;font-weight:700}
 @media(min-width:701px){.create-menu-overlay{align-items:center}.create-menu-sheet{border-radius:24px}}
+/* KURD HALO: align hamburger menu with the top feed tabs */
+@media(max-width:700px){
+ .app-header>#feedModeTabs{
+  left:50px!important;right:0!important;width:calc(100% - 50px)!important;
+ }
+ .app-header>#feedModeTabs button{width:25%!important}
+ .app-header>#feedModeTabs button:nth-child(1){left:0!important}
+ .app-header>#feedModeTabs button:nth-child(2){left:25%!important}
+ .app-header>#feedModeTabs button:nth-child(3){left:50%!important}
+ .app-header>#feedModeTabs button:nth-child(4){left:75%!important}
+ .app-header .header-actions{
+  left:5px!important;right:auto!important;top:0!important;
+  width:40px!important;height:42px!important;
+ }
+ .app-header .profile-menu-trigger{
+  width:40px!important;height:40px!important;min-width:40px!important;
+ }
+}
 </style>
 
 <script>self.ModelViewerElement=self.ModelViewerElement||{};self.ModelViewerElement.meshoptDecoderLocation='https://cdn.jsdelivr.net/npm/meshoptimizer/meshopt_decoder.js';</script>
