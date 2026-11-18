@@ -837,7 +837,7 @@ body.auth-required .bottom-nav{display:none!important}
   </details>
   <section id="haloPkPanel" style="margin:12px 0;padding:13px;border:1px solid #f5c96a55;border-radius:16px;background:linear-gradient(135deg,#21182c,#111321);color:white;">
    <h3 style="margin:0 0 8px;color:#f5c96a;">⚔️ KURD HALO — PK Challenge</h3>
-   <p style="font-size:12px;color:#c9c8d8;line-height:1.7;">لە کاتی لایڤدا ناوی هاوڕێک بگەڕێ و بانگهێشتی بکە. بۆ پەسەندکردنی بانگهێشت، بەرامبەرەکەت دەبێت لایڤی خۆی دەست پێکردبێت.</p>
+   <p style="font-size:12px;color:#c9c8d8;line-height:1.7;">لە کاتی لایڤدا ناوی هاوڕێک بگەڕێ و بانگهێشتی بکە. کاتێک بەڵێ هەڵدەبژێرێت، لایڤی خۆی بە خۆکار دەست پێ دەکات.</p>
    <input id="haloPkSearch" type="search" placeholder="گەڕان بە ناوی هاوڕێ..." style="width:100%;padding:11px;border-radius:10px;background:#080914;color:white;border:1px solid #ffffff30;">
    <button type="button" onclick="searchHaloPkUsers()">🔎 گەڕان</button>
    <div id="haloPkSearchResults" style="display:grid;gap:7px;margin-top:8px;"></div>
@@ -1986,9 +1986,7 @@ async function loadVideos(){
    const comment=document.createElement("button");comment.type="button";comment.className="feed-action";comment.innerHTML="<b>💬</b><span>"+(commentCounts[item.id]||0)+"</span>";comment.setAttribute("aria-label",haloFeatureText("کۆمێنت"));comment.addEventListener("click",()=>openVideoComments(item.id,()=>{commentCounts[item.id]=(commentCounts[item.id]||0)+1;comment.querySelector("span").textContent=commentCounts[item.id];}));
    const share=document.createElement("button");share.type="button";share.className="feed-action";share.innerHTML="<b>↗</b><span>"+haloFeatureText("هاوبەش")+"</span>";share.addEventListener("click",()=>openShareVideo(item.id));
    if(item.user_id!==currentUser.id){
-    const challenge=document.createElement("button");challenge.type="button";challenge.className="feed-action";challenge.innerHTML="<b>⚔️</b><span>"+haloFeatureText("تەحەدی")+"</span>";
-    challenge.addEventListener("click",()=>{startDmWithUser(item.user_id);setTimeout(()=>{const input=document.getElementById("dmText");if(input){input.value="⚔️ تەحەدی! بانگهێشتت دەکەم بۆ یاری/ڕکابەری لە KURD HALO. ئامادەیت؟";input.focus();}},450);});
-    actions.append(challenge);
+
    }
    const save=document.createElement("button");save.type="button";save.className="feed-action save-video-button"+(savedByMe.has(item.id)?" saved":"");save.innerHTML="<b>🔖</b><span>"+(savedByMe.has(item.id)?haloFeatureText("پاشەکەوتکراوە"):haloFeatureText("Save"))+"</span>";
    save.addEventListener("click",async()=>{
@@ -2498,13 +2496,23 @@ async function refreshHaloPkInvites(){
   const actions=document.createElement("div");actions.style.cssText="display:flex;gap:8px;flex-wrap:wrap;";
   const accept=document.createElement("button");accept.type="button";accept.textContent="✅ بەڵێ";accept.style.cssText="margin:0;flex:1;min-width:110px;";
   accept.onclick=async()=>{
-   if(!haloLiveSessionId){document.getElementById("haloPkStatus").textContent="بۆ قبوڵکردنی چالنج، سەرەتا لایڤی خۆت دەست پێ بکە.";return;}
    accept.disabled=true;decline.disabled=true;
-   const {error:acceptError}=await db.rpc("halo_pk_accept",{p_battle_id:battle.id,p_live_session_id:haloLiveSessionId});
-   if(acceptError){document.getElementById("haloPkStatus").textContent="قبوڵکردن سەرکەوتوو نەبوو: "+acceptError.message;accept.disabled=false;decline.disabled=false;return;}
-   haloPkBattleId=battle.id;
-   document.getElementById("haloPkStatus").textContent="✅ چالنجەکەت قبوڵ کرا. PK دەستی پێکرد.";
-   await refreshHaloPkInvites();
+   const pkStatus=document.getElementById("haloPkStatus");
+   try{
+    if(!haloLiveSessionId){
+     pkStatus.textContent="📷 کامێرا و لایڤ ئامادە دەکرێن...";
+     await joinCall();
+    }
+    if(!haloLiveSessionId){throw new Error("لایڤ دەست پێ نەکرد. مۆڵەتی کامێرا و مایکرۆفۆن بپشکنە.");}
+    const {error:acceptError}=await db.rpc("halo_pk_accept",{p_battle_id:battle.id,p_live_session_id:haloLiveSessionId});
+    if(acceptError)throw acceptError;
+    haloPkBattleId=battle.id;
+    pkStatus.textContent="✅ چالنج قبوڵ کرا و لایڤەکەت دەستی پێکرد.";
+    await refreshHaloPkInvites();
+   }catch(e){
+    pkStatus.textContent="قبوڵکردنی چالنج سەرکەوتوو نەبوو: "+(e.message||e);
+    accept.disabled=false;decline.disabled=false;
+   }
   };
   const decline=document.createElement("button");decline.type="button";decline.textContent="❌ ببورە مەشغوڵم";decline.style.cssText="margin:0;flex:1;min-width:140px;background:#6b2732;";
   decline.onclick=async()=>{
@@ -2566,16 +2574,20 @@ async function setupHaloPkInvites(){
  haloPkPollTimer=setInterval(()=>{refreshHaloPkInvites();refreshHaloPkScoreboard();},3000);
 }
 
-// Close the live screen after ending the live session.
+// Close the live screen, release camera/microphone, then return to the main video feed.
 async function closeLivePage(){
  const closeButton=document.querySelector('#liveHub button[onclick="closeLivePage()"]');
  if(closeButton){closeButton.disabled=true;closeButton.textContent="⏳ تکایە چاوەڕێ بکە...";}
  try{
   await leaveCall();
+ }finally{
   const liveHub=document.getElementById("liveHub");
   if(liveHub)liveHub.open=false;
-  window.scrollTo({top:0,behavior:"smooth"});
- }finally{
+  const home=document.getElementById("unifiedHub");
+  if(home)home.classList.remove("hidden");
+  const inbox=document.getElementById("inboxHub");
+  if(inbox)inbox.classList.remove("active");
+  window.scrollTo({top:0,behavior:"instant"});
   if(closeButton){closeButton.disabled=false;closeButton.textContent="✕ داخستنی پەڕەی لایڤ و گەڕانەوە";}
  }
 }
@@ -2595,8 +2607,10 @@ async function leaveCall(){
   if(agoraClient){await agoraClient.leave();agoraClient=null;}
   document.getElementById("local").innerHTML="";document.getElementById("remote").innerHTML="";
   document.getElementById("status").innerText="لە ژووری لایڤ دەرچوویت.";
+  const liveHub=document.getElementById("liveHub");if(liveHub)liveHub.open=false;
  }catch(e){document.getElementById("status").innerText="هەڵە: "+e.message;}
  await loadVideos();
+ window.scrollTo({top:0,behavior:"instant"});
 }
 async function toggleCamera(){if(!localTracks[1])return;cameraEnabled=!cameraEnabled;await localTracks[1].setEnabled(cameraEnabled);}
 async function toggleMic(){if(!localTracks[0])return;micEnabled=!micEnabled;await localTracks[0].setEnabled(micEnabled);}
@@ -2606,11 +2620,14 @@ async function switchCamera(){
   const Agora=await ensureHaloAgoraSDK();
   const cameras=await Agora.getCameras();
   if(cameras.length<2){alert("کامێرای دووەم لە مۆبایلەکەت نییە.");return;}
-  const tracks=await Agora.createCameraVideoTrack({facingMode:currentCamera==="user"?"environment":"user"});
-  await agoraClient.unpublish(localTracks[1]);localTracks[1].stop();localTracks[1].close();
-  localTracks[1]=tracks;currentCamera=currentCamera==="user"?"environment":"user";
-  await agoraClient.publish(localTracks[1]);localTracks[1].play("local");
- }catch(e){document.getElementById("status").innerText="هەڵەی کامێرا: "+e.message;}
+  const nextFacing=currentCamera==="user"?"environment":"user";
+  const target=cameras.find(camera=>camera.facingMode===nextFacing)||
+   cameras.find(camera=>camera.deviceId!==localTracks[1].getTrackLabel?.());
+  if(!target){alert("کامێرای جێگرەوە نەدۆزرایەوە.");return;}
+  await localTracks[1].setDevice(target.deviceId);
+  currentCamera=nextFacing;
+  const localBox=document.getElementById("local");if(localBox){localBox.innerHTML="";localTracks[1].play(localBox);}
+ }catch(e){document.getElementById("status").innerText="هەڵەی گۆڕینی کامێرا: "+e.message;}
 }
  
 
