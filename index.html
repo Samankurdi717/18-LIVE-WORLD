@@ -1960,21 +1960,41 @@ async function loadVideos(){
   if(!data.length&&!liveRows.length){feed.innerHTML=feedMode==="live"?"<p class=\"small\">ئێستا هیچ لایڤێکی چالاک نییە.</p>":feedMode==="following"?"<p class=\"small\">هێشتا هیچ کەسێکت شوێن نەکەوتووە، یان ئەوانە ڤیدیۆیان بڵاو نەکردووەتەوە.</p>":"<p class=\"small\">هێشتا ڤیدیۆیەک بڵاو نەکراوەتەوە. یەکەم ڤیدیۆت بڵاو بکەرەوە!</p>";return;}
   const liveHostIds=liveRows.map(x=>x.user_id).filter(id=>!profileMap.has(id));
   if(liveHostIds.length){const liveProfiles=await db.from("profiles").select("id,display_name,avatar_url").in("id",liveHostIds);if(liveProfiles.error)throw liveProfiles.error;(liveProfiles.data||[]).forEach(p=>profileMap.set(p.id,p));}
-  for(const live of liveRows){
-   const host=profileMap.get(live.user_id)||{};
-   const liveCard=document.createElement("article");liveCard.className="feed-card halo-live-feed-card";
-   liveCard.style.cssText="position:relative;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 35%,#54234f,#101020 65%);";
-   const closeLiveCard=document.createElement("button");closeLiveCard.type="button";closeLiveCard.textContent="✕";closeLiveCard.setAttribute("aria-label","داخستنی بەشی لایڤ");closeLiveCard.style.cssText="position:absolute;top:12px;right:12px;z-index:5;width:38px;height:38px;border:0;border-radius:50%;background:#ffffff22;color:white;font-size:22px;font-weight:bold;";
-   closeLiveCard.addEventListener("click",()=>liveCard.remove());
-   const liveInfo=document.createElement("div");liveInfo.style.cssText="text-align:center;padding:28px;color:white;max-width:90%;";
-   const avatar=document.createElement("div");avatar.style.cssText="width:96px;height:96px;border-radius:50%;margin:0 auto 16px;background:#302044;overflow:hidden;display:grid;place-items:center;font-size:42px;border:3px solid #ff416e;";
-   if(host.avatar_url){const img=document.createElement("img");img.src=host.avatar_url;img.alt="";img.style.cssText="width:100%;height:100%;object-fit:cover";avatar.append(img);}else avatar.textContent="👤";
-   const tag=document.createElement("strong");tag.textContent="🔴 LIVE";
-   const hostName=document.createElement("h2");hostName.textContent=host.display_name||"بەکارهێنەرێک لایڤە";
-   const liveTitle=document.createElement("p");liveTitle.textContent=live.title||"بەشداری لایڤ بکە";
-   const watch=document.createElement("button");watch.type="button";watch.textContent="▶ بینینی لایڤ لێرە";watch.style.cssText="padding:12px 22px;border:0;border-radius:24px;background:#ff315f;color:white;font-weight:bold;margin-top:12px;";
-   watch.addEventListener("click",()=>joinLiveViewer(live.channel,host.display_name||"لایڤ",liveCard));
-   liveInfo.append(avatar,tag,hostName,liveTitle,watch);liveCard.append(closeLiveCard,liveInfo);feed.appendChild(liveCard);
+  if(feedMode==="live"){
+   const shelf=document.createElement("section");shelf.className="halo-live-shelf";
+   shelf.style.cssText="width:100%;min-height:150px;box-sizing:border-box;padding:16px 12px 20px;background:linear-gradient(180deg,#171323,#090b17);";
+   const heading=document.createElement("h3");heading.textContent="🔴 لایڤە چالاکەکان";heading.style.cssText="margin:0 0 15px;color:#f5c96a;font-size:16px;text-align:right;";
+   const row=document.createElement("div");row.style.cssText="display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;padding:4px 2px 12px;direction:rtl;scrollbar-width:thin;";
+   shelf.append(heading,row);feed.appendChild(shelf);
+   for(const live of liveRows){
+    const host=profileMap.get(live.user_id)||{};
+    const item=document.createElement("button");item.type="button";item.style.cssText="flex:0 0 88px;width:88px;min-width:88px;display:flex;flex-direction:column;align-items:center;gap:7px;padding:0;border:0;background:transparent;color:#fff;";
+    const ring=document.createElement("span");ring.style.cssText="width:72px;height:72px;padding:3px;box-sizing:border-box;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#ff315f,#ffb347);box-shadow:0 0 0 2px #ffffff18;";
+    const avatar=document.createElement("span");avatar.style.cssText="width:100%;height:100%;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#302044;font-size:30px;border:3px solid #100e1b;box-sizing:border-box;";
+    if(host.avatar_url){const img=document.createElement("img");img.src=host.avatar_url;img.alt="";img.style.cssText="width:100%;height:100%;object-fit:cover";avatar.append(img);}else avatar.textContent="👤";
+    ring.appendChild(avatar);
+    const liveTag=document.createElement("span");liveTag.textContent="LIVE";liveTag.style.cssText="margin-top:-15px;z-index:1;padding:2px 8px;border-radius:8px;background:#ff315f;color:white;font-size:9px;font-weight:900;letter-spacing:.4px;";
+    const name=document.createElement("span");name.textContent=host.display_name||"ئەندام";name.style.cssText="max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#fff;";
+    item.append(ring,liveTag,name);item.addEventListener("click",()=>joinLiveViewer(live.channel,host.display_name||"لایڤ",item));row.appendChild(item);
+   }
+   if(!liveRows.length){const empty=document.createElement("p");empty.textContent="ئێستا هیچ کەسێک لایڤ نییە.";empty.className="small";empty.style.cssText="color:#c7c4d2;text-align:center;padding:24px 8px;";shelf.appendChild(empty);}
+  }else{
+   for(const live of liveRows){
+    const host=profileMap.get(live.user_id)||{};
+    const liveCard=document.createElement("article");liveCard.className="feed-card halo-live-feed-card";
+    liveCard.style.cssText="position:relative;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 35%,#54234f,#101020 65%);";
+    const closeLiveCard=document.createElement("button");closeLiveCard.type="button";closeLiveCard.textContent="✕";closeLiveCard.setAttribute("aria-label","داخستنی بەشی لایڤ");closeLiveCard.style.cssText="position:absolute;top:12px;right:12px;z-index:5;width:38px;height:38px;border:0;border-radius:50%;background:#ffffff22;color:white;font-size:22px;font-weight:bold;";
+    closeLiveCard.addEventListener("click",()=>liveCard.remove());
+    const liveInfo=document.createElement("div");liveInfo.style.cssText="text-align:center;padding:28px;color:white;max-width:90%;";
+    const avatar=document.createElement("div");avatar.style.cssText="width:96px;height:96px;border-radius:50%;margin:0 auto 16px;background:#302044;overflow:hidden;display:grid;place-items:center;font-size:42px;border:3px solid #ff416e;";
+    if(host.avatar_url){const img=document.createElement("img");img.src=host.avatar_url;img.alt="";img.style.cssText="width:100%;height:100%;object-fit:cover";avatar.append(img);}else avatar.textContent="👤";
+    const tag=document.createElement("strong");tag.textContent="🔴 LIVE";
+    const hostName=document.createElement("h2");hostName.textContent=host.display_name||"بەکارهێنەرێک لایڤە";
+    const liveTitle=document.createElement("p");liveTitle.textContent=live.title||"بەشداری لایڤ بکە";
+    const watch=document.createElement("button");watch.type="button";watch.textContent="▶ بینینی لایڤ لێرە";watch.style.cssText="padding:12px 22px;border:0;border-radius:24px;background:#ff315f;color:white;font-weight:bold;margin-top:12px;";
+    watch.addEventListener("click",()=>joinLiveViewer(live.channel,host.display_name||"لایڤ",liveCard));
+    liveInfo.append(avatar,tag,hostName,liveTitle,watch);liveCard.append(closeLiveCard,liveInfo);feed.appendChild(liveCard);
+   }
   }
   memberItems.forEach(item=>{
    const videoUrl=db.storage.from("videos").getPublicUrl(item.storage_path).data.publicUrl;
