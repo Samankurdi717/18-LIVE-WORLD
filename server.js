@@ -87,6 +87,23 @@ app.get("/token", requireSupabaseUser, async (req, res) => {
       }
 
       let authorized = Boolean(hostSession);
+      if (hostSession) {
+        const { count: followerCount, error: followerError } = await req.supabaseClient
+          .from("user_follows")
+          .select("follower_id", { count: "exact", head: true })
+          .eq("following_id", req.supabaseUser.id);
+
+        if (followerError) {
+          return res.status(403).json({ error: "Could not verify follower count" });
+        }
+        if ((followerCount || 0) < 500) {
+          return res.status(403).json({
+            error: "At least 500 followers are required to start a live",
+            followerCount: followerCount || 0,
+            requiredFollowers: 500
+          });
+        }
+      }
       if (!authorized) {
         const { data: guestRequests, error: guestError } = await req.supabaseClient
           .from("live_guest_requests")
