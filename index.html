@@ -1203,6 +1203,22 @@ function openMyProfile(){
  document.getElementById('profilePage').classList.remove('hidden');
  renderMyProfile();window.scrollTo({top:0,behavior:'smooth'});
 }
+async function openMemberProfile(userId){
+ if(!userId)return;if(currentUser&&userId===currentUser.id){openMyProfile();return;}
+ document.body.classList.remove('halo-search-open');const sp=document.querySelector('#unifiedHub>.user-search-panel');if(sp)sp.hidden=true;
+ const ud=document.getElementById('uploadDrawer');if(ud)ud.open=false;document.getElementById('inboxHub').classList.remove('active');document.getElementById('unifiedHub').classList.add('hidden');document.getElementById('profilePage').classList.remove('hidden');
+ const edit=document.querySelector('#profilePage button[onclick="openProfileEditor()"]');if(edit)edit.style.display='none';
+ const name=document.getElementById('publicProfileName'),bio=document.getElementById('publicProfileBio'),img=document.getElementById('publicProfileAvatar'),grid=document.getElementById('myVideoGrid');name.textContent='پرۆفایل بار دەکرێت...';bio.textContent='';img.classList.add('hidden');grid.replaceChildren();
+ try{
+  const {data:p,error}=await db.from('profiles').select('id,display_name,avatar_url').eq('id',userId).maybeSingle();if(error)throw error;if(!p)throw new Error('پرۆفایل نەدۆزرایەوە.');
+  name.textContent=p.display_name||'ئەندامێکی KURD HALO';bio.textContent='ئەندامی KURD HALO';if(p.avatar_url){img.src=p.avatar_url;img.classList.remove('hidden');}else img.removeAttribute('src');
+  const [f,g,v]=await Promise.all([db.from('user_follows').select('follower_id',{count:'exact',head:true}).eq('following_id',userId),db.from('user_follows').select('following_id',{count:'exact',head:true}).eq('follower_id',userId),db.from('videos').select('id,storage_path,caption,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(60)]);
+  if(f.error)throw f.error;if(g.error)throw g.error;if(v.error)throw v.error;document.getElementById('profileFollowersCount').textContent=f.count||0;document.getElementById('profileFollowingCount').textContent=g.count||0;
+  let likes=0;if(v.data?.length){const lr=await db.from('video_likes').select('video_id',{count:'exact',head:true}).in('video_id',v.data.map(x=>x.id));if(!lr.error)likes=lr.count||0;}document.getElementById('profileLikesCount').textContent=likes;
+  if(!v.data?.length){grid.textContent='هێشتا هیچ ڤیدیۆیەکی بڵاونەکردووەتەوە.';}else v.data.forEach(x=>{const tile=document.createElement('div');tile.className='profile-video-tile';tile.style.cursor='pointer';const video=document.createElement('video');video.src=db.storage.from('videos').getPublicUrl(x.storage_path).data.publicUrl;video.controls=true;video.muted=true;video.playsInline=true;video.preload='metadata';video.style.pointerEvents='none';tile.onclick=()=>openProfileVideoPlayer(x.storage_path,x.caption);const cap=document.createElement('div');cap.className='tile-caption';cap.textContent=x.caption||'KURD HALO';tile.append(video,cap);grid.append(tile);});
+ }catch(e){name.textContent='پرۆفایل';grid.textContent='هەڵە: '+String(e.message||e);}
+ setActiveNav('navProfile');window.scrollTo({top:0,behavior:'smooth'});
+}
 function openProfileEditor(){
  closeProfileMenu();
  openAccount();
@@ -1675,6 +1691,7 @@ async function openVideoComments(videoId,onCommentAdded){
    const isMine=currentUser&&row.user_id===currentUser.id;
    const displayName=isMine?haloFeatureText("تۆ"):(commenterNames.get(row.user_id)||haloFeatureText("ئەندام"));
    meta.textContent=displayName+" · "+new Date(row.created_at).toLocaleString();
+    meta.style.cursor="pointer";meta.title="بینینی پرۆفایل";meta.addEventListener("click",()=>openMemberProfile(row.user_id));
    const body=document.createElement("div");body.className="comment-content";body.textContent=row.content;
    item.append(meta,body);list.append(item);
   });
