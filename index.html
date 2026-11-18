@@ -1119,6 +1119,12 @@ function showUser(user){
   const name=metadata.full_name||"";
   const phone=metadata.phone_number||"";
   const avatar=metadata.avatar_url||"";
+  // Create or refresh this member's public profile row so their name appears on video comments.
+  if(name){
+   db.from("profiles").upsert({id:user.id,display_name:name,avatar_url:avatar,updated_at:new Date().toISOString()},{onConflict:"id"}).then(({error})=>{
+    if(error)console.warn("KURD HALO profile sync:",error.message);
+   });
+  }
   info.innerText="بەخێربێیت "+(name||user.email);
   loadVideos();loadFollowStats();
   document.getElementById("profileName").value=name;
