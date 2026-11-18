@@ -736,14 +736,21 @@ body.auth-required .bottom-nav{display:none!important}
   <button class="dark" type="button" onclick="openProfileEditor()">✏️ دەستکاریکردنی پرۆفایل</button>
  </div>
  <div class="profile-stats">
-  <div class="profile-stat"><strong id="profileFollowingCount">0</strong><span>Following</span></div>
-  <div class="profile-stat"><strong id="profileFollowersCount">0</strong><span>Followers</span></div>
+  <button class="profile-stat" type="button" onclick="openFollowList('following')" style="cursor:pointer;background:transparent;color:inherit;border:0;font:inherit"><strong id="profileFollowingCount">0</strong><span>Following</span></button>
+  <button class="profile-stat" type="button" onclick="openFollowList('followers')" style="cursor:pointer;background:transparent;color:inherit;border:0;font:inherit"><strong id="profileFollowersCount">0</strong><span>Followers</span></button>
   <div class="profile-stat"><strong id="profileLikesCount">0</strong><span>Like</span></div>
  </div>
  <div class="profile-videos-heading">▦ ڤیدیۆکانی بڵاوکراوە</div>
  <div id="myVideoGrid" class="profile-video-grid"><p class="small">هێشتا ڤیدیۆت نییە.</p></div>
 </section>
  
+<div id="followListModal" class="hidden" style="position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.82);padding:18px;overflow:auto">
+ <div style="max-width:480px;margin:35px auto;background:#11152a;border:1px solid #b58a36;border-radius:16px;padding:16px;color:#fff">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 id="followListTitle" style="margin:0">Following</h3><button type="button" class="dark" onclick="closeFollowList()">✕</button></div>
+  <div id="followListContent" style="display:grid;gap:10px;margin-top:16px"><p class="small">Loading...</p></div>
+ </div>
+</div>
+
 <!-- RIGHT SIDE PROFILE MENU -->
 <div id="profileMenuBackdrop" class="profile-drawer-backdrop hidden" onclick="closeProfileMenu()"></div>
 <aside id="profileDrawer" class="profile-drawer hidden" aria-label="Profile menu" dir="auto">
@@ -1710,6 +1717,33 @@ async function openVideoComments(videoId,onCommentAdded){
  await refreshComments();
 }
  
+async function closeFollowList(){document.getElementById("followListModal")?.classList.add("hidden");}
+async function openFollowList(kind){
+ if(!currentUser){alert("تکایە سەرەتا بچۆ ژوورەوە.");return;}
+ const modal=document.getElementById("followListModal"),content=document.getElementById("followListContent"),title=document.getElementById("followListTitle");
+ modal.classList.remove("hidden");title.textContent=kind==="followers"?"Followers":"Following";content.innerHTML='<p class="small">چاوەڕێ بکە...</p>';
+ try{
+  const column=kind==="followers"?"follower_id":"following_id";
+  const filter=kind==="followers"?"following_id":"follower_id";
+  const {data:rows,error}=await db.from("user_follows").select(column).eq(filter,currentUser.id).order("created_at",{ascending:false}).limit(200);
+  if(error)throw error;
+  const ids=(rows||[]).map(row=>row[column]).filter(Boolean);
+  if(!ids.length){content.innerHTML='<p class="small">هێشتا هیچ کەسێک لەم لیستەدا نییە.</p>';return;}
+  const {data:profiles,error:profileError}=await db.from("profiles").select("id,display_name,avatar_url").in("id",ids);
+  if(profileError)throw profileError;
+  const byId=new Map((profiles||[]).map(p=>[p.id,p]));
+  content.innerHTML="";
+  ids.forEach(id=>{
+   const p=byId.get(id);if(!p)return;
+   const row=document.createElement("button");row.type="button";row.style.cssText="display:flex;align-items:center;gap:12px;width:100%;padding:10px;border:1px solid rgba(245,201,106,.25);border-radius:12px;background:rgba(255,255,255,.05);color:#fff;text-align:left";
+   const img=document.createElement("img");img.src=p.avatar_url||"";img.alt="";img.style.cssText="width:42px;height:42px;border-radius:50%;object-fit:cover;background:#252943";
+   const name=document.createElement("span");name.textContent=p.display_name||"بەکارهێنەر";
+   row.append(img,name);row.addEventListener("click",()=>{closeFollowList();openMemberProfile(id);});content.append(row);
+  });
+  if(!content.children.length)content.innerHTML='<p class="small">پرۆفایلی ئەندامەکان نەدۆزرایەوە.</p>';
+ }catch(e){content.innerHTML="";const msg=document.createElement("p");msg.className="small";msg.textContent="لیستەکە نەکرایەوە: "+e.message;content.append(msg);}
+}
+
 // FOLLOW SYSTEM — requires the SQL setup file supplied with this build
 let feedMode="forYou";
 function setFeedMode(mode){
