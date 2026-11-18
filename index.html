@@ -2375,7 +2375,7 @@ async function joinLiveViewer(channel,title,inlineCard){
   const uid=Math.floor(Math.random()*1000000000)+1;
   const sessionToken=await getHaloAccessToken();
   const response=await fetch(TOKEN_API+"?channel="+encodeURIComponent(channel)+"&uid="+uid+"&role=subscriber",{headers:{Authorization:"Bearer "+sessionToken}});
-  if(!response.ok)throw new Error("Token API وەڵامی دروستی نەدا.");
+  if(!response.ok){const apiError=await response.text();throw new Error("Token API HTTP "+response.status+": "+apiError.slice(0,180));}
   haloViewerUid=uid;haloViewerChannel=channel;
   const tokenData=await response.json();if(!tokenData.token)throw new Error("Token نەدۆزرایەوە.");
   haloViewerClient=Agora.createClient({mode:"rtc",codec:"vp8"});
@@ -2428,7 +2428,7 @@ async function joinCall(){
   const uid=Math.floor(Math.random()*1000000000)+1;
   const sessionToken=await getHaloAccessToken();
   const response=await fetch(TOKEN_API+"?channel="+encodeURIComponent(channel)+"&uid="+uid+"&role=publisher",{headers:{Authorization:"Bearer "+sessionToken}});
-  if(!response.ok)throw new Error("Token API وەڵامی دروستی نەدا.");
+  if(!response.ok){const apiError=await response.text();throw new Error("Token API HTTP "+response.status+": "+apiError.slice(0,180));}
   const tokenData=await response.json();const token=tokenData.token;
   if(!token)throw new Error("Token نەدۆزرایەوە.");
   await agoraClient.join(AGORA_APP_ID,channel,token,uid);
