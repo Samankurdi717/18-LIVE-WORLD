@@ -217,7 +217,9 @@ body.auth-required .account-sheet{width:min(520px,100%);height:100%;max-height:1
 body.auth-required .account-close{display:none}
 body.auth-required .account-sheet>h2{font-size:25px;margin:24px 0 8px!important}
 body.auth-required #accountBox{margin-top:18px}
-body.auth-required #profileBox,body.auth-required #newPasswordBox{display:none!important}
+body.auth-required #profileBox{display:none!important}
+body.auth-required.password-recovery #accountBox{display:none!important}
+body.auth-required.password-recovery #newPasswordBox{display:block!important}
 .terms-wrap{margin:14px 0;padding:13px;border:1px solid rgba(164,139,255,.24);border-radius:15px;background:rgba(255,255,255,.035)}
 .terms-wrap label{display:flex;align-items:flex-start;gap:9px;color:#e8e7f5;font-size:12px;line-height:1.8;margin:8px 0}
 .terms-wrap input{width:18px;height:18px;flex:0 0 18px;margin:3px 0 0;accent-color:#9a70ff}
@@ -1206,12 +1208,14 @@ async function updatePassword(){
  if(password!==confirm){alert("وشە نهێنییەکان یەک ناگرنەوە.");return;}
  try{
   authMessage("وشەی نهێنی دەگۆڕدرێت...");
-  const {error}=await db.auth.updateUser({password});
+  const {data,error}=await db.auth.updateUser({password});
   if(error)throw error;
+  document.body.classList.remove("password-recovery");
   document.getElementById("newPasswordBox").classList.add("hidden");
   document.getElementById("newPassword").value="";
   document.getElementById("confirmPassword").value="";
   authMessage("وشەی نهێنی نوێ بە سەرکەوتوویی دانرا. ⭐");
+  if(data?.user)showUser(data.user);
  }catch(e){authMessage("هەڵە: "+e.message);}
 }
  
@@ -3265,12 +3269,27 @@ window.createKurdHaloOriginalSound=async function(){
 };
  
  
- switchAppTab("home");
+ function showPasswordRecovery(user){
+ if(user)currentUser=user;
+ document.body.classList.add("auth-required","password-recovery");
+ document.getElementById("accountModal").classList.remove("hidden");
+ document.getElementById("googleProfileModal")?.classList.add("hidden");
+ document.getElementById("accountBox")?.classList.add("hidden");
+ document.getElementById("profileBox")?.classList.add("hidden");
+ document.getElementById("newPasswordBox")?.classList.remove("hidden");
+ authMessage("لینکی گۆڕینی وشەی نهێنی پشتڕاست کرا. وشەی نهێنی نوێ دابنێ.");
+}
+switchAppTab("home");
 document.body.classList.add("auth-required");
 document.getElementById("accountModal").classList.remove("hidden");
-db.auth.getSession().then(({data})=>{if(data.session)showUser(data.session.user);});
+const recoveryLink=new URLSearchParams(window.location.hash.slice(1)).get("type")==="recovery";
+db.auth.getSession().then(({data})=>{
+ if(recoveryLink&&data.session)showPasswordRecovery(data.session.user);
+ else if(data.session)showUser(data.session.user);
+});
 db.auth.onAuthStateChange((event,session)=>{
- if(session){showUser(session.user);if(event==="PASSWORD_RECOVERY")document.getElementById("newPasswordBox").classList.remove("hidden");}
+ if(event==="PASSWORD_RECOVERY"&&session){showPasswordRecovery(session.user);return;}
+ if(session)showUser(session.user);
  else showUser(null);
 });
 
