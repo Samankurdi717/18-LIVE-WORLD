@@ -830,7 +830,6 @@ body.auth-required .bottom-nav{display:none!important}
 
  <div class="feed-toolbar">
   <h3 data-i18n="feedTitle">🌍 ڤیدیۆکانی کورد هەڵۆ</h3>
-  <button class="dark" type="button" onclick="openLive()" data-i18n="liveButton">🔴 Live</button>
   <button class="dark" id="globalFeedSoundButton" type="button" onclick="toggleAllFeedSound()">🔇 سەوتی هەموو ڤیدیۆکان</button>
   <button class="dark" onclick="loadVideos()" data-i18n="refresh">🔄 نوێکردنەوە</button>
  </div>
@@ -844,7 +843,7 @@ body.auth-required .bottom-nav{display:none!important}
   <p id="uploadStatus"></p>
   <p class="small" data-i18n="videoLimit">قەبارەی ڤیدیۆی بارکراو نابێت لە 50MB زیاتر بێت.</p>
  </details>
- <details class="live-inline" id="liveHub">
+ <details class="live-inline hidden" id="liveHub">
   <summary class="live-inline-title"><span class="live-dot"></span><strong data-i18n="liveTitle">🔴 لایڤ لە هەمان فید</strong></summary>
   <p>بە یەک کرتە لایڤ دەست پێ بکە؛ ناوی ژوور بە خۆکار دروست دەبێت.</p>
   <p class="small" style="color:#f5c96a;font-weight:700;">🎥 هەر بەکارهێنەرێک دەتوانێت لایڤ دەست پێ بکات.</p>
@@ -2655,7 +2654,7 @@ async function closeLivePage(){
   await leaveCall();
  }finally{
   const liveHub=document.getElementById("liveHub");
-  if(liveHub)liveHub.open=false;
+  if(liveHub){liveHub.open=false;liveHub.classList.add("hidden");}
   const home=document.getElementById("unifiedHub");
   if(home)home.classList.remove("hidden");
   const inbox=document.getElementById("inboxHub");
@@ -3236,9 +3235,8 @@ function openUpload(){
 }
 function openLive(){
  switchAppTab('home');
- setFeedMode('live');
  const live=document.getElementById('liveHub');
- if(live){live.open=true;live.scrollIntoView({behavior:'smooth',block:'center'});}
+ if(live){live.classList.remove('hidden');live.open=true;live.scrollIntoView({behavior:'smooth',block:'start'});}
 }
 
 
