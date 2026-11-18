@@ -155,7 +155,7 @@ values('dm-videos','dm-videos',false,104857600,
   array['video/mp4','video/quicktime','video/webm','video/3gpp','video/x-m4v','video/3gpp2']::text[])
 on conflict(id) do update set name=excluded.name,public=false,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 
-alter table storage.objects enable row level security;
+-- Supabase Storage already manages RLS on storage.objects; do not alter the table itself.
 drop policy if exists "dm videos participants can read" on storage.objects;
 create policy "dm videos participants can read" on storage.objects for select to authenticated
 using (bucket_id='dm-videos' and exists(
