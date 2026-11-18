@@ -612,6 +612,22 @@ body.auth-required .bottom-nav{display:none!important}
 }
 
 
+
+/* TikTok-style Create action sheet */
+.create-menu-overlay{position:fixed;inset:0;z-index:1000005;display:flex;align-items:flex-end;justify-content:center;padding:14px;background:rgba(0,0,0,.68);backdrop-filter:blur(5px)}
+.create-menu-overlay.hidden{display:none!important}
+.create-menu-sheet{width:min(100%,520px);padding:12px 14px calc(18px + env(safe-area-inset-bottom));border:1px solid rgba(245,201,106,.32);border-radius:24px 24px 18px 18px;background:linear-gradient(155deg,#191629,#090b17 75%);box-shadow:0 -12px 45px #0009;color:#fff}
+.create-menu-handle{width:42px;height:4px;border-radius:8px;background:#777;margin:0 auto 15px}
+.create-menu-heading{text-align:center;font-weight:900;font-size:16px;color:#f5c96a;margin:4px 0 16px}
+.create-menu-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.create-menu-option{min-width:0;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:12px 5px;border:1px solid #ffffff24;border-radius:17px;background:#ffffff09;color:#fff}
+.create-menu-option:active{transform:scale(.97);background:#ffffff18}
+.create-menu-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:16px;background:#ffffff12;font-size:25px}
+.create-live-option .create-menu-icon{background:#d9365230}
+.create-menu-option strong{font-size:14px}
+.create-menu-option small{font-size:10px;line-height:1.5;color:#c4c2d0;text-align:center}
+.create-menu-cancel{width:100%;margin-top:12px;border:1px solid #ffffff20;border-radius:13px;background:#ffffff0b;color:#fff;padding:11px;font-weight:700}
+@media(min-width:701px){.create-menu-overlay{align-items:center}.create-menu-sheet{border-radius:24px}}
 </style>
 
 <script>self.ModelViewerElement=self.ModelViewerElement||{};self.ModelViewerElement.meshoptDecoderLocation='https://cdn.jsdelivr.net/npm/meshoptimizer/meshopt_decoder.js';</script>
@@ -876,10 +892,22 @@ body.auth-required .bottom-nav{display:none!important}
  <p class="small" id="inboxStatus" role="status" aria-live="polite"></p>
 </section>
  
+<div class="create-menu-overlay hidden" id="createMenuOverlay" onclick="if(event.target===this)closeCreateMenu()">
+ <section class="create-menu-sheet" role="dialog" aria-modal="true" aria-label="Create">
+  <div class="create-menu-handle"></div>
+  <div class="create-menu-heading">دروستکردن لە KURD HALO</div>
+  <div class="create-menu-options">
+   <button type="button" class="create-menu-option create-live-option" onclick="createMenuLive()"><span class="create-menu-icon">🔴</span><strong>Live</strong><small>دەستپێکردنی پەخشی ڕاستەوخۆ</small></button>
+   <button type="button" class="create-menu-option" onclick="createMenuCamera()"><span class="create-menu-icon">📷</span><strong>Camera</strong><small>تۆمارکردنی ڤیدیۆ بە کامێرا</small></button>
+   <button type="button" class="create-menu-option" onclick="createMenuUpload()"><span class="create-menu-icon">＋</span><strong>Create</strong><small>هەڵبژاردن و بڵاوکردنەوەی ڤیدیۆ</small></button>
+  </div>
+  <button type="button" class="create-menu-cancel" onclick="closeCreateMenu()">داخستن</button>
+ </section>
+</div>
 <nav class="bottom-nav" id="mainBottomNav" aria-label="Main navigation">
  <button id="navHome" class="active" type="button" onclick="switchAppTab('home')"><span class="nav-icon">⌂</span><span>سەرەکی</span></button>
  <button id="navFriends" type="button" onclick="switchAppTab('friends')"><span class="nav-icon">👥</span><span>هاوڕێکان</span></button>
- <button id="navCreate" type="button" onclick="openUpload()"><span class="nav-icon">＋</span><span>دروستکردن</span></button>
+ <button id="navCreate" type="button" onclick="openCreateMenu()"><span class="nav-icon">＋</span><span>دروستکردن</span></button>
  <button id="navInbox" type="button" onclick="switchAppTab('inbox')"><span class="nav-icon">✉</span><span>پەیامەکان</span></button>
  <button id="navProfile" type="button" onclick="openMyProfile()"><span class="nav-icon">👤</span><span>پرۆفایل</span></button>
 </nav>
@@ -3129,11 +3157,35 @@ db.auth.onAuthStateChange((event,session)=>{
 });
 
  
-// Immersive-screen controls: keep secondary tools available without crowding the feed.
+// TikTok-style Create menu: Live, Camera, and Create.
+function openCreateMenu(){
+ setActiveNav('navCreate');
+ document.getElementById('createMenuOverlay')?.classList.remove('hidden');
+}
+function closeCreateMenu(){
+ document.getElementById('createMenuOverlay')?.classList.add('hidden');
+}
+function createMenuLive(){closeCreateMenu();openLive();}
+function createMenuCamera(){
+ closeCreateMenu();
+ if(!currentUser){openAccount();return;}
+ openUpload();
+ const input=document.getElementById('videoFile');
+ if(input){input.setAttribute('capture','environment');input.click();}
+}
+function createMenuUpload(){
+ closeCreateMenu();
+ if(!currentUser){openAccount();return;}
+ openUpload();
+ const input=document.getElementById('videoFile');
+ if(input){input.removeAttribute('capture');input.click();}
+}
 function openUpload(){
  if(!currentUser){openAccount();return;}
  switchAppTab('home');
  setActiveNav('navCreate');
+ const input=document.getElementById('videoFile');
+ if(input)input.removeAttribute('capture');
  const drawer=document.getElementById('uploadDrawer');
  if(drawer){drawer.open=true;}
 }
