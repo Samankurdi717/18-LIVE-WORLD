@@ -884,6 +884,8 @@ body.auth-required .bottom-nav{display:none!important}
 // KURD HALO — approved five-tab navigation
 let activeDmUser=null;
 let pendingSharedVideoId=null;
+let dmRealtimeChannel=null;
+let dmRealtimeUserId=null;
 function setActiveNav(id){document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.toggle('active',b.id===id));}
 function switchAppTab(tab){
  const profile=document.getElementById('profilePage');const home=document.getElementById('unifiedHub');const inbox=document.getElementById('inboxHub');
@@ -1938,6 +1940,19 @@ const DM_VIDEO_MIMES=new Set(['video/mp4','video/quicktime','video/webm','video/
 const dmVideoPicker=document.getElementById('dmVideoFile');
 if(dmVideoPicker){dmVideoPicker.addEventListener('change',()=>{const file=dmVideoPicker.files&&dmVideoPicker.files[0];if(!file){dmStatus('');return;}const ext=(file.name.split('.').pop()||'').toLowerCase();const allowedExt=['mp4','mov','webm','3gp','m4v','3g2'];if(!(file.type.startsWith('video/')||allowedExt.includes(ext))){dmVideoPicker.value='';dmStatus('تکایە فایلێکی ڤیدیۆ هەڵبژێرە.');return;}if(file.size>DM_VIDEO_MAX_BYTES){dmVideoPicker.value='';dmStatus('قەبارەی ڤیدیۆ نابێت لە 100MB زیاتر بێت.');return;}pendingSharedVideoId=null;dmStatus('ڤیدیۆ هەڵبژێردرا: '+file.name+' — ئامادەی ناردنە.');});}
 function startDmWithUser(userId){if(!currentUser){openAccount();return;}activeDmUser=userId;pendingSharedVideoId=null;const picker=document.getElementById('dmVideoFile');if(picker)picker.value='';switchAppTab('inbox');}
+async function ensureDmRealtime(){
+ if(!currentUser||!db)return;
+ if(dmRealtimeChannel&&dmRealtimeUserId===currentUser.id)return;
+ if(dmRealtimeChannel){try{await db.removeChannel(dmRealtimeChannel);}catch(_){}dmRealtimeChannel=null;}
+ dmRealtimeUserId=currentUser.id;
+ dmRealtimeChannel=db.channel('kurd-halo-dm-'+currentUser.id)
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'dm_messages'},payload=>{
+   const m=payload.new;if(!m||!currentUser)return;
+   if(m.sender_id!==currentUser.id&&m.recipient_id!==currentUser.id)return;
+   loadInbox();
+   if(activeDmUser&&(m.sender_id===activeDmUser||m.recipient_id===activeDmUser))loadDmMessages();
+  }).subscribe();
+}
 async function loadInbox(){
  const contacts=document.getElementById('inboxContacts');if(!contacts)return;
  if(!currentUser){contacts.innerHTML='<div class="inbox-empty">بۆ بەکارهێنانی Inbox بچۆ ژوورەوە.</div>';return;}
@@ -1972,7 +1987,7 @@ async function openDmConversation(userId){
  const {data:p,error}=await db.from('profiles').select('display_name,avatar_url').eq('id',userId).maybeSingle();if(error){dmStatus('هەڵە لە بارکردنی پرۆفایلی هاوڕێ: '+error.message);return;}
  const head=document.getElementById('inboxChatHead');head.replaceChildren();const avatar=p?.avatar_url?document.createElement('img'):document.createElement('span');if(p?.avatar_url){avatar.src=p.avatar_url;avatar.className='inbox-avatar';avatar.alt='';}else{avatar.className='inbox-avatar';avatar.textContent='👤';}const title=document.createElement('span');title.textContent=p?.display_name||('User '+userId.slice(0,8));head.append(avatar,title);
  document.getElementById('dmText').disabled=false;document.getElementById('dmSendButton').disabled=false;document.getElementById('dmVideoFile').disabled=false;
- await loadDmMessages();if(pendingSharedVideoId)dmStatus('ئێستا دەتوانیت ڤیدیۆکە بۆ '+title.textContent+' بنێریت.');
+ await ensureDmRealtime();await loadDmMessages();if(pendingSharedVideoId)dmStatus('ئێستا دەتوانیت ڤیدیۆکە بۆ '+title.textContent+' بنێریت.');
 }
 async function appendDmVideo(bubble,videoUrl,caption){const link=document.createElement('a');link.className='dm-video';link.href=videoUrl;link.target='_blank';link.rel='noopener noreferrer';const video=document.createElement('video');video.src=videoUrl;video.controls=true;video.playsInline=true;video.preload='metadata';video.setAttribute('controlsList','nodownload');const label=document.createElement('span');label.className='dm-video-caption';label.textContent=caption||'KURD HALO video';link.append(video,label);bubble.append(link);}
 async function loadDmMessages(){
@@ -1988,6 +2003,7 @@ async function loadDmMessages(){
    const time=document.createElement('small');time.className='dm-time';time.textContent=new Date(m.created_at).toLocaleString();bubble.append(time);box.append(bubble);
   }
   if(!data||!data.length)box.innerHTML='<div class="inbox-empty">ئەمە یەکەم گفتوگۆی ئێوەیە. سڵاوێک بنێرە 👋</div>';box.scrollTop=box.scrollHeight;
+   const {error:readError}=await db.rpc('mark_dm_read',{p_sender_id:activeDmUser});if(readError)console.warn('DM read receipt:',readError.message);
  }catch(e){box.innerHTML='<div class="inbox-empty">هەڵە لە بارکردنی نامەکان: '+String(e.message||e)+'</div>';}
 }
 async function sendDirectMessage(event){
