@@ -41,9 +41,9 @@
     <button class="khq-lang selected" data-lang="ku">کوردی</button><button class="khq-lang" data-lang="fa">فارسی</button>
     <button class="khq-lang" data-lang="ar">العربية</button><button class="khq-lang" data-lang="en">English</button>
    </div>
-   <p class="khq-muted">زمانی هەڵبژێردراو تەنها بۆ خۆتە؛ بەشداربووانی تر دەتوانن زمانی جیاواز هەڵبژێرن. هەموو پرسیار و وەڵامەکان تەنها بە نووسینن.</p>
+   <p class="khq-muted">زمانی هەڵبژێردراو تەنها بۆ خۆتە؛ بەشداربووانی تر دەتوانن زمانی جیاواز هەڵبژێرن. پرسیارەکان و هەڵبژاردەکان بە دەنگیش دەخوێندرێنەوە.</p>
    <button class="khq-btn primary" id="khqStart">▶ یاریی تاقیکردنەوە بە تەنیا</button><hr><h3>👥 پێشبڕکێی گرووپی</h3><input id="khqNickname" type="text" maxlength="40" placeholder="ناوی یاریزان"><button class="khq-btn" id="khqCreateRoom">➕ دروستکردنی ژووری پێشبڕکێ</button><input id="khqRoomCode" type="text" maxlength="6" placeholder="کۆدی ژوور"><button class="khq-btn" id="khqJoinRoom">🔑 چوونە ناو ژوور</button><div class="khq-muted" id="khqRoomStatus" aria-live="polite"></div><div id="khqLobby" class="hidden"><h3 id="khqRoomTitle"></h3><div id="khqPlayers" class="khq-muted"></div><button class="khq-btn primary hidden" id="khqHostStart">🚦 دەستپێکردنی پێشبڕکێ</button></div>
-   <p class="khq-muted" id="khqVoiceNote" aria-live="polite">هیچ دەنگێک یان خوێندنەوەیەکی خۆکار نییە؛ هەموو شتێک تەنها بە نووسین پیشان دەدرێت.</p>
+   <p class="khq-muted" id="khqVoiceNote" aria-live="polite">پرسیارەکان و هەڵبژاردەکان بە دەنگ دەخوێندرێنەوە؛ ئەگەر دەنگی زمانەکەت لە مۆبایلەکەت بەردەست نەبوو، هێشتا دەتوانیت بە نووسین یاری بکەیت.</p>
   </div>
   <div class="khq-panel hidden" id="khqGame">
    <div class="khq-muted" id="khqCategory"></div><div class="khq-muted" id="khqProgress"></div>
