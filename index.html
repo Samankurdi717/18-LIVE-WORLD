@@ -807,7 +807,7 @@ body.auth-required .bottom-nav{display:none!important}
  <details class="live-inline" id="liveHub">
   <summary class="live-inline-title"><span class="live-dot"></span><strong data-i18n="liveTitle">🔴 لایڤ لە هەمان فید</strong></summary>
   <p>بە یەک کرتە لایڤ دەست پێ بکە؛ ناوی ژوور بە خۆکار دروست دەبێت.</p>
-  <label for="haloAdultConfirm" style="display:flex;align-items:center;gap:9px;margin:12px 0;padding:11px;border:1px solid #f5c96a;border-radius:12px;background:#ffffff08;color:#f5c96a;font-weight:700;"><input id="haloAdultConfirm" type="checkbox" style="width:20px;height:20px;accent-color:#f5c96a;"> من ١٨ ساڵ یان زیاترەم و تەمەنی خۆم پشتڕاست دەکەمەوە.</label>
+  <p class="small" style="color:#f5c96a;font-weight:700;">🔒 بۆ دەستپێکردنی لایڤ، پێویستە لانیکەم ٥٠٠ فۆڵۆوەرت هەبێت.</p>
   <input type="hidden" id="channel">
   <div class="live-actions">
    <button onclick="joinCall()" data-i18n="joinLive">▶ Start Live</button>
@@ -2335,6 +2335,11 @@ async function getHaloAccessToken(){
  if(error||!data.session?.access_token)throw new Error("تکایە دووبارە بچۆ ژوورەوە.");
  return data.session.access_token;
 }
+async function getHaloFollowerCount(){
+ const {count,error}=await db.from("user_follows").select("follower_id",{count:"exact",head:true}).eq("following_id",currentUser.id);
+ if(error)throw new Error("نەتوانرا ژمارەی فۆڵۆوەرەکانت بزانرێت: "+error.message);
+ return count||0;
+}
 let agoraClient=null,localTracks=[],cameraEnabled=true,micEnabled=true,currentCamera="user";
 let haloLiveSessionId=null;
 let haloViewerClient=null;
@@ -2354,14 +2359,9 @@ function showLiveViewer(){
  const status=document.createElement("p");status.id="haloLiveViewerStatus";status.style.cssText="margin:0;padding:8px;text-align:center;background:#111;color:white;";
  panel.append(top,stage,status);document.body.appendChild(panel);return panel;
 }
-function requireHaloAdult(){
- const check=document.getElementById("haloAdultConfirm");
- if(!check||!check.checked){alert("بۆ بەکارهێنانی پەخشی زیندوو، پێویستە پشتڕاست بکەیتەوە کە ١٨ ساڵ یان زیاترەیت.");return false;}
- return true;
-}
 async function joinLiveViewer(channel,title,inlineCard){
  if(!currentUser){openAccount();return;}
- if(!requireHaloAdult())return;
+
  if(haloViewerClient)await leaveLiveViewer();
  let stage,status;
  haloViewerInlineCard=null;
@@ -2401,8 +2401,10 @@ async function leaveLiveViewer(){
  
 async function joinCall(){
  if(!currentUser){alert("سەرەتا بچۆ ژوورەوە.");return;}
- if(!requireHaloAdult())return;
+
  if(agoraClient||haloLiveSessionId){alert("لایڤێکت پێشتر دەست پێکردووە. سەرەتا دەرچوون بکە.");return;}
+ const followerCount=await getHaloFollowerCount();
+ if(followerCount<500){alert("بۆ دەستپێکردنی لایڤ پێویستە لانیکەم ٥٠٠ فۆڵۆوەرت هەبێت. ئێستا "+followerCount+" فۆڵۆوەرت هەیە.");return;}
  const channel="kh"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
  document.getElementById("channel").value=channel;
  try{
