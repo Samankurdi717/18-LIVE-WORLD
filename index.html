@@ -1073,7 +1073,7 @@ async function signInWithGoogle(){
  try{
   if(!document.getElementById("termsConsent").checked){alert("پێویستە مەرج و ڕێساکانی KURD HALO پەسەند بکەیت.");return;}
   authMessage("پەیوەندی بە هەژماری Google دەکرێت...");
-  const {error}=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:APP_URL,scopes:"openid email profile"}});
+  const {error}=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:APP_URL,scopes:"openid email profile",queryParams:{prompt:"select_account"}}});
   if(error)throw error;
  }catch(e){authMessage("چوونەژوورەوە بە Google سەرکەوتوو نەبوو: "+e.message);}
 }
