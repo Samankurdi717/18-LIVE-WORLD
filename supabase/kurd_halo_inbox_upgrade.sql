@@ -11,21 +11,24 @@ begin
   if to_regclass('public.profiles') is null then missing := array_append(missing,'public.profiles');
   else
     if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='id' and data_type='uuid') then missing := array_append(missing,'profiles.id uuid'); end if;
-    if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='display_name') then missing := array_append(missing,'profiles.display_name'); end if;
-    if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='avatar_url') then missing := array_append(missing,'profiles.avatar_url'); end if;
+    if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='display_name' and data_type='text') then missing := array_append(missing,'profiles.display_name text'); end if;
+    if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='avatar_url' and data_type='text') then missing := array_append(missing,'profiles.avatar_url text'); end if;
+    if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='updated_at' and data_type='timestamp with time zone') then missing := array_append(missing,'profiles.updated_at timestamptz'); end if;
   end if;
   if to_regclass('public.videos') is null then missing := array_append(missing,'public.videos');
   else
     if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='videos' and column_name='id' and data_type='uuid') then missing := array_append(missing,'videos.id uuid'); end if;
     if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='videos' and column_name='user_id' and data_type='uuid') then missing := array_append(missing,'videos.user_id uuid'); end if;
-    if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='videos' and column_name='storage_path') then missing := array_append(missing,'videos.storage_path'); end if;
-    if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='videos' and column_name='caption') then missing := array_append(missing,'videos.caption'); end if;
+    if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='videos' and column_name='storage_path' and data_type='text') then missing := array_append(missing,'videos.storage_path text'); end if;
+    if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='videos' and column_name='caption' and data_type='text') then missing := array_append(missing,'videos.caption text'); end if;
+    if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='videos' and column_name='created_at' and data_type='timestamp with time zone') then missing := array_append(missing,'videos.created_at timestamptz'); end if;
   end if;
   if to_regclass('public.user_follows') is null then missing := array_append(missing,'public.user_follows');
   else
     if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='user_follows' and column_name='follower_id' and data_type='uuid') then missing := array_append(missing,'user_follows.follower_id uuid'); end if;
     if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='user_follows' and column_name='following_id' and data_type='uuid') then missing := array_append(missing,'user_follows.following_id uuid'); end if;
   end if;
+  if not exists (select 1 from storage.buckets where id='videos' and public is true) then missing := array_append(missing,'public storage bucket videos (required for existing feed-video shares)'); end if;
   if cardinality(missing)>0 then raise exception 'KURD HALO Inbox preflight failed: %',array_to_string(missing,', '); end if;
 end
 $preflight$;
