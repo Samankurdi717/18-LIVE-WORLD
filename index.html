@@ -3251,6 +3251,7 @@ function openLive(){
   const inbox=document.getElementById('inboxHub');
   const profile=document.getElementById('profilePage');
   const sound=document.getElementById('soundHub');
+  const quiz=document.getElementById('khQuizPage');
   const feature=document.getElementById('profileFeatureModal');
   const search=home?.querySelector('.user-search-panel');
   const drawer=document.getElementById('uploadDrawer');
@@ -3262,6 +3263,7 @@ function openLive(){
    profile?.classList.add('hidden');
    inbox?.classList.remove('active');
    sound?.classList.add('hidden');
+   quiz?.classList.add('hidden');
    feature?.classList.add('hidden');
    document.getElementById('profileDrawer')?.classList.add('hidden');
    document.getElementById('profileMenuBackdrop')?.classList.add('hidden');
@@ -3273,7 +3275,27 @@ function openLive(){
    return;
   }
 
+  if(tab==='quiz'){
+   document.body.classList.remove('halo-search-open');
+   if(search)search.hidden=true;
+   home?.classList.add('hidden');
+   inbox?.classList.remove('active');
+   profile?.classList.add('hidden');
+   sound?.classList.add('hidden');
+   quiz?.classList.remove('hidden');
+   feature?.classList.add('hidden');
+   setActiveNav('navHome');
+   window.scrollTo({top:0,behavior:'instant'});
+   return;
+  }
+
+  if(tab==='klawen'){
+   alert('بەشی کڵاوێن هێشتا پەڕەی تایبەتیی ئامادە نییە.');
+   return;
+  }
+
   if(tab==='friends'){
+   quiz?.classList.add('hidden');
    sound?.classList.add('hidden');
    profile?.classList.add('hidden');
    inbox?.classList.remove('active');
@@ -3288,6 +3310,7 @@ function openLive(){
   }
 
   if(tab==='inbox'){
+   quiz?.classList.add('hidden');
    sound?.classList.add('hidden');
    profile?.classList.add('hidden');
    if(search)search.hidden=true;
@@ -3300,6 +3323,7 @@ function openLive(){
   }
 
   if(tab==='profile'){
+   quiz?.classList.add('hidden');
    sound?.classList.add('hidden');
    openMyProfile();
    return;
