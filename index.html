@@ -3251,11 +3251,13 @@ function openLive(){
   const inbox=document.getElementById('inboxHub');
   const profile=document.getElementById('profilePage');
   const sound=document.getElementById('soundHub');
+  const live=document.getElementById('liveHub');
   const quiz=document.getElementById('khQuizPage');
   const feature=document.getElementById('profileFeatureModal');
   const search=home?.querySelector('.user-search-panel');
   const drawer=document.getElementById('uploadDrawer');
   if(drawer)drawer.open=false;
+  if(live){live.open=false;live.classList.add('hidden');}
 
   if(tab==='home'){
    document.body.classList.remove('halo-search-open');
