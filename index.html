@@ -1908,9 +1908,16 @@ async function loadVideos(){
   (likesResult.data||[]).forEach(row=>{likeCounts[row.video_id]=(likeCounts[row.video_id]||0)+1;if(row.user_id===currentUser.id)likedByMe.add(row.video_id);});
   (commentsResult.data||[]).forEach(row=>{commentCounts[row.video_id]=(commentCounts[row.video_id]||0)+1;});
   feed.innerHTML="";
-  const memberItems=(data||[]).sort((a,b)=>
-   new Date(b.published_at||b.created_at||0)-new Date(a.published_at||a.created_at||0)
-  );
+  const memberItems=(data||[]).sort((a,b)=>{
+   const timeA=new Date(a.published_at||a.created_at||0).getTime();
+   const timeB=new Date(b.published_at||b.created_at||0).getTime();
+   if(feedMode!=="forYou")return timeB-timeA;
+   const now=Date.now();
+   const ageA=Math.max(0,(now-timeA)/3600000),ageB=Math.max(0,(now-timeB)/3600000);
+   const scoreA=((likeCounts[a.id]||0)*2+(commentCounts[a.id]||0)*3)/Math.pow(ageA+2,0.6);
+   const scoreB=((likeCounts[b.id]||0)*2+(commentCounts[b.id]||0)*3)/Math.pow(ageB+2,0.6);
+   return scoreB-scoreA||timeB-timeA;
+  });
   // Active live broadcasts appear before short videos in the same vertical feed.
   feedStatus("٥/٥ — پشکنینی لایڤەکان...");
   const liveResult=await db.from("live_sessions").select("id,user_id,channel,title,started_at").eq("status","live").order("started_at",{ascending:false}).limit(30);
