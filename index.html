@@ -1773,7 +1773,9 @@ async function openVideoComments(videoId,onCommentAdded){
 async function closeFollowList(){document.getElementById("followListModal")?.classList.add("hidden");}
 async function openFollowList(kind,targetUserId){
  if(!currentUser){alert("تکایە سەرەتا بچۆ ژوورەوە.");return;}
- const listOwnerId=targetUserId||document.getElementById('profilePage')?.dataset.viewedUserId||currentUser.id;
+ const profilePage=document.getElementById('profilePage');
+ const viewedUserId=profilePage&&!profilePage.classList.contains('hidden')?profilePage.dataset.viewedUserId:'';
+ const listOwnerId=targetUserId||viewedUserId||currentUser.id;
  const modal=document.getElementById("followListModal"),content=document.getElementById("followListContent"),title=document.getElementById("followListTitle");
  modal.classList.remove("hidden");title.textContent=kind==="followers"?"Followers":"Following";content.innerHTML='<p class="small">چاوەڕێ بکە...</p>';
  try{
