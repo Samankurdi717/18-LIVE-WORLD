@@ -1687,11 +1687,11 @@ async function openVideoComments(videoId,onCommentAdded){
   }
   data.forEach(row=>{
    const item=document.createElement("div");item.className="comment-item";
-   const meta=document.createElement("div");meta.className="comment-meta";
+   const meta=document.createElement("button");meta.type="button";meta.className="comment-meta";meta.style.cssText="display:block;width:100%;text-align:left;cursor:pointer;background:transparent;border:0;color:inherit;padding:4px 0;position:relative;z-index:2;";
    const isMine=currentUser&&row.user_id===currentUser.id;
    const displayName=isMine?haloFeatureText("تۆ"):(commenterNames.get(row.user_id)||haloFeatureText("ئەندام"));
    meta.textContent=displayName+" · "+new Date(row.created_at).toLocaleString();
-    meta.style.cursor="pointer";meta.title="بینینی پرۆفایل";meta.addEventListener("click",()=>openMemberProfile(row.user_id));
+    meta.title="بینینی پرۆفایلی ئەم ئەندامە";meta.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();openMemberProfile(row.user_id);});
    const body=document.createElement("div");body.className="comment-content";body.textContent=row.content;
    item.append(meta,body);list.append(item);
   });
