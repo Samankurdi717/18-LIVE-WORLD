@@ -1996,6 +1996,7 @@ async function loadVideos(){
     liveInfo.append(avatar,tag,hostName,liveTitle,watch);liveCard.append(closeLiveCard,liveInfo);feed.appendChild(liveCard);
    }
   }
+  if(feedMode==="live"){feedStatus("");return;}
   memberItems.forEach(item=>{
    const videoUrl=db.storage.from("videos").getPublicUrl(item.storage_path).data.publicUrl;
    const card=document.createElement("article");card.className="feed-card";
