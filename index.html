@@ -1863,24 +1863,29 @@ async function loadVideos(){
  const feedStatus=message=>{if(requestVersion===haloFeedLoadVersion)feed.innerHTML="<p class='small'>"+message+"</p>";};
  feedStatus("١/٥ — پەیوەندی بە داتابەیسی ڤیدیۆکان...");
  try{
-  const {data:allVideos,error}=await db.from("videos").select("*").order("created_at",{ascending:false}).limit(100);
-  if(error)throw error;
-  if(requestVersion!==haloFeedLoadVersion)return;
-  let data=allVideos||[];
-  if(feedMode==="live")data=[];
-  feedStatus("٢/٥ — ڤیدیۆکان دۆزرایەوە؛ زانیارییەکانیان بار دەکرێت...");
-  let followedIds=[];
-  if(feedMode==="saved"){
-   const {data:savedRows,error:savedError}=await db.from("video_saves").select("video_id").eq("user_id",currentUser.id);
-   if(savedError)throw savedError;
-   const savedIds=new Set((savedRows||[]).map(x=>x.video_id));
-   data=data.filter(v=>savedIds.has(v.id));
-  }
+  let data=[],followedIds=[];
   if(feedMode==="following"){
    const {data:followRows,error:followError}=await db.from("user_follows").select("following_id").eq("follower_id",currentUser.id);
-   if(followError)throw followError;followedIds=(followRows||[]).map(x=>x.following_id);
-   data=data.filter(v=>followedIds.includes(v.user_id));
+   if(followError)throw followError;
+   followedIds=(followRows||[]).map(x=>x.following_id);
+   if(followedIds.length){
+    const result=await db.from("videos").select("*").in("user_id",followedIds).order("created_at",{ascending:false}).limit(100);
+    if(result.error)throw result.error;data=result.data||[];
+   }
+  }else if(feedMode==="saved"){
+   const {data:savedRows,error:savedError}=await db.from("video_saves").select("video_id").eq("user_id",currentUser.id);
+   if(savedError)throw savedError;
+   const savedIds=(savedRows||[]).map(x=>x.video_id);
+   if(savedIds.length){
+    const result=await db.from("videos").select("*").in("id",savedIds).order("created_at",{ascending:false}).limit(100);
+    if(result.error)throw result.error;data=result.data||[];
+   }
+  }else if(feedMode!=="live"){
+   const result=await db.from("videos").select("*").order("created_at",{ascending:false}).limit(100);
+   if(result.error)throw result.error;data=result.data||[];
   }
+  if(requestVersion!==haloFeedLoadVersion)return;
+  feedStatus("٢/٥ — ڤیدیۆکان دۆزرایەوە؛ زانیارییەکانیان بار دەکرێت...");
   
   const videoIds=data.map(v=>v.id);
   feedStatus("٣/٥ — لایک و کۆمێنتەکان بار دەکرێن...");
