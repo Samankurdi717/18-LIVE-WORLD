@@ -2410,7 +2410,7 @@ async function joinCall(){
   document.getElementById("status").innerText="ئامادەکاری بۆ دەستپێکردنی لایڤ...";
   const {error:staleError}=await db.from("live_sessions").update({status:"ended",ended_at:new Date().toISOString()}).eq("user_id",currentUser.id).in("status",["live","starting"]);
   if(staleError)throw staleError;
-  const {data:startingLive,error:startingLiveError}=await db.from("live_sessions").insert({user_id:currentUser.id,channel:channel,title:"لایڤ",status:"starting"}).select("id").single();
+  const {data:startingLive,error:startingLiveError}=await db.from("live_sessions").insert({user_id:currentUser.id,channel:channel,title:"لایڤ",status:"live"}).select("id").single();
   if(startingLiveError)throw startingLiveError;
   haloLiveSessionId=startingLive.id;
   agoraClient=Agora.createClient({mode:"rtc",codec:"vp8"});
