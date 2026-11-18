@@ -958,7 +958,7 @@ function switchAppTab(tab){
  else{document.body.classList.remove('halo-search-open');}
 
  const isInbox=tab==='inbox';home?.classList.toggle('hidden',isInbox);inbox?.classList.toggle('active',isInbox);
- if(tab==='home'){setActiveNav('navHome');window.scrollTo({top:0,behavior:'smooth'});}
+ if(tab==='home'){setActiveNav('navHome');setFeedMode('forYou');window.scrollTo({top:0,behavior:'smooth'});}
  else if(tab==='friends'){setActiveNav('navFriends');const input=document.getElementById('userSearchInput');input?.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input?.focus(),180);}
  else if(tab==='inbox'){setActiveNav('navInbox');if(currentUser)loadInbox();else openAccount();}
 }
