@@ -2621,8 +2621,9 @@ async function switchCamera(){
   const cameras=await Agora.getCameras();
   if(cameras.length<2){alert("کامێرای دووەم لە مۆبایلەکەت نییە.");return;}
   const nextFacing=currentCamera==="user"?"environment":"user";
-  const target=cameras.find(camera=>camera.facingMode===nextFacing)||
-   cameras.find(camera=>camera.deviceId!==localTracks[1].getTrackLabel?.());
+  const currentDeviceId=localTracks[1].getMediaStreamTrack?.().getSettings?.().deviceId;
+  const target=cameras.find(camera=>camera.facingMode===nextFacing&&camera.deviceId!==currentDeviceId)||
+   cameras.find(camera=>camera.deviceId!==currentDeviceId);
   if(!target){alert("کامێرای جێگرەوە نەدۆزرایەوە.");return;}
   await localTracks[1].setDevice(target.deviceId);
   currentCamera=nextFacing;
