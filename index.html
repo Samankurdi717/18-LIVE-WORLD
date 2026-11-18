@@ -1209,7 +1209,8 @@ async function signOut(){
 }// PROFILE PAGE, DRAWER AND FEATURE PANELS
 function openMyProfile(){
  if(!currentUser){openAccount();return;}document.getElementById('profilePage').dataset.viewedUserId='';
- document.body.classList.remove('halo-search-open');
+ const ownEdit=document.querySelector('#profilePage button[onclick="openProfileEditor()"]');if(ownEdit)ownEdit.style.display='';
+ document.body.classList.remove('halo-search-open');const hs=document.getElementById('headerSearchButton');if(hs)hs.hidden=true;
  const searchPanel=document.querySelector('#unifiedHub>.user-search-panel');if(searchPanel)searchPanel.hidden=true;
  const uploadDrawer=document.getElementById('uploadDrawer');if(uploadDrawer)uploadDrawer.open=false;
  setActiveNav('navProfile');document.getElementById('inboxHub').classList.remove('active');
