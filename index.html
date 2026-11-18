@@ -171,7 +171,7 @@ button:disabled{opacity:.5}
  
 .bottom-nav{display:grid;
  position:fixed;z-index:60;bottom:0;left:50%;transform:translateX(-50%);width:min(620px,100%);
- display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));
  background:rgba(9,10,22,.94);backdrop-filter:blur(20px);border-top:1px solid var(--line)
 }
 .bottom-nav button{margin:0;padding:8px 3px;border-radius:13px;background:transparent;color:#85879f;box-shadow:none;font-size:11px}
@@ -1201,7 +1201,7 @@ async function signOut(){
  closeProfileMenu();closeProfileFeature();document.getElementById("profilePage").classList.add("hidden");document.getElementById("inboxHub").classList.remove("active");document.getElementById("unifiedHub").classList.remove("hidden");activeDmUser=null;pendingSharedVideoId=null;showUser(null);authMessage("بە سەرکەوتوویی دەرچوویت.");
 }// PROFILE PAGE, DRAWER AND FEATURE PANELS
 function openMyProfile(){
- if(!currentUser){openAccount();return;}
+ if(!currentUser){openAccount();return;}document.getElementById('profilePage').dataset.viewedUserId='';
  document.body.classList.remove('halo-search-open');
  const searchPanel=document.querySelector('#unifiedHub>.user-search-panel');if(searchPanel)searchPanel.hidden=true;
  const uploadDrawer=document.getElementById('uploadDrawer');if(uploadDrawer)uploadDrawer.open=false;
@@ -1211,7 +1211,7 @@ function openMyProfile(){
  renderMyProfile();window.scrollTo({top:0,behavior:'smooth'});
 }
 async function openMemberProfile(userId){
- if(!userId)return;if(currentUser&&userId===currentUser.id){openMyProfile();return;}
+ if(!userId)return;document.getElementById('profilePage').dataset.viewedUserId=userId;if(currentUser&&userId===currentUser.id){openMyProfile();return;}
  document.body.classList.remove('halo-search-open');const sp=document.querySelector('#unifiedHub>.user-search-panel');if(sp)sp.hidden=true;
  const ud=document.getElementById('uploadDrawer');if(ud)ud.open=false;document.getElementById('inboxHub').classList.remove('active');document.getElementById('unifiedHub').classList.add('hidden');document.getElementById('profilePage').classList.remove('hidden');
  const edit=document.querySelector('#profilePage button[onclick="openProfileEditor()"]');if(edit)edit.style.display='none';
@@ -1718,14 +1718,15 @@ async function openVideoComments(videoId,onCommentAdded){
 }
  
 async function closeFollowList(){document.getElementById("followListModal")?.classList.add("hidden");}
-async function openFollowList(kind){
+async function openFollowList(kind,targetUserId){
  if(!currentUser){alert("تکایە سەرەتا بچۆ ژوورەوە.");return;}
+ const listOwnerId=targetUserId||document.getElementById('profilePage')?.dataset.viewedUserId||currentUser.id;
  const modal=document.getElementById("followListModal"),content=document.getElementById("followListContent"),title=document.getElementById("followListTitle");
  modal.classList.remove("hidden");title.textContent=kind==="followers"?"Followers":"Following";content.innerHTML='<p class="small">چاوەڕێ بکە...</p>';
  try{
   const column=kind==="followers"?"follower_id":"following_id";
   const filter=kind==="followers"?"following_id":"follower_id";
-  const {data:rows,error}=await db.from("user_follows").select(column).eq(filter,currentUser.id).order("created_at",{ascending:false}).limit(200);
+  const {data:rows,error}=await db.from("user_follows").select(column).eq(filter,listOwnerId).order("created_at",{ascending:false}).limit(200);
   if(error)throw error;
   const ids=(rows||[]).map(row=>row[column]).filter(Boolean);
   if(!ids.length){content.innerHTML='<p class="small">هێشتا هیچ کەسێک لەم لیستەدا نییە.</p>';return;}
