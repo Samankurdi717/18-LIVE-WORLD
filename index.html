@@ -1076,7 +1076,7 @@ function ensureHaloAgoraSDK(){
  return haloAgoraLoadPromise;
 }
 const APP_URL="https://samankurdi717.github.io/18-LIVE-WORLD/";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage}});
 let currentUser=null;
  
 function authMessage(message){document.getElementById("authStatus").innerText=message;}
@@ -3308,12 +3308,13 @@ window.createKurdHaloOriginalSound=async function(){
  authMessage("لینکی گۆڕینی وشەی نهێنی پشتڕاست کرا. وشەی نهێنی نوێ دابنێ.");
 }
 switchAppTab("home");
-document.body.classList.add("auth-required");
-document.getElementById("accountModal").classList.remove("hidden");
+// Restore the saved Supabase session before showing the login screen.
 const recoveryLink=new URLSearchParams(window.location.hash.slice(1)).get("type")==="recovery";
-db.auth.getSession().then(({data})=>{
+db.auth.getSession().then(({data,error})=>{
+ if(error)console.warn("KURD HALO session restore:",error.message);
  if(recoveryLink&&data.session)showPasswordRecovery(data.session.user);
  else if(data.session)showUser(data.session.user);
+ else showUser(null);
 });
 db.auth.onAuthStateChange((event,session)=>{
  if(event==="PASSWORD_RECOVERY"&&session){showPasswordRecovery(session.user);return;}
