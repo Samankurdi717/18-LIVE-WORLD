@@ -1657,11 +1657,18 @@ async function openVideoComments(videoId,onCommentAdded){
   if(error){list.textContent=haloFeatureText("هەڵە لە بارکردنی کۆمێنتەکان: ")+error.message;return;}
   list.innerHTML="";
   if(!data||!data.length){list.textContent=haloFeatureText("هێشتا کۆمێنت نییە. یەکەم کۆمێنت بنووسە.");return;}
+  const commenterIds=[...new Set(data.map(row=>row.user_id).filter(Boolean))];
+  let commenterNames=new Map();
+  if(commenterIds.length){
+   const profiles=await db.from("profiles").select("id,display_name").in("id",commenterIds);
+   if(!profiles.error)commenterNames=new Map((profiles.data||[]).map(profile=>[profile.id,profile.display_name]));
+  }
   data.forEach(row=>{
    const item=document.createElement("div");item.className="comment-item";
    const meta=document.createElement("div");meta.className="comment-meta";
    const isMine=currentUser&&row.user_id===currentUser.id;
-   meta.textContent=(isMine?haloFeatureText("تۆ"):haloFeatureText("ئەندام ")+row.user_id.slice(0,8))+" · "+new Date(row.created_at).toLocaleString();
+   const displayName=isMine?haloFeatureText("تۆ"):(commenterNames.get(row.user_id)||haloFeatureText("ئەندام"));
+   meta.textContent=displayName+" · "+new Date(row.created_at).toLocaleString();
    const body=document.createElement("div");body.className="comment-content";body.textContent=row.content;
    item.append(meta,body);list.append(item);
   });
