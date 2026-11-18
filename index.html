@@ -2495,17 +2495,27 @@ async function refreshHaloPkInvites(){
  data.forEach(battle=>{
   const row=document.createElement("div");row.style.cssText="padding:9px;background:#ffffff0d;border-radius:10px;display:flex;flex-direction:column;gap:7px;";
   const label=document.createElement("strong");label.textContent="⚔️ "+(names.get(battle.challenger_user_id)||"ئەندام")+" بانگهێشتی PK ـی کردوویت.";
-  const accept=document.createElement("button");accept.type="button";accept.textContent="پەسەندکردن";accept.style.cssText="margin:0;";
+  const actions=document.createElement("div");actions.style.cssText="display:flex;gap:8px;flex-wrap:wrap;";
+  const accept=document.createElement("button");accept.type="button";accept.textContent="✅ بەڵێ";accept.style.cssText="margin:0;flex:1;min-width:110px;";
   accept.onclick=async()=>{
-   if(!haloLiveSessionId){document.getElementById("haloPkStatus").textContent="بۆ پەسەندکردن، سەرەتا لایڤی خۆت دەست پێ بکە و دووبارە پەسەندکردن هەڵبژێرە.";return;}
-   accept.disabled=true;
+   if(!haloLiveSessionId){document.getElementById("haloPkStatus").textContent="بۆ قبوڵکردنی چالنج، سەرەتا لایڤی خۆت دەست پێ بکە.";return;}
+   accept.disabled=true;decline.disabled=true;
    const {error:acceptError}=await db.rpc("halo_pk_accept",{p_battle_id:battle.id,p_live_session_id:haloLiveSessionId});
-   if(acceptError){document.getElementById("haloPkStatus").textContent="پەسەندکردن سەرکەوتوو نەبوو: "+acceptError.message;accept.disabled=false;return;}
+   if(acceptError){document.getElementById("haloPkStatus").textContent="قبوڵکردن سەرکەوتوو نەبوو: "+acceptError.message;accept.disabled=false;decline.disabled=false;return;}
    haloPkBattleId=battle.id;
-   document.getElementById("haloPkStatus").textContent="✅ بانگهێشت پەسەند کرا. ئەنجام و کاتی PK لە خشتەکەدا دەردەکەون.";
+   document.getElementById("haloPkStatus").textContent="✅ چالنجەکەت قبوڵ کرا. PK دەستی پێکرد.";
    await refreshHaloPkInvites();
   };
-  row.append(label,accept);box.append(row);
+  const decline=document.createElement("button");decline.type="button";decline.textContent="❌ ببورە مەشغوڵم";decline.style.cssText="margin:0;flex:1;min-width:140px;background:#6b2732;";
+  decline.onclick=async()=>{
+   if(!confirm("دڵنیایت دەتەوێت ئەم چالنجە ڕەت بکەیتەوە؟"))return;
+   accept.disabled=true;decline.disabled=true;
+   const {error:declineError}=await db.from("halo_pk_battles").update({status:"declined"}).eq("id",battle.id).eq("opponent_user_id",currentUser.id).eq("status","pending");
+   if(declineError){document.getElementById("haloPkStatus").textContent="نەتوانرا چالنج ڕەت بکرێتەوە: "+declineError.message;accept.disabled=false;decline.disabled=false;return;}
+   document.getElementById("haloPkStatus").textContent="📩 وەڵامەکەت نێردرا: ببورە مەشغوڵم.";
+   await refreshHaloPkInvites();
+  };
+  actions.append(accept,decline);row.append(label,actions);box.append(row);
  });
 }
 async function refreshHaloPkScoreboard(){
