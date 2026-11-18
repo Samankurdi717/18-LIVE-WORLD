@@ -1879,7 +1879,8 @@ async function searchUsers(){
 }
  
 // One global sound switch controls every feed video.
-let haloFeedSoundEnabled=false;
+let haloFeedSoundEnabled=true;
+try{const savedFeedSound=localStorage.getItem("haloFeedSoundEnabled");if(savedFeedSound!==null)haloFeedSoundEnabled=savedFeedSound==="true";}catch(e){}
 let haloFeedLoadVersion=0;
 function haloFeedIcon(name){
  const paths={
@@ -1902,6 +1903,7 @@ function updateFeedSoundButtons(){
 }
 function toggleAllFeedSound(){
  haloFeedSoundEnabled=!haloFeedSoundEnabled;
+ try{localStorage.setItem("haloFeedSoundEnabled",String(haloFeedSoundEnabled));}catch(e){}
  document.querySelectorAll("#feed video").forEach(video=>{video.muted=!haloFeedSoundEnabled;});
  updateFeedSoundButtons();
 }
