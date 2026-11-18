@@ -1203,20 +1203,29 @@ async function resetPassword(){
 async function updatePassword(){
  const password=document.getElementById("newPassword").value;
  const confirm=document.getElementById("confirmPassword").value;
+ const button=document.querySelector("#newPasswordBox button");
  if(!password||!confirm){alert("هەردوو خانەکە پڕ بکەرەوە.");return;}
  if(password.length<6){alert("وشەی نهێنی دەبێت لانیکەم 6 پیت بێت.");return;}
  if(password!==confirm){alert("وشە نهێنییەکان یەک ناگرنەوە.");return;}
  try{
+  if(button)button.disabled=true;
   authMessage("وشەی نهێنی دەگۆڕدرێت...");
-  const {data,error}=await db.auth.updateUser({password});
+  const {error}=await db.auth.updateUser({password});
   if(error)throw error;
-  document.body.classList.remove("password-recovery");
-  document.getElementById("newPasswordBox").classList.add("hidden");
   document.getElementById("newPassword").value="";
   document.getElementById("confirmPassword").value="";
-  authMessage("وشەی نهێنی نوێ بە سەرکەوتوویی دانرا. ⭐");
-  if(data?.user)showUser(data.user);
- }catch(e){authMessage("هەڵە: "+e.message);}
+  document.getElementById("newPasswordBox").innerHTML='<h3 style="color:#e8bd45">✅ وشەی نهێنی نوێ بە سەرکەوتوویی دانرا</h3><p style="color:#fff;line-height:1.9">ئێستا دەتوانیت بە وشەی نهێنی نوێ بچیتە ژوورەوە.</p><button type="button" onclick="finishPasswordRecovery()">چوونەوە بۆ چوونەژوورەوە</button>';
+  authMessage("سەرکەوتوو بوو! وشەی نهێنی نوێت پاشەکەوت کرا. ⭐");
+ }catch(e){
+  authMessage("گۆڕینی وشەی نهێنی سەرکەوتوو نەبوو: "+(e.message||e));
+  if(button)button.disabled=false;
+ }
+}
+function finishPasswordRecovery(){
+ document.body.classList.remove("password-recovery");
+ document.getElementById("newPasswordBox").classList.add("hidden");
+ document.getElementById("accountBox")?.classList.remove("hidden");
+ authMessage("بە ئیمەیڵ و وشەی نهێنی نوێ بچۆ ژوورەوە.");
 }
  
 // SHOW USER AND PROFILE
@@ -3289,6 +3298,8 @@ db.auth.getSession().then(({data})=>{
 });
 db.auth.onAuthStateChange((event,session)=>{
  if(event==="PASSWORD_RECOVERY"&&session){showPasswordRecovery(session.user);return;}
+ // Keep the recovery screen visible while the password update is being saved.
+ if(document.body.classList.contains("password-recovery"))return;
  if(session)showUser(session.user);
  else showUser(null);
 });
