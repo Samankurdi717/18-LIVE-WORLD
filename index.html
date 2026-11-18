@@ -736,6 +736,7 @@ body.auth-required .bottom-nav{display:none!important}
   </details>
  </div>
  <button onclick="signUp()" data-i18n="signup">📝 خۆتۆمارکردن</button>
+ <button type="button" class="dark" onclick="signInWithGoogle()" style="width:100%;margin-top:10px;border:1px solid #d5ad4b;background:#fff;color:#222;font-weight:800">🌐 بەردەوامبوون بە Google / Gmail</button>
  <button class="dark" onclick="signIn()" data-i18n="signin">چوونەژوورەوە</button>
  <button class="dark" onclick="resetPassword()" data-i18n="forgot">وشەی نهێنیم لەبیرچووە؟</button>
  <button class="red hidden" id="logoutBtn" onclick="signOut()" data-i18n="logout">دەرچوون لە هەژمار</button>
@@ -777,6 +778,15 @@ body.auth-required .bottom-nav{display:none!important}
  </div>
 </div>
  
+<!-- REQUIRED GOOGLE PROFILE SETUP -->
+<div class="account-modal hidden" id="googleProfileModal"><div class="account-sheet" style="max-width:520px">
+<h2 style="text-align:center;color:#e8bd45">✨ تەواوکردنی پرۆفایل</h2><p class="small">بۆ بەکارهێنانی KURD HALO ئەم زانیارییانە پڕ بکەرەوە.</p>
+<label class="field-label" for="googleProfileName">ناو</label><input id="googleProfileName" type="text" autocomplete="name" placeholder="ناوی تەواو">
+<label class="field-label" for="googleProfileGender">ڕەگەز</label><select id="googleProfileGender"><option value="">ڕەگەز هەڵبژێرە</option><option value="male">نێر</option><option value="female">مێ</option><option value="intersex">دووڕەگەز</option></select>
+<label class="field-label" for="googleProfileAge">تەمەن</label><input id="googleProfileAge" type="number" min="13" max="120" inputmode="numeric" placeholder="تەمەن بە ساڵ">
+<label class="field-label" for="googleProfilePhoto">وێنەی پرۆفایل (ئیجباری)</label><input id="googleProfilePhoto" type="file" accept="image/*" required><img id="googleProfilePhotoPreview" class="avatar hidden" alt="پێشبینینی وێنە">
+<button type="button" onclick="saveGoogleProfile()" style="width:100%;margin-top:14px">پاشەکەوتکردن و چوونەژوورەوە</button><p id="googleProfileStatus" class="small"></p>
+</div></div>
 <!-- KURD HALO PROFILE PAGE -->
 <section id="profilePage" class="panel hidden">
  <div class="profile-topline"><button class="dark" type="button" onclick="switchAppTab('home')">← گەڕانەوە</button><button class="profile-menu-trigger" type="button" onclick="openProfileMenu()">☰</button></div>
@@ -1058,6 +1068,37 @@ let currentUser=null;
  
 function authMessage(message){document.getElementById("authStatus").innerText=message;}
  
+// GOOGLE SIGN-IN AND REQUIRED PROFILE COMPLETION
+async function signInWithGoogle(){
+ try{
+  if(!document.getElementById("termsConsent").checked){alert("پێویستە مەرج و ڕێساکانی KURD HALO پەسەند بکەیت.");return;}
+  authMessage("پەیوەندی بە هەژماری Google دەکرێت...");
+  const {error}=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:APP_URL,scopes:"openid email profile"}});
+  if(error)throw error;
+ }catch(e){authMessage("چوونەژوورەوە بە Google سەرکەوتوو نەبوو: "+e.message);}
+}
+document.getElementById("googleProfilePhoto")?.addEventListener("change",function(){
+ const file=this.files?.[0],preview=document.getElementById("googleProfilePhotoPreview");
+ if(!file){preview.classList.add("hidden");return;}
+ if(!file.type.startsWith("image/")||file.size>5*1024*1024){alert("وێنە دەبێت لە ٥MB بچووکتر بێت.");this.value="";preview.classList.add("hidden");return;}
+ preview.src=URL.createObjectURL(file);preview.classList.remove("hidden");
+});
+async function saveGoogleProfile(){
+ if(!currentUser)return;
+ const name=document.getElementById("googleProfileName").value.trim(),gender=document.getElementById("googleProfileGender").value,age=Number(document.getElementById("googleProfileAge").value),file=document.getElementById("googleProfilePhoto").files?.[0],status=document.getElementById("googleProfileStatus"),btn=document.querySelector("#googleProfileModal button[onclick='saveGoogleProfile()']");
+ if(!name||!gender||!Number.isInteger(age)||age<13||age>120||!file){alert("ناو، ڕەگەز، تەمەن و وێنەی پرۆفایل پێویستن.");return;}
+ if(!file.type.startsWith("image/")||file.size>5*1024*1024){alert("وێنەکە دەبێت لە ٥MB بچووکتر بێت.");return;}
+ btn.disabled=true;status.textContent="پرۆفایلەکەت پاشەکەوت دەکرێت...";
+ try{
+  const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg",path=currentUser.id+"/avatars/google-profile."+ext;
+  const {error:upErr}=await db.storage.from("videos").upload(path,file,{contentType:file.type,upsert:true});if(upErr)throw upErr;
+  const avatarUrl=db.storage.from("videos").getPublicUrl(path).data.publicUrl;
+  const {data,error}=await db.auth.updateUser({data:{full_name:name,gender,age,avatar_url:avatarUrl,halo_profile_complete:true}});if(error)throw error;
+  const {error:profileErr}=await db.from("profiles").upsert({id:currentUser.id,display_name:name,avatar_url:avatarUrl,updated_at:new Date().toISOString()},{onConflict:"id"});if(profileErr)throw profileErr;
+  document.getElementById("googleProfileModal").classList.add("hidden");showUser(data.user||currentUser);authMessage("پرۆفایلەکەت تەواو بوو. بەخێربێیت! ⭐");
+ }catch(e){status.textContent="هەڵە لە پاشەکەوتکردن: "+e.message;}finally{btn.disabled=false;}
+}
+
 // EMAIL OTP AUTHENTICATION
 let pendingOtpEmail="";
 let pendingOtpType="email";
@@ -1182,6 +1223,12 @@ function showUser(user){
  const profileBox=document.getElementById("profileBox");
  const userAvatar=document.getElementById("userAvatar");
  if(user){
+  const authProvider=user.app_metadata?.provider||"",userMetadata=user.user_metadata||{};
+  if(authProvider==="google"&&userMetadata.halo_profile_complete!==true){
+   document.body.classList.add("auth-required");document.getElementById("accountModal").classList.add("hidden");document.getElementById("googleProfileModal").classList.remove("hidden");
+   document.getElementById("googleProfileName").value=userMetadata.full_name||userMetadata.name||"";document.getElementById("googleProfileGender").value=userMetadata.gender||"";document.getElementById("googleProfileAge").value=userMetadata.age||"";return;
+  }
+  document.getElementById("googleProfileModal")?.classList.add("hidden");
   document.body.classList.remove("auth-required");
   document.getElementById("accountModal").classList.add("hidden");
   logout.classList.remove("hidden");profileBox.classList.remove("hidden");
