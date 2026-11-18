@@ -72,7 +72,16 @@
  const langs={ku:{voice:'ku-IQ',dir:'rtl'},fa:{voice:'fa-IR',dir:'rtl'},ar:{voice:'ar-SA',dir:'rtl'},en:{voice:'en-US',dir:'ltr'}};
  let lang='ku',deck=[],index=0,score=0,answered=false,timer=null,seconds=12,questionBank=bank;
  const $=id=>document.getElementById(id);
- function speak(text){ return; }
+ function speak(text){
+  if(!('speechSynthesis' in window)||typeof window.SpeechSynthesisUtterance!=='function')return;
+  try{
+   window.speechSynthesis.cancel();
+   const utterance=new SpeechSynthesisUtterance(String(text||''));
+   utterance.lang=langs[lang]?.voice||'ku-IQ';
+   utterance.rate=0.9;utterance.pitch=1;utterance.volume=1;
+   window.speechSynthesis.speak(utterance);
+  }catch(error){console.warn('KURD HALO quiz voice:',error);}
+ }
  document.querySelectorAll('.khq-lang').forEach(b=>b.addEventListener('click',()=>{lang=b.dataset.lang;document.querySelectorAll('.khq-lang').forEach(x=>x.classList.toggle('selected',x===b));page.dir=langs[lang].dir;}));
  function mix(a){return a.map(x=>({x,r:Math.random()})).sort((a,b)=>a.r-b.r).map(o=>o.x);}
  async function start(){
