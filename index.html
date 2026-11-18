@@ -807,7 +807,7 @@ body.auth-required .bottom-nav{display:none!important}
  <details class="live-inline" id="liveHub">
   <summary class="live-inline-title"><span class="live-dot"></span><strong data-i18n="liveTitle">🔴 لایڤ لە هەمان فید</strong></summary>
   <p>بە یەک کرتە لایڤ دەست پێ بکە؛ ناوی ژوور بە خۆکار دروست دەبێت.</p>
-  <p class="small" style="color:#f5c96a;font-weight:700;">🔒 بۆ دەستپێکردنی لایڤ، پێویستە لانیکەم ٥٠٠ فۆڵۆوەرت هەبێت.</p>
+  <p class="small" style="color:#f5c96a;font-weight:700;">🎥 هەر بەکارهێنەرێک دەتوانێت لایڤ دەست پێ بکات.</p>
   <input type="hidden" id="channel">
   <div class="live-actions">
    <button onclick="joinCall()" data-i18n="joinLive">▶ Start Live</button>
@@ -2335,11 +2335,6 @@ async function getHaloAccessToken(){
  if(error||!data.session?.access_token)throw new Error("تکایە دووبارە بچۆ ژوورەوە.");
  return data.session.access_token;
 }
-async function getHaloFollowerCount(){
- const {count,error}=await db.from("user_follows").select("follower_id",{count:"exact",head:true}).eq("following_id",currentUser.id);
- if(error)throw new Error("نەتوانرا ژمارەی فۆڵۆوەرەکانت بزانرێت: "+error.message);
- return count||0;
-}
 let agoraClient=null,localTracks=[],cameraEnabled=true,micEnabled=true,currentCamera="user";
 let haloLiveSessionId=null;
 let haloViewerClient=null;
@@ -2403,8 +2398,6 @@ async function joinCall(){
  if(!currentUser){alert("سەرەتا بچۆ ژوورەوە.");return;}
 
  if(agoraClient||haloLiveSessionId){alert("لایڤێکت پێشتر دەست پێکردووە. سەرەتا دەرچوون بکە.");return;}
- const followerCount=await getHaloFollowerCount();
- if(followerCount<500){alert("بۆ دەستپێکردنی لایڤ پێویستە لانیکەم ٥٠٠ فۆڵۆوەرت هەبێت. ئێستا "+followerCount+" فۆڵۆوەرت هەیە.");return;}
  const channel="kh"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
  document.getElementById("channel").value=channel;
  try{
