@@ -2679,7 +2679,7 @@ async function sendHaloPkChallenge(opponentId,button){
 async function refreshHaloPkInvites(){
  const box=document.getElementById("haloPkInvites");if(!box)return;
  if(!currentUser){box.textContent="سەرەتا بچۆ ژوورەوە.";return;}
- const {data,error}=await db.from("halo_pk_battles").select("id,challenger_user_id,created_at,status").eq("opponent_user_id",currentUser.id).eq("status","pending").order("created_at",{ascending:false}).limit(10);
+ const {data,error}=await db.from("halo_pk_battles").select("id,challenger_user_id,challenger_live_session_id,created_at,status").eq("opponent_user_id",currentUser.id).eq("status","pending").order("created_at",{ascending:false}).limit(10);
  if(error){box.textContent="خوێندنەوەی بانگهێشتەکان سەرکەوتوو نەبوو: "+error.message;return;}
  box.innerHTML="";
  if(!data?.length){box.textContent="هیچ بانگهێشتێکی چاوەڕوان نییە.";return;}
