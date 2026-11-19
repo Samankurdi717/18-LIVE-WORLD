@@ -1049,11 +1049,12 @@ function changeLanguage(lang){
  document.title="KURD HALO — کورد هەڵۆ";
  localStorage.setItem("kurdora_language",lang);
  localStorage.setItem("kurdHaloLanguage",lang);
+ localStorage.setItem("kurdHaloPrimaryLanguage",lang);
  // Rebuild dynamic feed actions so their labels use the newly selected language.
  const feedElement=document.getElementById("feed");
  // Feed reload is triggered after authentication; avoid accessing currentUser before its initialization.
 }
-(function(){const saved=localStorage.getItem("kurdora_language")||localStorage.getItem("kurdstar_language")||"ku";document.getElementById("language").value=saved;changeLanguage(saved);})();
+(function(){const saved=localStorage.getItem("kurdHaloPrimaryLanguage")||"en";document.getElementById("language").value=saved;changeLanguage(saved);})();
  
 // SUPABASE
 const SUPABASE_URL="https://eofqtrncbswbujzgrvra.supabase.co";
