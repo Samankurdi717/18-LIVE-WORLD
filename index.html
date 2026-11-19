@@ -2696,7 +2696,7 @@ async function refreshHaloPkInvites(){
   decline.onclick=async()=>{
    if(!confirm("دڵنیایت دەتەوێت ئەم چالنجە ڕەت بکەیتەوە؟"))return;
    accept.disabled=true;decline.disabled=true;
-   const {error:declineError}=await db.from("halo_pk_battles").update({status:"declined"}).eq("id",battle.id).eq("opponent_user_id",currentUser.id).eq("status","pending");
+   const {error:declineError}=await db.rpc("halo_pk_decline",{p_battle_id:battle.id});
    if(declineError){document.getElementById("haloPkStatus").textContent="نەتوانرا چالنج ڕەت بکرێتەوە: "+declineError.message;accept.disabled=false;decline.disabled=false;return;}
    document.getElementById("haloPkStatus").textContent="📩 وەڵامەکەت نێردرا: ببورە مەشغوڵم.";
    await refreshHaloPkInvites();
