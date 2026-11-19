@@ -915,6 +915,7 @@ body.auth-required .bottom-nav{display:none!important}
    <p style="font-size:12px;color:#c9c8d8;line-height:1.7;">لە کاتی لایڤدا ناوی هاوڕێک بگەڕێ و بانگهێشتی بکە. کاتێک بەڵێ هەڵدەبژێرێت، لایڤی خۆی بە خۆکار دەست پێ دەکات.</p>
    <input id="haloPkSearch" type="search" placeholder="گەڕان بە ناوی هاوڕێ..." style="width:100%;padding:11px;border-radius:10px;background:#080914;color:white;border:1px solid #ffffff30;">
    <button type="button" onclick="searchHaloPkUsers()">🔎 گەڕان</button>
+   <button type="button" class="dark" onclick="loadHaloPkFriends()">👥 هاوڕێکانم بۆ PK</button>
    <div id="haloPkSearchResults" style="display:grid;gap:7px;margin-top:8px;"></div>
    <hr style="border-color:#ffffff20;margin:12px 0;">
    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><strong>📩 بانگهێشتەکانی PK</strong><button type="button" class="dark" onclick="refreshHaloPkInvites()">↻ نوێکردنەوە</button></div>
@@ -2685,6 +2686,28 @@ async function searchHaloPkUsers(){
   invite.onclick=()=>sendHaloPkChallenge(user.id,invite);row.append(name,invite);box.append(row);
  });
  status.textContent="ئەنجامی گەڕان: "+data.length;
+}
+async function loadHaloPkFriends(){
+  const box=document.getElementById("haloPkSearchResults"),status=document.getElementById("haloPkStatus");
+  if(!currentUser){status.textContent="سەرەتا بچۆ ژوورەوە.";return;}
+  box.textContent="هاوڕێکان بار دەکرێن...";
+  try{
+   const {data:rows,error}=await db.from("user_follows").select("following_id").eq("follower_id",currentUser.id).limit(100);
+   if(error)throw error;
+   const ids=[...new Set((rows||[]).map(x=>x.following_id).filter(id=>id&&id!==currentUser.id))];
+   if(!ids.length){box.textContent="هێشتا کەسێکت فۆڵۆ نەکردووە. ناوی بەکارهێنەر بگەڕێ.";return;}
+   const {data:users,error:profileError}=await db.from("profiles").select("id,display_name").in("id",ids).limit(100);
+   if(profileError)throw profileError;
+   box.innerHTML="";
+   if(!users?.length){box.textContent="هاوڕێیەک نەدۆزرایەوە.";return;}
+   users.forEach(user=>{
+    const row=document.createElement("div");row.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;background:#ffffff0d;border-radius:10px;";
+    const name=document.createElement("strong");name.textContent=user.display_name||"ئەندام";
+    const invite=document.createElement("button");invite.type="button";invite.textContent="⚔️ بانگهێشت";invite.style.cssText="margin:0;padding:7px 10px;font-size:11px;";
+    invite.onclick=()=>sendHaloPkChallenge(user.id,invite);row.append(name,invite);box.append(row);
+   });
+   status.textContent="هاوڕێکانت: "+users.length;
+  }catch(e){box.textContent="بارکردنی هاوڕێکان سەرکەوتوو نەبوو: "+(e.message||e);}
 }
 async function sendHaloPkChallenge(opponentId,button){
  const status=document.getElementById("haloPkStatus");
