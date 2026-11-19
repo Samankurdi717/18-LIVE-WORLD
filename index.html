@@ -808,6 +808,7 @@ body.auth-required .bottom-nav{display:none!important}
   <div id="publicProfileName" class="profile-username">ناوی بەکارهێنەر</div>
   <div id="publicProfileBio" class="profile-bio">بایۆ</div>
   <button class="dark" type="button" onclick="openProfileEditor()">✏️ دەستکاریکردنی پرۆفایل</button>
+  <div id="memberProfileActions" style="display:none;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:12px"></div>
  </div>
  <div class="profile-stats">
   <button class="profile-stat" type="button" onclick="openFollowList('following')" style="cursor:pointer;background:transparent;color:inherit;border:0;font:inherit"><strong id="profileFollowingCount">0</strong><span>Following</span></button>
@@ -1368,6 +1369,21 @@ function openMyProfile(){
  document.getElementById('profilePage').classList.remove('hidden');
  renderMyProfile();window.scrollTo({top:0,behavior:'smooth'});
 }
+async function renderMemberProfileActions(userId){
+ const box=document.getElementById('memberProfileActions');if(!box)return;
+ box.replaceChildren();box.style.display='none';
+ if(!currentUser||!userId||userId===currentUser.id)return;
+ const follow=document.createElement('button');follow.type='button';follow.className='follow-button';follow.dataset.targetUserId=userId;
+ const message=document.createElement('button');message.type='button';message.className='dark';message.textContent='💬 Message';
+ message.addEventListener('click',()=>startDmWithUser(userId));
+ try{
+  const {data,error}=await db.from('user_follows').select('following_id').eq('follower_id',currentUser.id).eq('following_id',userId).maybeSingle();
+  if(error)throw error;
+  const isFollowing=!!data;follow.dataset.following=String(isFollowing);follow.textContent=isFollowing?'✓ Following':'➕ Follow';follow.classList.toggle('following',isFollowing);
+  follow.addEventListener('click',()=>toggleFollow(userId,follow));
+  box.append(follow,message);box.style.display='flex';
+ }catch(e){console.warn('Member profile actions:',e);}
+}
 async function openMemberProfile(userId){
  if(!userId)return;document.getElementById('profilePage').dataset.viewedUserId=userId;if(currentUser&&userId===currentUser.id){openMyProfile();return;}
  document.body.classList.remove('halo-search-open');const sp=document.querySelector('#unifiedHub>.user-search-panel');if(sp)sp.hidden=true;
@@ -1377,6 +1393,7 @@ async function openMemberProfile(userId){
  try{
   const {data:p,error}=await db.from('profiles').select('id,display_name,avatar_url').eq('id',userId).maybeSingle();if(error)throw error;if(!p)throw new Error('پرۆفایل نەدۆزرایەوە.');
   name.textContent=p.display_name||'ئەندامێکی KURD HALO';bio.textContent='ئەندامی KURD HALO';if(p.avatar_url){img.src=p.avatar_url;img.classList.remove('hidden');}else img.removeAttribute('src');
+  await renderMemberProfileActions(userId);
   const [f,g,v]=await Promise.all([db.from('user_follows').select('follower_id',{count:'exact',head:true}).eq('following_id',userId),db.from('user_follows').select('following_id',{count:'exact',head:true}).eq('follower_id',userId),db.from('videos').select('id,storage_path,caption,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(60)]);
   if(f.error)throw f.error;if(g.error)throw g.error;if(v.error)throw v.error;document.getElementById('profileFollowersCount').textContent=f.count||0;document.getElementById('profileFollowingCount').textContent=g.count||0;
   let likes=0;if(v.data?.length){const lr=await db.from('video_likes').select('video_id',{count:'exact',head:true}).in('video_id',v.data.map(x=>x.id));if(!lr.error)likes=lr.count||0;}document.getElementById('profileLikesCount').textContent=likes;
@@ -1404,6 +1421,7 @@ function openProfileVideoPlayer(storagePath,caption){
 }
 async function renderMyProfile(){
  if(!currentUser)return;
+ const memberActions=document.getElementById('memberProfileActions');if(memberActions){memberActions.replaceChildren();memberActions.style.display='none';}
  const meta=currentUser.user_metadata||{};
  document.getElementById('publicProfileName').textContent=meta.full_name||currentUser.email||'KURD HALO user';
  document.getElementById('publicProfileBio').textContent=meta.bio||'بایۆی خۆت زیاد بکە';
@@ -1964,6 +1982,7 @@ async function searchUsers(){
    const left=document.createElement("div");left.style.cssText="display:flex;align-items:center;gap:9px;min-width:0";
    if(profile.avatar_url){const img=document.createElement("img");img.src=profile.avatar_url;img.alt="";img.style.cssText="width:36px;height:36px;border-radius:50%;object-fit:cover";left.append(img);}
    const name=document.createElement("span");name.className="result-name";name.textContent=profile.display_name||"بەکارهێنەری KURD HALO";left.append(name);
+   left.style.cursor="pointer";left.title="View profile";left.addEventListener("click",()=>openMemberProfile(profile.id));
    const actions=document.createElement("div");actions.style.cssText="display:flex;align-items:center;gap:6px;flex-shrink:0";
    const message=document.createElement("button");message.type="button";message.className="dark";message.textContent="💬 پەیام";message.addEventListener("click",()=>startDmWithUser(profile.id));
    const follow=document.createElement("button");follow.type="button";follow.className="follow-button"+(followingSet.has(profile.id)?" following":"");follow.dataset.targetUserId=profile.id;follow.dataset.following=String(followingSet.has(profile.id));follow.textContent=followingSet.has(profile.id)?"✓ فۆڵۆ":"➕ فۆڵۆ";follow.addEventListener("click",()=>toggleFollow(profile.id,follow));
