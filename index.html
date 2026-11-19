@@ -2623,7 +2623,26 @@ async function joinCall(){
   const tokenData=await response.json();const token=tokenData.token;
   if(!token)throw new Error("Token نەدۆزرایەوە.");
   await agoraClient.join(AGORA_APP_ID,channel,token,uid);
-  localTracks=await Agora.createMicrophoneAndCameraTracks();
+  // Prefer the rear/environment camera when starting a host live.
+  const hostMicTrack=await Agora.createMicrophoneAudioTrack();
+  let hostCameraTrack=null;
+  try{
+   const availableCameras=await Agora.getCameras();
+   const rearCamera=availableCameras.find(camera=>camera.facingMode==="environment"||/back|rear|environment|پشت/i.test(camera.label||""));
+   if(rearCamera){
+    hostCameraTrack=await Agora.createCameraVideoTrack({cameraId:rearCamera.deviceId,encoderConfig:"480p_1",optimizationMode:"motion"});
+    currentCamera="environment";
+   }else{
+    hostCameraTrack=await Agora.createCameraVideoTrack({encoderConfig:"480p_1",optimizationMode:"motion"});
+    currentCamera="user";
+    document.getElementById("status").innerText="کامێرای دواوە دیاری نەکرا؛ کامێرای بەردەست بەکاردێت...";
+   }
+  }catch(cameraError){
+   try{hostCameraTrack?.stop();hostCameraTrack?.close();}catch(_){}
+   hostMicTrack.stop();hostMicTrack.close();
+   throw new Error("کامێرا نەکرایەوە: "+cameraError.message);
+  }
+  localTracks=[hostMicTrack,hostCameraTrack];
   await agoraClient.publish(localTracks);localTracks[1].play("local");
   const {error:activateLiveError}=await db.from("live_sessions").update({status:"live",started_at:new Date().toISOString()}).eq("id",haloLiveSessionId).eq("user_id",currentUser.id);
   if(activateLiveError)throw activateLiveError;
