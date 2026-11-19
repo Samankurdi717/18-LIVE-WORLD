@@ -829,6 +829,8 @@ body.auth-required .bottom-nav{display:none!important}
 <div id="profileMenuBackdrop" class="profile-drawer-backdrop hidden" onclick="closeProfileMenu()"></div>
 <aside id="profileDrawer" class="profile-drawer hidden" aria-label="Profile menu" dir="auto">
  <div class="drawer-head"><strong>🦅 KURD HALO</strong><button class="account-close" type="button" onclick="closeProfileMenu()">✕</button></div>
+ <button class="drawer-item" type="button" onclick="refreshHaloApp()"><span class="drawer-icon">🔄</span><span>نوێکردنەوەی ئەپ</span><span class="drawer-arrow">‹</span></button>
+ <div class="drawer-divider"></div>
  <div class="drawer-language" style="padding:10px 14px 4px">
   <label for="language" style="display:block;color:var(--muted);font-size:12px;margin-bottom:4px">🌐 زمان / Language</label>
   <select id="language" aria-label="زمان / Language" title="زمان / Language" onchange="changeLanguage(this.value)">
@@ -3346,6 +3348,12 @@ db.auth.onAuthStateChange((event,session)=>{
 });
 
  
+// Refresh KURD HALO by reloading the latest app page.
+function refreshHaloApp(){
+ if(!confirm("ئەپەکە نوێ دەبێتەوە. ئەگەر لایڤێکت کراوەتەوە یان نامەیەکت هێشتا نەناردووە، دەکرێت بوەستێت. دەتەوێت بەردەوام بیت؟"))return;
+ window.location.reload();
+}
+
 // TikTok-style Create menu: Live, Camera, and Create.
 function openCreateMenu(){
  setActiveNav('navCreate');
