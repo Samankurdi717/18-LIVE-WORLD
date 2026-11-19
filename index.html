@@ -3622,6 +3622,17 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "9861db48-82e7-4476-a0d5-ad5f503a20a4",
+      serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
+      serviceWorkerParam: { scope: "/18-LIVE-WORLD/push/onesignal/" }
+    });
+  });
+</script>
 <script src="js/quiz-competition.js"></script>
 </body>
 </html>
