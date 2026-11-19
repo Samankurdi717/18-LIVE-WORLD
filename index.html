@@ -2289,6 +2289,7 @@ let haloLiveChatChannel=null;
 let haloLiveChatSessionId=null;
 let haloLiveReplyTo=null;
 let haloGuestRequestChannel=null,haloGuestRequestId=null,haloGuestTracks=[],haloHostGuestChannel=null;
+let haloPkPendingAcceptBattleId=null;
 async function cleanupHaloGuestRole(){
  if(haloGuestRequestChannel){try{await db.removeChannel(haloGuestRequestChannel);}catch(_){}haloGuestRequestChannel=null;}
  if(haloViewerClient&&haloGuestTracks.length){try{await haloViewerClient.unpublish(haloGuestTracks);}catch(_){}haloGuestTracks.forEach(t=>{try{t.stop();t.close();}catch(_){}});haloGuestTracks=[];try{await haloViewerClient.setClientRole("audience");}catch(_){}}
@@ -2309,14 +2310,21 @@ async function startHaloGuestRole(status){
   await haloViewerClient.setClientRole("host");
   haloGuestTracks=await Agora.createMicrophoneAndCameraTracks();
   await haloViewerClient.publish(haloGuestTracks);
-  const guestVideo=document.createElement("div");guestVideo.className="halo-guest-video-stage";guestVideo.style.cssText="position:relative;width:100%;height:150px;background:#080808;margin-top:6px;";
-  const stage=document.querySelector(".halo-live-viewer-stage");if(stage){stage.append(guestVideo);haloGuestTracks[1].play(guestVideo);}
+  const guestVideo=document.createElement("div");guestVideo.className="halo-guest-video-stage";guestVideo.style.cssText="position:relative;min-width:0;min-height:180px;width:100%;height:100%;background:#080808;border:1px solid #f5c96a;border-radius:10px;overflow:hidden;";
+  const stage=document.querySelector(".halo-live-viewer-stage");if(stage){stage.dataset.pkMode=haloPkPendingAcceptBattleId?"true":"";if(haloPkPendingAcceptBattleId){stage.style.display="grid";stage.style.gridTemplateColumns="repeat(2,minmax(0,1fr))";stage.style.gap="5px";stage.style.alignItems="stretch";stage.style.padding="5px";stage.querySelectorAll(":scope > div:not(.halo-guest-video-stage):not(.halo-guest-controls)").forEach(box=>{box.style.position="relative";box.style.inset="auto";box.style.width="100%";box.style.height="100%";box.style.minWidth="0";});}stage.append(guestVideo);haloGuestTracks[1].play(guestVideo);}
   const controls=document.createElement("div");controls.className="halo-guest-controls";controls.style.cssText="display:flex;gap:8px;padding:6px;flex-wrap:wrap;";
   let guestMicOn=true,guestCamOn=true;
   const micBtn=document.createElement("button");micBtn.type="button";micBtn.textContent="🎤 مایکرۆفۆن";micBtn.onclick=async()=>{guestMicOn=!guestMicOn;await haloGuestTracks[0].setEnabled(guestMicOn);micBtn.textContent=guestMicOn?"🎤 مایکرۆفۆن":"🔇 مایکرۆفۆن داخراو";};
   const camBtn=document.createElement("button");camBtn.type="button";camBtn.textContent="📷 کامێرا";camBtn.onclick=async()=>{guestCamOn=!guestCamOn;await haloGuestTracks[1].setEnabled(guestCamOn);camBtn.textContent=guestCamOn?"📷 کامێرا":"🚫 کامێرا داخراو";};
   controls.append(micBtn,camBtn);if(stage)stage.append(controls);
-  status.textContent="🎤 داواکارییەکەت پەسەند کرا؛ ئێستا لەسەر سەکۆی میوانیت.";
+  if(haloPkPendingAcceptBattleId){
+   const battleId=haloPkPendingAcceptBattleId;
+   const {error:pkAcceptError}=await db.rpc("halo_pk_accept",{p_battle_id:battleId,p_live_session_id:haloLiveChatSessionId});
+   if(pkAcceptError)throw pkAcceptError;
+   haloPkBattleId=battleId;haloPkPendingAcceptBattleId=null;
+   status.textContent="⚔️ PK دەستی پێکرد! هەردوو یاریزان لە هەمان لایڤدان.";
+   await refreshHaloPkScoreboard();
+  }else status.textContent="🎤 داواکارییەکەت پەسەند کرا؛ ئێستا لەسەر سەکۆی میوانیت.";
  }catch(e){
   status.textContent="نەتوانرا بچیتە سەر سەکۆ: "+String(e.message||e);
   if(haloGuestTracks.length){try{await haloViewerClient.unpublish(haloGuestTracks);}catch(_){}haloGuestTracks.forEach(t=>{try{t.stop();t.close();}catch(_){}});haloGuestTracks=[];}
@@ -2552,12 +2560,12 @@ async function joinLiveViewer(channel,title,inlineCard){
   haloViewerClient=Agora.createClient({mode:"rtc",codec:"vp8"});
   haloViewerClient.on("user-published",async(user,mediaType)=>{
    await haloViewerClient.subscribe(user,mediaType);
-   if(mediaType==="video"){const box=document.createElement("div");box.style.cssText="position:absolute;inset:0;width:100%;height:100%;";stage.append(box);user.videoTrack.play(box);}
+   if(mediaType==="video"){const box=document.createElement("div");box.style.cssText=stage.dataset.pkMode==="true"?"position:relative;min-width:0;width:100%;height:100%;background:#080808;border-radius:10px;overflow:hidden;":"position:absolute;inset:0;width:100%;height:100%;";stage.append(box);user.videoTrack.play(box);}
    if(mediaType==="audio")user.audioTrack.play();
   });
   haloViewerClient.on("user-left",()=>{status.textContent="لایڤکەر لایڤی کۆتایی پێهێنا.";setTimeout(()=>{if(haloViewerClient)leaveLiveViewer();},1200);});
   await haloViewerClient.join(AGORA_APP_ID,channel,tokenData.token,uid);status.textContent="🔴 لە هەمان فیددا لایڤ دەبینیت";await setupHaloLiveChat(channel,panel,stage,status);
-  const guestButton=document.createElement("button");guestButton.type="button";guestButton.textContent="🎙️ داوای چوونە سەر سەکۆ";guestButton.style.cssText="margin:6px 10px;padding:9px 12px;background:#8b6b24;color:white;";
+  const guestButton=document.createElement("button");guestButton.id="haloGuestSeatButton";guestButton.type="button";guestButton.textContent="🎙️ داوای چوونە سەر سەکۆ";guestButton.style.cssText="margin:6px 10px;padding:9px 12px;background:#8b6b24;color:white;";
   guestButton.onclick=()=>requestHaloGuestSeat(status,guestButton);status.insertAdjacentElement("afterend",guestButton);
  }catch(e){status.textContent="هەڵە لە پەیوەندی: "+e.message;if(haloViewerClient){try{await haloViewerClient.leave();}catch(_){}haloViewerClient=null;}}
 }
@@ -2677,17 +2685,20 @@ async function refreshHaloPkInvites(){
    accept.disabled=true;decline.disabled=true;
    const pkStatus=document.getElementById("haloPkStatus");
    try{
-    if(!haloLiveSessionId){
-     pkStatus.textContent="📷 کامێرا و لایڤ ئامادە دەکرێن...";
-     await joinCall();
-    }
-    if(!haloLiveSessionId){throw new Error("لایڤ دەست پێ نەکرد. مۆڵەتی کامێرا و مایکرۆفۆن بپشکنە.");}
-    const {error:acceptError}=await db.rpc("halo_pk_accept",{p_battle_id:battle.id,p_live_session_id:haloLiveSessionId});
-    if(acceptError)throw acceptError;
-    haloPkBattleId=battle.id;
-    pkStatus.textContent="✅ چالنج قبوڵ کرا و لایڤەکەت دەستی پێکرد.";
+    pkStatus.textContent="🔴 پەیوەندی بە لایڤی هاوڕێکەتەوە...";
+    const {data:hostLive,error:hostLiveError}=await db.from("live_sessions").select("id,channel,title").eq("id",battle.challenger_live_session_id).eq("status","live").single();
+    if(hostLiveError||!hostLive)throw hostLiveError||new Error("لایڤی بانگهێشتکەر ئێستا چالاک نییە.");
+    await joinLiveViewer(hostLive.channel,hostLive.title||"PK Challenge",null);
+    if(!haloViewerClient||haloLiveChatSessionId!==hostLive.id)throw new Error("نەتوانرا پەیوەندی بە هەمان لایڤەوە بکرێت.");
+    const guestButton=document.getElementById("haloGuestSeatButton");
+    if(!guestButton)throw new Error("دوگمەی داوای سەکۆ نەدۆزرایەوە.");
+    haloPkPendingAcceptBattleId=battle.id;
+    await requestHaloGuestSeat(document.getElementById("haloLiveViewerStatus"),guestButton);
+    if(!haloGuestRequestId)throw new Error("داواکاریی چوونە سەر سەکۆ نەنێردرا.");
+    pkStatus.textContent="📩 چالنج قبوڵ کرا؛ چاوەڕێی پەسەندکردنی خاوەنی لایڤ بە.";
     await refreshHaloPkInvites();
    }catch(e){
+    haloPkPendingAcceptBattleId=null;
     pkStatus.textContent="قبوڵکردنی چالنج سەرکەوتوو نەبوو: "+(e.message||e);
     accept.disabled=false;decline.disabled=false;
    }
