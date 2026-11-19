@@ -2540,7 +2540,14 @@ function showLiveViewer(){
  const status=document.createElement("p");status.id="haloLiveViewerStatus";status.style.cssText="margin:0;padding:8px;text-align:center;background:#111;color:white;";
  panel.append(top,stage,status);document.body.appendChild(panel);return panel;
 }
+function pauseHaloFeedVideosForLive(){
+ document.querySelectorAll("#feed video,.profile-video-player video").forEach(video=>{
+  try{video.pause();video.muted=true;}catch(_){}
+ });
+}
+ 
 async function joinLiveViewer(channel,title,inlineCard){
+ pauseHaloFeedVideosForLive();
  if(!currentUser){openAccount();return;}
 
  if(haloViewerClient)await leaveLiveViewer();
@@ -2581,6 +2588,7 @@ async function leaveLiveViewer(){
 
  
 async function joinCall(){
+ pauseHaloFeedVideosForLive();
  if(!currentUser){alert("سەرەتا بچۆ ژوورەوە.");return;}
 
  if(agoraClient||haloLiveSessionId){alert("لایڤێکت پێشتر دەست پێکردووە. سەرەتا دەرچوون بکە.");return;}
