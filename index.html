@@ -867,7 +867,7 @@ body.auth-required .bottom-nav{display:none!important}
    <div class="inbox-chat-head" id="inboxChatHead"><span class="inbox-avatar">💬</span><span data-i18n="chooseConversation">گفتوگۆیەک هەڵبژێرە</span></div>
    <div class="inbox-messages" id="inboxMessages"><div class="inbox-empty" data-i18n="chooseFriend">هاوڕێیەک هەڵبژێرە بۆ دەستپێکردنی گفتوگۆ.</div></div>
    <form class="dm-compose" id="dmCompose" onsubmit="sendDirectMessage(event)">
-    <div class="dm-attach-wrap"><input id="dmVideoFile" type="file" accept="video/mp4,video/quicktime,video/webm,video/3gpp,video/x-m4v,video/3gpp2" hidden><button class="dark dm-attach" type="button" onclick="document.getElementById('dmVideoFile').click()" aria-label="ناردنی ڤیدیۆ لە گەلەری" title="ناردنی ڤیدیۆ لە گەلەری" data-i18n-title="sendVideoGallery">🎬</button></div>
+    <div class="dm-attach-wrap"><input id="dmVideoFile" type="file" accept="video/mp4,video/quicktime,video/webm,video/3gpp,video/x-m4v,video/3gpp2,.mp4,.mov,.webm,.3gp,.m4v,.3g2" hidden><button class="dark dm-attach" type="button" onclick="document.getElementById('dmVideoFile').click()" aria-label="ناردنی ڤیدیۆ لە گەلەری" title="ناردنی ڤیدیۆ لە گەلەری" data-i18n-title="sendVideoGallery">🎬</button></div>
     <textarea id="dmText" rows="1" maxlength="2000" data-i18n-placeholder="messagePlaceholder" placeholder="نامەکەت بنووسە..." disabled></textarea>
     <button id="dmSendButton" type="submit" data-i18n="sendMessage" disabled>ناردن</button>
    </form>
@@ -2031,13 +2031,27 @@ function makeDmUuid(){
  const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
  return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
 }
-function getDmVideoMeta(file){
+// Browser-side container-signature validation; Supabase enforces bucket size/MIME/RLS.
+async function getDmVideoMeta(file){
  if(!file||!file.size)throw new Error('فایلێکی ڤیدیۆی دروست هەڵبژێرە.');
  if(file.size>DM_VIDEO_MAX_BYTES)throw new Error('قەبارەی ڤیدیۆ نابێت لە 100MB زیاتر بێت.');
- const ext=(file.name.split('.').pop()||'').toLowerCase();const expected=DM_VIDEO_EXTENSIONS[ext];
- if(!expected)throw new Error('فۆرماتی ئەم ڤیدیۆیە پشتگیری ناکرێت.');
- const mime=(file.type||expected).toLowerCase();if(!DM_VIDEO_MIMES.has(mime))throw new Error('فۆرماتی ڤیدیۆکە ڕێگەپێدراو نییە.');
- return {ext,mime};
+ const bytes=new Uint8Array(await file.slice(0,32).arrayBuffer());
+ const ascii=(start,length)=>String.fromCharCode(...bytes.slice(start,start+length));
+ let detected=null;
+ if(bytes.length>=12&&ascii(4,4)==='ftyp'){
+  const brand=ascii(8,4).toLowerCase();
+  if(brand.startsWith('3gp'))detected={ext:'3gp',mime:'video/3gpp'};
+  else if(brand.startsWith('3g2'))detected={ext:'3g2',mime:'video/3gpp2'};
+  else if(brand==='qt  ')detected={ext:'mov',mime:'video/quicktime'};
+  else if(brand.startsWith('m4v'))detected={ext:'m4v',mime:'video/x-m4v'};
+  else detected={ext:'mp4',mime:'video/mp4'};
+ }else if(bytes.length>=4&&bytes[0]===0x1a&&bytes[1]===0x45&&bytes[2]===0xdf&&bytes[3]===0xa3){
+  detected={ext:'webm',mime:'video/webm'};
+ }
+ if(!detected||DM_VIDEO_EXTENSIONS[detected.ext]!==detected.mime)throw new Error('ناوەڕۆکی فایلەکە ڤیدیۆی MP4، MOV، WebM، 3GP، M4V یان 3G2 نییە.');
+ const declared=(file.type||'').split(';')[0].trim().toLowerCase();
+ if(declared&&declared!=='application/octet-stream'&&!DM_VIDEO_MIMES.has(declared))throw new Error('فۆرماتی ڕاگەیەنراوی فایلەکە پشتگیری ناکرێت.');
+ return detected;
 }
 async function clearDmRealtime(){
  const channel=dmRealtimeChannel;dmRealtimeChannel=null;dmRealtimeUserId=null;
@@ -2060,10 +2074,14 @@ async function ensureDmRealtime(){
 }
 const dmVideoPicker=document.getElementById('dmVideoFile');
 if(dmVideoPicker){
- dmVideoPicker.addEventListener('change',()=>{
+ dmVideoPicker.addEventListener('change',async()=>{
   const file=dmVideoPicker.files&&dmVideoPicker.files[0];if(!file){dmStatus('');return;}
-  try{getDmVideoMeta(file);pendingSharedVideoId=null;dmStatus('ڤیدیۆ هەڵبژێردرا: '+file.name+' — ئامادەی ناردنە.');}
-  catch(e){dmVideoPicker.value='';dmStatus(e.message||String(e));}
+  dmStatus('ناوەڕۆکی ڤیدیۆکە پشکنین دەکرێت...');
+  try{
+   const meta=await getDmVideoMeta(file);
+   pendingSharedVideoId=null;
+   dmStatus('ڤیدیۆی '+meta.ext.toUpperCase()+' پشکنرا و ئامادەی ناردنە.');
+  }catch(e){dmVideoPicker.value='';dmStatus(e.message||String(e));}
  });
 }
 function startDmWithUser(userId){
@@ -2179,7 +2197,7 @@ async function sendDirectMessage(event){
  try{
   const payload={sender_id:currentUser.id,recipient_id:activeDmUser,content:textValue||null,video_id:videoId||null,media_path:null,media_mime_type:null,media_size_bytes:null};
   if(file){
-   const meta=getDmVideoMeta(file);uploadedPath=currentUser.id+'/'+makeDmUuid()+'.'+meta.ext;
+   const meta=await getDmVideoMeta(file);uploadedPath=currentUser.id+'/'+makeDmUuid()+'.'+meta.ext;
    dmStatus('ڤیدیۆکە بە شێوەی تایبەتی بار دەکرێت...');
    const {error:uploadError}=await db.storage.from('dm-videos').upload(uploadedPath,file,{cacheControl:'3600',upsert:false,contentType:meta.mime});
    if(uploadError)throw uploadError;
