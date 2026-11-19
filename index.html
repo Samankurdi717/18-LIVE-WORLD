@@ -1397,7 +1397,7 @@ async function renderMyProfile(){
   const [followers,following,videos]=await Promise.all([
    db.from('user_follows').select('follower_id',{count:'exact',head:true}).eq('following_id',currentUser.id),
    db.from('user_follows').select('following_id',{count:'exact',head:true}).eq('follower_id',currentUser.id),
-   db.from('videos').select('id,storage_path,caption,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(60)
+   db.from('videos').select('id,user_id,storage_path,caption,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(60)
   ]);
   if(followers.error)throw followers.error;if(following.error)throw following.error;if(videos.error)throw videos.error;
   document.getElementById('profileFollowersCount').textContent=followers.count||0;
