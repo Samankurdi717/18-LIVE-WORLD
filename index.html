@@ -2363,6 +2363,23 @@ async function requestHaloGuestSeat(status,button){
   else if(state==="removed"){await cleanupHaloGuestRole();status.textContent="خاوەنی لایڤ لە سەکۆی میوان لایبردیت.";button.disabled=false;button.textContent="داوای چوونە سەر سەکۆ";}
  }).subscribe();
 }
+function setHaloPkHostStage(active){
+ const stage=document.querySelector(".live-stage");if(!stage)return;
+ stage.classList.toggle("halo-pk-stage",!!active);
+ stage.style.display=active?"grid":"";
+ stage.style.gridTemplateColumns=active?"repeat(2,minmax(0,1fr))":"";
+ stage.style.gap=active?"7px":"";
+ [...stage.children].forEach(box=>{box.style.minWidth=active?"0":"";box.style.width=active?"100%":"";});
+ ["local","remote"].forEach(id=>{
+  const box=document.getElementById(id);if(!box)return;
+  box.style.height=active?"190px":"";
+  box.style.minHeight=active?"190px":"";
+  box.style.width="100%";
+  box.style.boxSizing="border-box";
+  if(id==="remote"){box.style.display=active?"grid":"";box.style.gridTemplateColumns=active?"1fr":"";box.style.gap=active?"4px":"";}
+  box.querySelectorAll("video,.video").forEach(video=>{video.style.height=active?"190px":"";video.style.minHeight=active?"190px":"";video.style.width="100%";});
+ });
+}
 async function setupHaloHostGuestManager(sessionId){
  const status=document.getElementById("status");if(!sessionId||!status)return;
  let panel=document.getElementById("haloHostGuestPanel");
@@ -2372,7 +2389,7 @@ async function setupHaloHostGuestManager(sessionId){
   const {data,error}=await db.from("live_guest_requests").select("id,user_id,status,created_at").eq("live_session_id",sessionId).in("status",["pending","approved"]).order("created_at",{ascending:true});
   if(error){list.textContent="هەڵە: "+error.message;return;}
   list.innerHTML="";
-  const rows=data||[];const ids=[...new Set(rows.map(x=>x.user_id))];let names=new Map();
+  const rows=data||[];setHaloPkHostStage(!!(haloPkBattleId&&rows.some(x=>x.status==="approved")));const ids=[...new Set(rows.map(x=>x.user_id))];let names=new Map();
   if(ids.length){const p=await db.from("profiles").select("id,display_name").in("id",ids);if(!p.error)names=new Map((p.data||[]).map(x=>[x.id,x.display_name||"ئەندام"]));}
   if(!rows.length){list.textContent="هێشتا داواکارییەک نییە.";return;}
   rows.forEach(row=>{
@@ -2806,7 +2823,8 @@ async function refreshHaloPkScoreboard(){
  if(!haloPkBattleId){panel.style.display="none";return;}
  const {data:b,error}=await db.from("halo_pk_battles").select("id,challenger_user_id,opponent_user_id,status,challenger_score,opponent_score,starts_at,ends_at,winner_user_id").eq("id",haloPkBattleId).maybeSingle();
  if(error||!b){document.getElementById("haloPkStatus").textContent=error?"خوێندنەوەی ئەنجامی PK: "+error.message:"PK نەدۆزرایەوە.";return;}
- panel.style.display="block";
+ setHaloPkHostStage(b.status==="active");
+  panel.style.display="block";
  const ids=[b.challenger_user_id,b.opponent_user_id];
  const {data:profiles}=await db.from("profiles").select("id,display_name").in("id",ids);
  const names=new Map((profiles||[]).map(p=>[p.id,p.display_name||"یاریزان"]));
@@ -2868,6 +2886,7 @@ async function leaveCall(){
   if(haloPkPollTimer){clearInterval(haloPkPollTimer);haloPkPollTimer=null;}
   if(haloPkRealtimeChannel){try{await db.removeChannel(haloPkRealtimeChannel);}catch(_){}haloPkRealtimeChannel=null;}
   haloPkBattleId=null;
+  setHaloPkHostStage(false);
   const pkPanel=document.getElementById("haloPkScoreboard");if(pkPanel)pkPanel.style.display="none";
   await cleanupHaloHostGuestManager();
   await cleanupHaloLivePresence();
