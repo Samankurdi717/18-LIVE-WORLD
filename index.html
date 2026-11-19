@@ -1753,9 +1753,26 @@ async function openProfileFeature(key){
     addLine('کۆی ڤیدیۆکان',rows.length);addLine('کۆی فۆڵۆوەر',followers.data?.length||0);addLine('کۆی لایکەکان',likes.data?.length||0);addLine('کۆی کۆمێنتەکان',comments.data?.length||0);
     rows.slice(0,5).forEach(v=>{const p=document.createElement('p');p.className='small';p.textContent='🎬 '+(v.caption||'ڤیدیۆی بێ ناونیشان');content.append(p);});
    }else{
-    const events=[...(followers.data||[]).map(x=>({kind:'👥 کەسێک فۆڵۆی کردوویت',date:x.created_at})),...(likes.data||[]).map(x=>({kind:'❤️ لایکێکی نوێ لەسەر ڤیدیۆکەت',date:x.created_at})),...(comments.data||[]).map(x=>({kind:'💬 کۆمێنت: '+(x.content||''),date:x.created_at}))].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,40);
+    const events=[
+     ...(followers.data||[]).map(x=>({type:'follows',actorId:x.follower_id,kind:'👥 کەسێک فۆڵۆی کردوویت',date:x.created_at})),
+     ...(likes.data||[]).map(x=>({type:'likes',actorId:x.user_id,kind:'❤️ لایکێکی نوێ لەسەر ڤیدیۆکەت',date:x.created_at})),
+     ...(comments.data||[]).map(x=>({type:'comments',actorId:x.user_id,kind:'💬 کۆمێنت: '+(x.content||''),date:x.created_at}))
+    ].filter(item=>localStorage.getItem('haloPref_'+item.type)!=='off')
+     .sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,40);
+    const actorIds=[...new Set(events.map(item=>item.actorId).filter(Boolean))];
+    const actorResult=actorIds.length?await db.from('profiles').select('id,display_name,avatar_url').in('id',actorIds):{data:[],error:null};
+    if(actorResult.error)throw actorResult.error;
+    const actorMap=new Map((actorResult.data||[]).map(profile=>[profile.id,profile]));
     if(!events.length){const empty=document.createElement('p');empty.className='small';empty.textContent='هێشتا چالاکییەکی نوێ نییە.';content.append(empty);}
-    events.forEach(item=>{const p=document.createElement('p');p.className='feature-activity-item';p.textContent=item.kind+' · '+new Date(item.date).toLocaleString();content.append(p);});
+    events.forEach(item=>{
+     const row=document.createElement('div');row.className='feature-activity-item';row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
+     const detail=document.createElement('span');detail.textContent=item.kind+' · '+new Date(item.date).toLocaleString();
+     const actor=actorMap.get(item.actorId);
+     if(actor&&item.actorId){
+      const who=document.createElement('button');who.type='button';who.className='dark';who.textContent=actor.display_name||'ئەندام';who.style.cssText='padding:6px 10px;font-size:12px;flex-shrink:0';who.addEventListener('click',()=>openMemberProfile(item.actorId));row.append(detail,who);
+     }else row.append(detail);
+     content.append(row);
+    });
    }
   }catch(e){loading.textContent='نەتوانرا زانیارییەکان باربکرێن: '+e.message;}
  }
