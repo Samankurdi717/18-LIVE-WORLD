@@ -3631,6 +3631,11 @@ if ('serviceWorker' in navigator) {
       serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
       serviceWorkerParam: { scope: "/18-LIVE-WORLD/push/onesignal/" }
     });
+    try {
+      await OneSignal.Slidedown.promptPush();
+    } catch (err) {
+      console.warn("KURD HALO notification prompt:", err);
+    }
   });
 </script>
 <script src="js/quiz-competition.js"></script>
