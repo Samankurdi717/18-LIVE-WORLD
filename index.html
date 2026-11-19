@@ -1054,7 +1054,7 @@ function changeLanguage(lang){
  const feedElement=document.getElementById("feed");
  // Feed reload is triggered after authentication; avoid accessing currentUser before its initialization.
 }
-(function(){const saved=localStorage.getItem("kurdHaloPrimaryLanguage")||"en";document.getElementById("language").value=saved;changeLanguage(saved);})();
+(function(){const migrationKey="kurdHaloEnglishDefaultV1";if(!localStorage.getItem(migrationKey)){localStorage.setItem("kurdHaloPrimaryLanguage","en");localStorage.setItem(migrationKey,"1");}const saved=localStorage.getItem("kurdHaloPrimaryLanguage")||"en";const selector=document.getElementById("language");if(selector)selector.value=saved;changeLanguage(saved);})();
  
 // SUPABASE
 const SUPABASE_URL="https://eofqtrncbswbujzgrvra.supabase.co";
