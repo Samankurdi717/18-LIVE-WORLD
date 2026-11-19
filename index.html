@@ -913,6 +913,17 @@ body.auth-required .bottom-nav{display:none!important}
   <section id="haloPkPanel" style="margin:12px 0;padding:13px;border:1px solid #f5c96a55;border-radius:16px;background:linear-gradient(135deg,#21182c,#111321);color:white;">
    <h3 style="margin:0 0 8px;color:#f5c96a;">⚔️ KURD HALO — PK Challenge</h3>
    <p style="font-size:12px;color:#c9c8d8;line-height:1.7;">لە کاتی لایڤدا ناوی هاوڕێک بگەڕێ و بانگهێشتی بکە. کاتێک بەڵێ هەڵدەبژێرێت، لایڤی خۆی بە خۆکار دەست پێ دەکات.</p>
+   <button type="button" class="dark" onclick="startHaloPkDemo()" style="width:100%;margin:8px 0;border:1px solid #f5c96a;color:#f5c96a;">🧪 تاقیکردنەوەی PK بە تەنها</button>
+   <div id="haloPkDemoControls" style="display:none;margin:8px 0;padding:10px;border:1px dashed #f5c96a88;border-radius:12px;background:#080914;">
+    <strong style="color:#f5c96a;">🧪 دۆخی تاقیکردنەوە — هیچ درهەمێک بەکارناهێنرێت</strong>
+    <p style="font-size:12px;color:#ddd;margin:6px 0;">دوگمەکانی زیادکردنی خاڵ تاقی بکەرەوە؛ لە کۆتاییدا براوە دیاری دەکرێت.</p>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+     <button type="button" class="dark" onclick="addHaloPkDemoScore('A')">➕ ١٠ خاڵ بۆ تۆ</button>
+     <button type="button" class="dark" onclick="addHaloPkDemoScore('B')">➕ ١٠ خاڵ بۆ هاوڕێ</button>
+     <button type="button" onclick="finishHaloPkDemo()">🏁 کۆتاییهێنان</button>
+     <button type="button" class="dark" onclick="stopHaloPkDemo()">✕ داخستن</button>
+    </div>
+   </div>
    <input id="haloPkSearch" type="search" placeholder="گەڕان بە ناوی هاوڕێ..." style="width:100%;padding:11px;border-radius:10px;background:#080914;color:white;border:1px solid #ffffff30;">
    <button type="button" onclick="searchHaloPkUsers()">🔎 گەڕان</button>
    <button type="button" class="dark" onclick="loadHaloPkFriends()">👥 هاوڕێکانم بۆ PK</button>
@@ -2668,6 +2679,20 @@ async function joinCall(){
 let haloPkRealtimeChannel=null;
 let haloPkBattleId=null;
 let haloPkPollTimer=null;
+let haloPkDemoMode=false,haloPkDemoTimer=null,haloPkDemoScores={A:0,B:0};
+function startHaloPkDemo(){
+ const panel=document.getElementById("haloPkScoreboard"),controls=document.getElementById("haloPkDemoControls");if(!panel||!controls)return;
+ haloPkDemoMode=true;haloPkDemoScores={A:0,B:0};if(haloPkDemoTimer)clearInterval(haloPkDemoTimer);
+ panel.style.display="block";controls.style.display="block";
+ document.getElementById("haloPkNameA").textContent="تۆ — تاقیکردنەوە";document.getElementById("haloPkNameB").textContent="هاوڕێ — خەیاڵی";
+ document.getElementById("haloPkScoreA").textContent="0";document.getElementById("haloPkScoreB").textContent="0";document.getElementById("haloPkCountdown").textContent="01:00";
+ document.getElementById("haloPkWinner").textContent="⚔️ تاقیکردنەوە دەستی پێکرد";document.getElementById("haloPkStatus").textContent="🧪 تاقیکردنەوە چالاکە؛ بانگهێشتی ڕاستەقینە نانێردرێت.";
+ let left=60;haloPkDemoTimer=setInterval(()=>{if(!haloPkDemoMode){clearInterval(haloPkDemoTimer);haloPkDemoTimer=null;return;}left=Math.max(0,left-1);document.getElementById("haloPkCountdown").textContent=String(Math.floor(left/60)).padStart(2,"0")+":"+String(left%60).padStart(2,"0");if(left===0)finishHaloPkDemo();},1000);
+}
+function addHaloPkDemoScore(side){if(!haloPkDemoMode)return;haloPkDemoScores[side]+=10;document.getElementById(side==="A"?"haloPkScoreA":"haloPkScoreB").textContent=haloPkDemoScores[side].toLocaleString();document.getElementById("haloPkWinner").textContent="⭐ خاڵەکان نوێ کرانەوە";}
+function finishHaloPkDemo(){if(!haloPkDemoMode)return;if(haloPkDemoTimer){clearInterval(haloPkDemoTimer);haloPkDemoTimer=null;}const a=haloPkDemoScores.A,b=haloPkDemoScores.B;document.getElementById("haloPkCountdown").textContent="00:00";document.getElementById("haloPkWinner").textContent=a===b?"🤝 یەکسان!":a>b?"🏆 تۆ براوەیت!":"🏆 هاوڕێ براوەیە!";document.getElementById("haloPkStatus").textContent="✅ تاقیکردنەوە تەواو بوو؛ هیچ داتایەکی ڕاستەقینە نەگۆڕدرا.";}
+function stopHaloPkDemo(){haloPkDemoMode=false;if(haloPkDemoTimer){clearInterval(haloPkDemoTimer);haloPkDemoTimer=null;}const c=document.getElementById("haloPkDemoControls"),p=document.getElementById("haloPkScoreboard");if(c)c.style.display="none";if(p)p.style.display="none";document.getElementById("haloPkStatus").textContent="دۆخی تاقیکردنەوە داخرا.";}
+
 async function searchHaloPkUsers(){
  const input=document.getElementById("haloPkSearch"),box=document.getElementById("haloPkSearchResults"),status=document.getElementById("haloPkStatus");
  const term=(input?.value||"").trim();
@@ -2771,6 +2796,7 @@ async function refreshHaloPkInvites(){
  });
 }
 async function refreshHaloPkScoreboard(){
+ if(haloPkDemoMode)return;
  const panel=document.getElementById("haloPkScoreboard");if(!panel||!currentUser)return;
  if(!haloPkBattleId){
   const {data:active,error:activeError}=await db.from("halo_pk_battles").select("id").eq("status","active").or("challenger_user_id.eq."+currentUser.id+",opponent_user_id.eq."+currentUser.id).order("created_at",{ascending:false}).limit(1);
