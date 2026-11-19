@@ -2291,6 +2291,7 @@ let haloLiveReplyTo=null;
 let haloGuestRequestChannel=null,haloGuestRequestId=null,haloGuestTracks=[],haloHostGuestChannel=null;
 let haloPkPendingAcceptBattleId=null;
 async function cleanupHaloGuestRole(){
+ haloPkPendingAcceptBattleId=null;
  if(haloGuestRequestChannel){try{await db.removeChannel(haloGuestRequestChannel);}catch(_){}haloGuestRequestChannel=null;}
  if(haloViewerClient&&haloGuestTracks.length){try{await haloViewerClient.unpublish(haloGuestTracks);}catch(_){}haloGuestTracks.forEach(t=>{try{t.stop();t.close();}catch(_){}});haloGuestTracks=[];try{await haloViewerClient.setClientRole("audience");}catch(_){}}
  const guestStage=document.querySelector(".halo-live-viewer-stage");
@@ -2326,6 +2327,7 @@ async function startHaloGuestRole(status){
    await refreshHaloPkScoreboard();
   }else status.textContent="🎤 داواکارییەکەت پەسەند کرا؛ ئێستا لەسەر سەکۆی میوانیت.";
  }catch(e){
+  haloPkPendingAcceptBattleId=null;
   status.textContent="نەتوانرا بچیتە سەر سەکۆ: "+String(e.message||e);
   if(haloGuestTracks.length){try{await haloViewerClient.unpublish(haloGuestTracks);}catch(_){}haloGuestTracks.forEach(t=>{try{t.stop();t.close();}catch(_){}});haloGuestTracks=[];}
   try{await haloViewerClient.setClientRole("audience");}catch(_){}
@@ -2342,7 +2344,7 @@ async function requestHaloGuestSeat(status,button){
  haloGuestRequestChannel=db.channel("halo-guest-request-"+data.id).on("postgres_changes",{event:"UPDATE",schema:"public",table:"live_guest_requests",filter:"id=eq."+data.id},async payload=>{
   const state=payload.new.status;
   if(state==="approved"){button.textContent="✅ پەسەند کرا";await startHaloGuestRole(status);}
-  else if(state==="declined"){status.textContent="داواکارییەکەت ڕەتکرایەوە.";button.disabled=false;button.textContent="دووبارە داوا بکە";}
+  else if(state==="declined"){haloPkPendingAcceptBattleId=null;status.textContent="داواکارییەکەت ڕەتکرایەوە.";button.disabled=false;button.textContent="دووبارە داوا بکە";}
   else if(state==="removed"){await cleanupHaloGuestRole();status.textContent="خاوەنی لایڤ لە سەکۆی میوان لایبردیت.";button.disabled=false;button.textContent="داوای چوونە سەر سەکۆ";}
  }).subscribe();
 }
