@@ -13,7 +13,7 @@
   "theme_color": "#080914",
   "icons": [
     {
-      "src": "./halo-icon.svg",
+      "src": "./halo-icon.svg?v=20261120",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
