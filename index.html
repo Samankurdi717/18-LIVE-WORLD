@@ -297,7 +297,7 @@ body.auth-required .bottom-nav{display:none!important}
 .inbox-chat{min-height:43svh;display:flex;flex-direction:column}.inbox-chat-head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;font-weight:800}
 .inbox-messages{padding:12px;display:flex;flex-direction:column;gap:9px;overflow:auto;min-height:200px;max-height:43svh}
 .dm-bubble{max-width:86%;padding:10px 12px;border-radius:15px;background:#242740;color:#fff;align-self:flex-start;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;font-size:13px}.dm-bubble.mine{align-self:flex-end;background:linear-gradient(135deg,#7651d8,#4b67b8)}
-.dm-time{display:block;font-size:9px;opacity:.7;margin-top:5px}.dm-video{display:block;max-width:250px;color:#fff;text-decoration:none;border:1px solid #ffffff28;border-radius:12px;padding:7px;background:#101326;margin-top:6px}.dm-video video{display:block;width:100%;max-height:240px;object-fit:contain;border-radius:9px;background:#000}.dm-video-caption{display:block;font-size:11px;margin-top:5px}
+.dm-time{display:block;font-size:9px;opacity:.7;margin-top:5px}.dm-read-receipt{display:inline-block;margin-inline-start:4px;font-weight:900;letter-spacing:-2px;color:#d8e9ff}.dm-read-receipt.is-read{color:#79e7ef}.dm-video{display:block;max-width:250px;color:#fff;text-decoration:none;border:1px solid #ffffff28;border-radius:12px;padding:7px;background:#101326;margin-top:6px}.dm-video video{display:block;width:100%;max-height:240px;object-fit:contain;border-radius:9px;background:#000}.dm-video-caption{display:block;font-size:11px;margin-top:5px}
 .dm-compose{display:flex;gap:7px;align-items:flex-end;padding:10px;border-top:1px solid var(--line)}.dm-compose textarea{flex:1;min-width:0;min-height:42px;max-height:110px;resize:vertical;border:1px solid var(--line);border-radius:12px;background:#080a18;color:#fff;padding:10px;font:inherit}.dm-compose button{margin:0;white-space:nowrap}.dm-attach{min-width:42px;padding:10px!important}.inbox-empty{padding:22px 12px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8}
 @media(min-width:700px){.inbox-shell{grid-template-columns:220px 1fr}.inbox-contacts{max-height:66svh}.inbox-chat{min-height:66svh}.inbox-messages{max-height:54svh}}
 @media(max-width:420px){.bottom-nav{gap:2px;padding-left:5px;padding-right:5px}.bottom-nav button{font-size:9px}.dm-compose{gap:5px}}
@@ -2246,9 +2246,55 @@ async function loadVideos(){
 // PRIVATE DIRECT MESSAGES + PHONE GALLERY VIDEO SHARING
 function dmStatus(message){const el=document.getElementById('inboxStatus');if(el)el.textContent=message||'';}
 const DM_VIDEO_MAX_BYTES=100*1024*1024;
-const DM_VIDEO_MIMES=new Set(['video/mp4','video/quicktime','video/webm','video/3gpp','video/x-m4v','video/3gpp2']);
+const DM_VIDEO_MIME_BY_EXT=Object.freeze({
+ mp4:'video/mp4',mov:'video/quicktime',webm:'video/webm',
+ '3gp':'video/3gpp',m4v:'video/x-m4v','3g2':'video/3gpp2'
+});
+const DM_VIDEO_MIMES=new Set(Object.values(DM_VIDEO_MIME_BY_EXT));
+function makeDmUploadUuid(){
+ if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID().toLowerCase();
+ if(window.crypto&&typeof window.crypto.getRandomValues==='function'){
+  const bytes=new Uint8Array(16);window.crypto.getRandomValues(bytes);
+  bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+  const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+  return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
+ }
+ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+  const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);
+ });
+}
+async function validateDmGalleryVideo(file){
+ if(!file)throw new Error('تکایە ڤیدیۆیەک هەڵبژێرە.');
+ if(!Number.isFinite(file.size)||file.size<16)throw new Error('فایلی ڤیدیۆکە زۆر بچووکە یان دروست نییە.');
+ if(file.size>DM_VIDEO_MAX_BYTES)throw new Error('قەبارەی ڤیدیۆ نابێت لە 100MB زیاتر بێت.');
+ const ext=(file.name.split('.').pop()||'').toLowerCase();
+ const mime=DM_VIDEO_MIME_BY_EXT[ext];
+ if(!mime)throw new Error('فۆرماتی ڤیدیۆ پشتگیری ناکرێت. MP4، MOV، WebM، 3GP، M4V یان 3G2 هەڵبژێرە.');
+ const declared=(file.type||'').toLowerCase();
+ const compatible=!declared||declared==='application/octet-stream'||declared===mime||(ext==='m4v'&&declared==='video/mp4');
+ if(!compatible)throw new Error('فۆرماتی فایل و پاشگری ناوی یەک ناگرنەوە.');
+ const head=new Uint8Array(await file.slice(0,16).arrayBuffer());
+ const isWebm=ext==='webm'&&head.length>=4&&head[0]===0x1a&&head[1]===0x45&&head[2]===0xdf&&head[3]===0xa3;
+ const isIsoBmff=ext!=='webm'&&head.length>=8&&String.fromCharCode(...head.slice(4,8))==='ftyp';
+ if(!isWebm&&!isIsoBmff)throw new Error('ناوەڕۆکی فایل وەک ڤیدیۆی MP4/MOV/3GP یان WebM نەناسرا.');
+ return {ext,mime};
+}
 const dmVideoPicker=document.getElementById('dmVideoFile');
-if(dmVideoPicker){dmVideoPicker.addEventListener('change',()=>{const file=dmVideoPicker.files&&dmVideoPicker.files[0];if(!file){dmStatus('');return;}const ext=(file.name.split('.').pop()||'').toLowerCase();const allowedExt=['mp4','mov','webm','3gp','m4v','3g2'];if(!(file.type.startsWith('video/')||allowedExt.includes(ext))){dmVideoPicker.value='';dmStatus('تکایە فایلێکی ڤیدیۆ هەڵبژێرە.');return;}if(file.size>DM_VIDEO_MAX_BYTES){dmVideoPicker.value='';dmStatus('قەبارەی ڤیدیۆ نابێت لە 100MB زیاتر بێت.');return;}pendingSharedVideoId=null;dmStatus('ڤیدیۆ هەڵبژێردرا: '+file.name+' — ئامادەی ناردنە.');});}
+if(dmVideoPicker){
+ dmVideoPicker.addEventListener('change',async()=>{
+  const file=dmVideoPicker.files&&dmVideoPicker.files[0];
+  if(!file){dmStatus('');return;}
+  dmVideoPicker.disabled=true;dmStatus('فۆرمات و ناوەڕۆکی ڤیدیۆ پشکنین دەکرێت...');
+  try{
+   await validateDmGalleryVideo(file);
+   pendingSharedVideoId=null;
+   dmStatus('ڤیدیۆ هەڵبژێردرا: '+file.name+' — ئامادەی ناردنە.');
+  }catch(e){
+   dmVideoPicker.value='';
+   dmStatus(String(e.message||e));
+  }finally{dmVideoPicker.disabled=false;}
+ });
+}
 function startDmWithUser(userId){if(!currentUser){openAccount();return;}activeDmUser=userId;pendingSharedVideoId=null;const picker=document.getElementById('dmVideoFile');if(picker)picker.value='';switchAppTab('inbox');}
 async function ensureDmRealtime(){
  if(!currentUser||!db)return;
@@ -2261,7 +2307,13 @@ async function ensureDmRealtime(){
    if(m.sender_id!==currentUser.id&&m.recipient_id!==currentUser.id)return;
    loadInbox();
    if(activeDmUser&&(m.sender_id===activeDmUser||m.recipient_id===activeDmUser))loadDmMessages();
-  }).subscribe();
+  })
+  .on('postgres_changes',{event:'UPDATE',schema:'public',table:'dm_messages'},payload=>{
+   const m=payload.new;
+   if(!m||!currentUser||!activeDmUser)return;
+   if(m.sender_id===currentUser.id&&m.recipient_id===activeDmUser&&m.read_at)loadDmMessages();
+  })
+  .subscribe();
 }
 async function loadInbox(){
  const contacts=document.getElementById('inboxContacts');if(!contacts)return;
@@ -2301,42 +2353,94 @@ async function openDmConversation(userId){
 }
 async function appendDmVideo(bubble,videoUrl,caption){const link=document.createElement('a');link.className='dm-video';link.href=videoUrl;link.target='_blank';link.rel='noopener noreferrer';const video=document.createElement('video');video.src=videoUrl;video.controls=true;video.playsInline=true;video.preload='metadata';video.setAttribute('controlsList','nodownload');const label=document.createElement('span');label.className='dm-video-caption';label.textContent=caption||'KURD HALO video';link.append(video,label);bubble.append(link);}
 async function loadDmMessages(){
- if(!activeDmUser||!currentUser)return;const box=document.getElementById('inboxMessages');box.innerHTML='<div class="inbox-empty">چاوەڕێ بکە...</div>';
+ if(!activeDmUser||!currentUser)return;
+ const box=document.getElementById('inboxMessages');
+ box.innerHTML='<div class="inbox-empty">چاوەڕێ بکە...</div>';
  try{
-  const {data,error}=await db.from('dm_messages').select('id,sender_id,recipient_id,content,video_id,media_path,created_at').or('and(sender_id.eq.'+currentUser.id+',recipient_id.eq.'+activeDmUser+'),and(sender_id.eq.'+activeDmUser+',recipient_id.eq.'+currentUser.id+')').order('created_at',{ascending:true}).limit(200);
-  if(error)throw error;box.innerHTML='';
+  const {data,error}=await db.from('dm_messages')
+   .select('id,sender_id,recipient_id,content,video_id,media_path,created_at,read_at')
+   .or('and(sender_id.eq.'+currentUser.id+',recipient_id.eq.'+activeDmUser+'),and(sender_id.eq.'+activeDmUser+',recipient_id.eq.'+currentUser.id+')')
+   .order('created_at',{ascending:true}).limit(200);
+  if(error)throw error;
+  box.innerHTML='';
   for(const m of(data||[])){
-   const bubble=document.createElement('div');bubble.className='dm-bubble'+(m.sender_id===currentUser.id?' mine':'');
-   if(m.content){const text=document.createElement('div');text.textContent=m.content;bubble.append(text);}
-   if(m.video_id){const {data:v,error:videoError}=await db.from('videos').select('storage_path,caption').eq('id',m.video_id).maybeSingle();if(!videoError&&v){const url=db.storage.from('videos').getPublicUrl(v.storage_path).data.publicUrl;await appendDmVideo(bubble,url,v.caption||'ڤیدیۆی KURD HALO');}else{const fallback=document.createElement('span');fallback.textContent='🎞 ڤیدیۆی هاوبەشکراو';bubble.append(fallback);}}
-   if(m.media_path){const {data:urlData,error:urlError}=await db.storage.from('dm-videos').createSignedUrl(m.media_path,3600);if(!urlError&&urlData?.signedUrl){await appendDmVideo(bubble,urlData.signedUrl,'ڤیدیۆی نێردراو لە گەلەری');}else{const unavailable=document.createElement('span');unavailable.textContent='🎬 ڤیدیۆ هەیە، بەڵام نەتوانرا باربکرێت.';bubble.append(unavailable);}}
-   const time=document.createElement('small');time.className='dm-time';time.textContent=new Date(m.created_at).toLocaleString();bubble.append(time);box.append(bubble);
+   const bubble=document.createElement('div');
+   bubble.className='dm-bubble'+(m.sender_id===currentUser.id?' mine':'');
+   if(m.content){
+    const text=document.createElement('div');text.textContent=m.content;bubble.append(text);
+   }
+   if(m.video_id){
+    const {data:v,error:videoError}=await db.from('videos').select('storage_path,caption').eq('id',m.video_id).maybeSingle();
+    if(!videoError&&v){
+     const url=db.storage.from('videos').getPublicUrl(v.storage_path).data.publicUrl;
+     await appendDmVideo(bubble,url,v.caption||'ڤیدیۆی KURD HALO');
+    }else{
+     const fallback=document.createElement('span');fallback.textContent='🎞 ڤیدیۆی هاوبەشکراو';bubble.append(fallback);
+    }
+   }
+   if(m.media_path){
+    const {data:urlData,error:urlError}=await db.storage.from('dm-videos').createSignedUrl(m.media_path,3600);
+    if(!urlError&&urlData?.signedUrl){
+     await appendDmVideo(bubble,urlData.signedUrl,'ڤیدیۆی نێردراو لە گەلەری');
+    }else{
+     const unavailable=document.createElement('span');unavailable.textContent='🎬 ڤیدیۆ هەیە، بەڵام نەتوانرا باربکرێت.';bubble.append(unavailable);
+    }
+   }
+   const time=document.createElement('small');time.className='dm-time';time.textContent=new Date(m.created_at).toLocaleString();
+   if(m.sender_id===currentUser.id){
+    const receipt=document.createElement('span');
+    receipt.className='dm-read-receipt'+(m.read_at?' is-read':'');
+    receipt.textContent=m.read_at?'✓✓':'✓';
+    receipt.setAttribute('aria-label',m.read_at?'خوێندراوە':'نێردراوە');
+    time.append(document.createTextNode(' '),receipt);
+   }
+   bubble.append(time);box.append(bubble);
   }
-  if(!data||!data.length)box.innerHTML='<div class="inbox-empty">ئەمە یەکەم گفتوگۆی ئێوەیە. سڵاوێک بنێرە 👋</div>';box.scrollTop=box.scrollHeight;
-   const {error:readError}=await db.rpc('mark_dm_read',{p_sender_id:activeDmUser});if(readError)console.warn('DM read receipt:',readError.message);
- }catch(e){box.innerHTML='<div class="inbox-empty">هەڵە لە بارکردنی نامەکان: '+String(e.message||e)+'</div>';}
+  if(!data||!data.length)box.innerHTML='<div class="inbox-empty">ئەمە یەکەم گفتوگۆی ئێوەیە. سڵاوێک بنێرە 👋</div>';
+  box.scrollTop=box.scrollHeight;
+  const {error:readError}=await db.rpc('mark_dm_read',{p_sender_id:activeDmUser});
+  if(readError)console.warn('DM read receipt:',readError.message);
+ }catch(e){
+  box.innerHTML='<div class="inbox-empty">هەڵە لە بارکردنی نامەکان: '+String(e.message||e)+'</div>';
+ }
 }
 async function sendDirectMessage(event){
- event.preventDefault();if(!currentUser||!activeDmUser){dmStatus('سەرەتا هاوڕێیەک هەڵبژێرە.');return;}
- const textValue=document.getElementById('dmText').value.trim();const picker=document.getElementById('dmVideoFile');const file=picker.files&&picker.files[0];const videoId=pendingSharedVideoId;
- if(!textValue&&!file&&!videoId)return;if(file&&videoId){dmStatus('تکایە تەنها یەک ڤیدیۆ لە هەر نامەیەکدا بنێرە.');return;}
- const button=document.getElementById('dmSendButton');const attach=document.querySelector('.dm-attach');button.disabled=true;if(attach)attach.disabled=true;
+ event.preventDefault();
+ if(!currentUser||!activeDmUser){dmStatus('سەرەتا هاوڕێیەک هەڵبژێرە.');return;}
+ const textValue=document.getElementById('dmText').value.trim();
+ const picker=document.getElementById('dmVideoFile');
+ const file=picker.files&&picker.files[0];
+ const videoId=pendingSharedVideoId;
+ if(!textValue&&!file&&!videoId)return;
+ if(file&&videoId){dmStatus('تکایە تەنها یەک ڤیدیۆ لە هەر نامەیەکدا بنێرە.');return;}
+ const button=document.getElementById('dmSendButton');
+ const attach=document.querySelector('.dm-attach');
+ button.disabled=true;if(attach)attach.disabled=true;
  let uploadedPath=null;
  try{
   const payload={sender_id:currentUser.id,recipient_id:activeDmUser,content:textValue||null,video_id:videoId||null,media_path:null,media_mime_type:null,media_size_bytes:null};
   if(file){
-   if(file.size>DM_VIDEO_MAX_BYTES)throw new Error('قەبارەی ڤیدیۆ نابێت لە 100MB زیاتر بێت.');
-   const ext=(file.name.split('.').pop()||'mp4').toLowerCase();const allowed=['mp4','mov','webm','3gp','m4v','3g2'];if(!allowed.includes(ext))throw new Error('فۆرماتی ئەم ڤیدیۆیە پشتگیری ناکرێت.');
-   const mime=file.type||({mp4:'video/mp4',mov:'video/quicktime',webm:'video/webm', '3gp':'video/3gpp',m4v:'video/x-m4v','3g2':'video/3gpp2'}[ext]);if(!DM_VIDEO_MIMES.has(mime))throw new Error('فۆرماتی ڤیدیۆکە ڕێگەپێدراو نییە.');
-   const token=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);uploadedPath=currentUser.id+'/'+token+'.'+ext;
+   const meta=await validateDmGalleryVideo(file);
+   const token=makeDmUploadUuid();
+   uploadedPath=currentUser.id+'/'+token+'.'+meta.ext;
    dmStatus('ڤیدیۆکە بە شێوەی تایبەتی بار دەکرێت...');
-   const {error:uploadError}=await db.storage.from('dm-videos').upload(uploadedPath,file,{cacheControl:'3600',upsert:false,contentType:mime});if(uploadError)throw uploadError;
-   payload.media_path=uploadedPath;payload.media_mime_type=mime;payload.media_size_bytes=file.size;
+   const {error:uploadError}=await db.storage.from('dm-videos').upload(uploadedPath,file,{cacheControl:'3600',upsert:false,contentType:meta.mime});
+   if(uploadError)throw uploadError;
+   payload.media_path=uploadedPath;payload.media_mime_type=meta.mime;payload.media_size_bytes=file.size;
   }
-  const {error}=await db.from('dm_messages').insert(payload);if(error)throw error;
-  document.getElementById('dmText').value='';picker.value='';pendingSharedVideoId=null;dmStatus('نامەکەت بە سەرکەوتوویی نێردرا.');await loadDmMessages();await loadInbox();
- }catch(e){if(uploadedPath){try{await db.storage.from('dm-videos').remove([uploadedPath]);}catch(_){}}dmStatus('ناردنی نامە سەرکەوتوو نەبوو: '+String(e.message||e));}
- finally{button.disabled=false;if(attach)attach.disabled=false;}
+  const {error}=await db.from('dm_messages').insert(payload);
+  if(error)throw error;
+  document.getElementById('dmText').value='';
+  picker.value='';
+  pendingSharedVideoId=null;
+  dmStatus('نامەکەت بە سەرکەوتوویی نێردرا.');
+  await loadDmMessages();await loadInbox();
+ }catch(e){
+  if(uploadedPath){try{await db.storage.from('dm-videos').remove([uploadedPath]);}catch(_){}}
+  dmStatus('ناردنی نامە سەرکەوتوو نەبوو: '+String(e.message||e));
+ }finally{
+  button.disabled=false;if(attach)attach.disabled=false;
+ }
 }
  
 // KURD HALO LIVE CHAT + REACTIONS
