@@ -1,6 +1,46 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0b0"/><stop offset=".48" stop-color="#e6ad43"/><stop offset="1" stop-color="#9e6724"/></linearGradient>
+ <clipPath id="flag"><rect x="183" y="182" width="146" height="88" rx="8"/></clipPath>
+ <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
 <rect width="512" height="512" rx="112" fill="#080914"/>
-<path d="M92 346 178 116l78 108 78-108 86 230h-92l-72-111-72 111z" fill="#f5c96a"/>
-<path d="M178 346h156" stroke="#39d5e8" stroke-width="22" stroke-linecap="round"/>
-<circle cx="256" cy="78" r="17" fill="#8b5cf6"/>
+<circle cx="256" cy="246" r="218" fill="#101426" stroke="url(#gold)" stroke-width="10"/>
+<circle cx="256" cy="246" r="202" fill="none" stroke="#f5c96a" stroke-opacity=".35" stroke-width="2" stroke-dasharray="4 9"/>
+<!-- Kurdish flag -->
+<g clip-path="url(#flag)">
+ <rect x="183" y="182" width="146" height="29.4" fill="#e53945"/>
+ <rect x="183" y="211.4" width="146" height="29.2" fill="#fff"/>
+ <rect x="183" y="240.6" width="146" height="29.4" fill="#159447"/>
+ <circle cx="256" cy="226" r="17" fill="#e9b94f"/>
+ <path d="M256 207a19 19 0 1 0 0 38 15 15 0 1 1 0-38" fill="#fff"/>
+ <g fill="#e9b94f" transform="translate(256 226)">
+  <path d="M0-29 3-20 12-20 5-14 8-5 0-10-8-5-5-14-12-20-3-20Z"/>
+  <path d="M0-29 3-20 12-20 5-14 8-5 0-10-8-5-5-14-12-20-3-20Z" transform="rotate(60)"/>
+  <path d="M0-29 3-20 12-20 5-14 8-5 0-10-8-5-5-14-12-20-3-20Z" transform="rotate(120)"/>
+  <path d="M0-29 3-20 12-20 5-14 8-5 0-10-8-5-5-14-12-20-3-20Z" transform="rotate(180)"/>
+  <path d="M0-29 3-20 12-20 5-14 8-5 0-10-8-5-5-14-12-20-3-20Z" transform="rotate(240)"/>
+  <path d="M0-29 3-20 12-20 5-14 8-5 0-10-8-5-5-14-12-20-3-20Z" transform="rotate(300)"/>
+ </g>
+</g>
+<rect x="177" y="176" width="158" height="100" rx="13" fill="none" stroke="url(#gold)" stroke-width="5"/>
+<!-- stylized golden eagle wings -->
+<path d="M252 302c-22-30-45-44-86-51 16 19 27 34 40 48-29-12-52-16-80-13 25 16 43 29 60 47-30-7-53-6-78 4 37 15 70 25 110 19 14-2 27-8 38-19 11 11 24 17 38 19 40 6 73-4 110-19-25-10-48-11-78-4 17-18 35-31 60-47-28-3-51 1-80 13 13-14 24-29 40-48-41 7-64 21-86 51-2-21-4-37-4-57-10 12-15 26-14 43-1-17-4-31-14-43 0 20-2 36-4 57Z" fill="url(#gold)" stroke="#6f491e" stroke-width="3" stroke-linejoin="round"/>
+<path d="M256 282c-12 9-19 25-19 43 0 18 8 32 19 43 11-11 19-25 19-43 0-18-7-34-19-43Z" fill="#f8d77c" stroke="#8e6128" stroke-width="3"/>
+<path d="M244 366 256 382 268 366" fill="#e6ad43"/>
+<path d="M248 347 256 356 264 347" fill="#080914"/>
+<!-- city landmarks / labels -->
+<g fill="#f5c96a" font-family="Arial,sans-serif" font-size="13" font-weight="700" text-anchor="middle">
+ <text x="256" y="411">ERBIL • SLEMANI • DUHOK</text>
+ <text x="256" y="429">ZAKHO • HALABJA • KIRKUK</text>
+</g>
+<!-- five stars -->
+<g fill="url(#gold)" stroke="#9e6724" stroke-width="1">
+ <path d="m160 449 5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1Z"/>
+ <path d="m208 449 5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1Z"/>
+ <path d="m256 449 5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1Z"/>
+ <path d="m304 449 5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1Z"/>
+ <path d="m352 449 5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1Z"/>
+</g>
+<text x="256" y="493" fill="#fff0c2" font-family="Arial,sans-serif" font-size="17" font-weight="800" text-anchor="middle" letter-spacing="3">KURD HALO</text>
 </svg>
