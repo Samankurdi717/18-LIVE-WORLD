@@ -665,6 +665,23 @@ body.auth-required .bottom-nav{display:none!important}
  .app-header .header-actions{background:transparent!important;border:0!important;box-shadow:none!important;}
  .app-header .profile-menu-trigger{background:transparent!important;border:0!important;box-shadow:none!important;}
 }
+
+/* Inbox recipient search, read receipts and persistent header Search */
+.inbox-directory-search{margin:8px 0 12px;padding:10px;border:1px solid var(--line);border-radius:14px;background:rgba(15,16,30,.9)}
+.inbox-directory-row{display:flex;align-items:center;gap:7px}
+.inbox-directory-row input{flex:1;min-width:0;margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:#080a18;color:#fff;font:inherit}
+.inbox-directory-row button{flex:0 0 auto;margin:0;padding:10px 12px;white-space:nowrap}
+.inbox-user-search-results{display:grid;gap:7px;max-height:25svh;overflow:auto;margin-top:8px}
+.inbox-user-search-result{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:8px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.045)}
+.inbox-user-search-result .inbox-user-identity{display:flex;align-items:center;gap:8px;min-width:0}
+.inbox-user-search-result img,.inbox-user-search-result .inbox-avatar{width:34px;height:34px;flex:0 0 34px;border-radius:50%;object-fit:cover}
+.inbox-user-search-result strong{min-width:0;overflow-wrap:anywhere;font-size:13px}
+.inbox-user-search-result button{margin:0;padding:7px 10px;white-space:nowrap;font-size:11px}
+.dm-meta{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:5px}
+.dm-time,.dm-receipt{font-size:10px;color:#b8b9cc}.dm-receipt{color:#9fe8f1;font-weight:700}
+.app-header .header-actions{flex:0 0 auto!important;display:flex!important;align-items:center;gap:5px!important}
+.app-header .header-search{width:34px;height:34px;min-width:34px;margin:0;padding:3px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.08);color:#fff;box-shadow:none;font-size:15px}
+@media(max-width:700px){.inbox-directory-row button{padding:9px 10px;font-size:11px}.inbox-user-search-results{max-height:22svh}}
 </style>
 
 <script>self.ModelViewerElement=self.ModelViewerElement||{};self.ModelViewerElement.meshoptDecoderLocation='https://cdn.jsdelivr.net/npm/meshoptimizer/meshopt_decoder.js';</script>
@@ -689,6 +706,7 @@ body.auth-required .bottom-nav{display:none!important}
 
 
  <div class="header-actions">
+  <button class="header-search" type="button" onclick="toggleHaloSearch()" aria-label="گەڕان" title="گەڕان" aria-expanded="false">🔍</button>
   <button class="profile-menu-trigger" type="button" onclick="openProfileMenu()" aria-label="مێنیو" title="مێنیو">☰</button>
  </div>
 </header>
@@ -839,10 +857,6 @@ body.auth-required .bottom-nav{display:none!important}
   </select>
  </div>
  <div class="drawer-divider"></div>
- <div style="padding:9px 14px 4px;color:#e9c879;font-weight:800">🎮 یارییەکان</div>
-<button class="drawer-item" onclick="closeProfileMenu();switchAppTab('klawen')"><span class="drawer-icon">🧶</span><span>کڵاوێن</span><span class="drawer-arrow">‹</span></button>
- <button class="drawer-item" onclick="closeProfileMenu();switchAppTab('quiz')"><span class="drawer-icon">🌍</span><span>پرسیار و وەڵام</span><span class="drawer-arrow">‹</span></button>
- <div class="drawer-divider"></div>
  <button class="drawer-item" onclick="openProfileFeature('balance')"><span class="drawer-icon">💰</span><span data-halo-profile-label="balance">Balance</span><span class="drawer-arrow">‹</span></button>
  <button class="drawer-item" onclick="openProfileFeature('activity')"><span class="drawer-icon">📊</span><span data-halo-profile-label="activity">Activity Center</span><span class="drawer-arrow">‹</span></button>
  <button class="drawer-item" onclick="openProfileFeature('offline')"><span class="drawer-icon">📥</span><span data-halo-profile-label="offline">Offline Videos</span><span class="drawer-arrow">‹</span></button>
@@ -949,6 +963,13 @@ body.auth-required .bottom-nav{display:none!important}
 <!-- PRIVATE INBOX / DIRECT MESSAGES -->
 <section class="inbox-page" id="inboxHub" aria-label="Inbox">
  <div class="inbox-title"><h2 data-i18n="inboxTitle">✉️ Inbox</h2><button class="dark" type="button" onclick="loadInbox()" data-i18n="refreshInbox">↻ نوێکردنەوە</button></div>
+ <div class="inbox-directory-search">
+  <div class="inbox-directory-row">
+   <input id="inboxUserSearchInput" type="search" maxlength="60" placeholder="گەڕان بەدوای بەکارهێنەر بۆ پەیام..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();searchInboxUsers()}">
+   <button class="dark" type="button" onclick="searchInboxUsers()">🔍 گەڕان</button>
+  </div>
+  <div id="inboxUserSearchResults" class="inbox-user-search-results" aria-live="polite"></div>
+ </div>
  <div class="inbox-shell">
   <div class="inbox-contacts" id="inboxContacts"><div class="inbox-empty" data-i18n="inboxEmptyContacts">هاوڕێکان و گفتوگۆکان لێرە دەردەکەون.</div></div>
   <div class="inbox-chat">
@@ -994,6 +1015,14 @@ let activeDmUser=null;
 let pendingSharedVideoId=null;
 let dmRealtimeChannel=null;
 let dmRealtimeUserId=null;
+function toggleHaloSearch(){
+ const inbox=document.getElementById('inboxHub');const profile=document.getElementById('profilePage');const home=document.getElementById('unifiedHub');
+ if(inbox?.classList.contains('active')||(profile&&!profile.classList.contains('hidden'))||home?.classList.contains('hidden')){if(typeof window.switchAppTab==='function')window.switchAppTab('home');}
+ const panel=home?.querySelector('.user-search-panel');if(!panel)return;
+ const open=panel.hidden||!document.body.classList.contains('halo-search-open');panel.hidden=!open;document.body.classList.toggle('halo-search-open',open);
+ document.querySelector('.header-search')?.setAttribute('aria-expanded',String(open));
+ if(open)setTimeout(()=>document.getElementById('userSearchInput')?.focus(),90);
+}
 function setActiveNav(id){document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.toggle('active',b.id===id));}
 function switchAppTab(tab){
  const profile=document.getElementById('profilePage');const home=document.getElementById('unifiedHub');const inbox=document.getElementById('inboxHub');
@@ -1015,13 +1044,13 @@ function closeAccount(){if(!currentUser)return;document.getElementById('accountM
 function openShareVideo(videoId){if(!currentUser){alert('بۆ ناردنی ڤیدیۆ سەرەتا بچۆ ژوورەوە.');openAccount();return;}const picker=document.getElementById('dmVideoFile');if(picker)picker.value='';activeDmUser=null;pendingSharedVideoId=videoId;switchAppTab('inbox');dmStatus('هاوڕێیەک هەڵبژێرە، پاشان ڤیدیۆکەی بۆ بنێرە.');}
 // LANGUAGE DICTIONARY
 const translations={
- ku:{tagline:"لە کوردستانەوە بۆ هەموو جیهان",languageLabel:"زمان",accountTitle:"👤 هەژماری بەکارهێنەر",firstName:"ناو",fatherName:"ناوی باوک",grandfatherName:"ناوی باپیر",gender:"ڕەگەز",chooseGender:"ڕەگەز هەڵبژێرە",male:"نێر",female:"مێ",intersex:"دووڕەگەز",email:"ئیمەیڵ",mobile:"ژمارەی مۆبایل",password:"وشەی نهێنی",confirmPassword:"دووبارە وشەی نهێنی",signup:"📝 خۆتۆمارکردن",signin:"چوونەژوورەوە",forgot:"وشەی نهێنیم لەبیرچووە؟",logout:"دەرچوون لە هەژمار",myProfile:"🪪 پرۆفایلی من",choosePhoto:"وێنەی پرۆفایل لە گەلەری مۆبایلەکەت هەڵبژێرە",smsNote:"ژمارەی تەلەفون تۆمار دەکرێت، بەڵام پشتڕاستکردنەوەی SMS هێشتا چالاک نییە و پێویستی بە ڕێکخستنی دابینکەری SMS هەیە.",saveProfile:"💾 پاشەکەوتکردنی گۆڕانکارییەکان",newPasswordTitle:"🔐 وشەی نهێنی نوێ",changePassword:"گۆڕینی وشەی نهێنی",uploadTitle:"📹 بڵاوکردنەوەی ڤیدیۆ",chooseVideo:"ڤیدیۆیەک لە گەلەری مۆبایلەکەت هەڵبژێرە",uploadButton:"⬆️ بارکردنی ڤیدیۆ",videoLimit:"قەبارەی ڤیدیۆ نابێت لە 50MB زیاتر بێت.",feedTitle:"🌍 ڤیدیۆکانی کورد هەڵۆ",refresh:"🔄 نوێکردنەوە",liveTitle:"🔴 بەشداری لایڤ",liveDescription:"جیهانی لایڤ و پەیوەندی لەگەڵ خەڵکی جیهان",ageConfirm:"من 18 ساڵ یان زیاترەم",joinLive:"▶ بەشداری لایڤ",leaveLive:"دەرچوون",yourVideo:"📹 ڤیدیۆی تۆ",participants:"🌍 بەشداربووانی لایڤ",switchCamera:"🔄 گۆڕینی کامێرا",camera:"📷 کامێرا",microphone:"🎤 مایکرۆفۆن",gamesTitle:'🎮 یارییەکانی KURDORA',gamesIntro:'یاریی کوردی، بیرکاری و کێبڕکێ لەگەڵ هاوڕێکانت؛ هەموویان لە یەک شوێن.',allVideos:'هەموو ڤیدیۆکان لە یەک فیددا',forYou:'بۆ تۆ',following:'شوێنکەوتووان',navFeed:'فیدیۆ',navGames:'یارییەکان',navUpload:'بڵاوکردنەوە',navAccount:'هەژمار'},
- fa:{tagline:"از کردستان به تمام جهان",languageLabel:"زبان",accountTitle:"👤 حساب کاربری",firstName:"نام",fatherName:"نام پدر",grandfatherName:"نام پدربزرگ",gender:"جنسیت",chooseGender:"جنسیت را انتخاب کنید",male:"مرد",female:"زن",intersex:"بیناجنس",email:"ایمیل",mobile:"شماره موبایل",password:"رمز عبور",confirmPassword:"تکرار رمز عبور",signup:"📝 ثبت نام",signin:"ورود",forgot:"رمز عبور را فراموش کرده‌اید؟",logout:"خروج از حساب",myProfile:"🪪 پروفایل من",choosePhoto:"عکس پروفایل را از گالری انتخاب کنید",smsNote:"شماره ثبت می‌شود، اما تأیید پیامکی هنوز فعال نیست.",saveProfile:"💾 ذخیره تغییرات",newPasswordTitle:"🔐 رمز عبور جدید",changePassword:"تغییر رمز عبور",uploadTitle:"📹 انتشار ویدیو",chooseVideo:"یک ویدیو از گالری انتخاب کنید",uploadButton:"⬆️ بارگذاری ویدیو",videoLimit:"حجم ویدیو نباید بیشتر از 50 مگابایت باشد.",feedTitle:"🌍 ویدیوهای KURD STAR",refresh:"🔄 تازه‌سازی",liveTitle:"🔴 پیوستن به پخش زنده",liveDescription:"ارتباط زنده با مردم جهان",ageConfirm:"من ۱۸ سال یا بیشتر دارم",joinLive:"▶ پیوستن به پخش زنده",leaveLive:"خروج",yourVideo:"📹 ویدیوی شما",participants:"🌍 شرکت‌کنندگان زنده",switchCamera:"🔄 تغییر دوربین",camera:"📷 دوربین",microphone:"🎤 میکروفون",gamesTitle:'🎮 بازی\u200cهای KURDORA',gamesIntro:'بازی\u200cهای کردی، فکری و رقابتی با دوستان؛ همه در یک مکان.',allVideos:'همه ویدیوها در یک فید',forYou:'برای شما',following:'دنبال\u200cشده\u200cها',navFeed:'ویدیو',navGames:'بازی\u200cها',navUpload:'انتشار',navAccount:'حساب'},
- en:{tagline:"From Kurdistan to the whole world",languageLabel:"Language",accountTitle:"👤 User account",firstName:"First name",fatherName:"Father's name",grandfatherName:"Grandfather's name",gender:"Gender",chooseGender:"Choose gender",male:"Male",female:"Female",intersex:"Intersex",email:"Email",mobile:"Mobile number",password:"Password",confirmPassword:"Confirm password",signup:"📝 Sign up",signin:"Log in",forgot:"Forgot password?",logout:"Log out",myProfile:"🪪 My profile",choosePhoto:"Choose a profile photo from your gallery",smsNote:"Your phone number is saved, but SMS verification is not configured yet.",saveProfile:"💾 Save changes",newPasswordTitle:"🔐 New password",changePassword:"Change password",uploadTitle:"📹 Upload a video",chooseVideo:"Choose a video from your phone gallery",uploadButton:"⬆️ Upload video",videoLimit:"Video size must not exceed 50MB.",feedTitle:"🌍 KURD STAR videos",refresh:"🔄 Refresh",liveTitle:"🔴 Join live",liveDescription:"Live connections with people around the world",ageConfirm:"I am 18 years old or older",joinLive:"▶ Join live",leaveLive:"Leave",yourVideo:"📹 Your video",participants:"🌍 Live participants",switchCamera:"🔄 Switch camera",camera:"📷 Camera",microphone:"🎤 Microphone",gamesTitle:'🎮 KURDORA Games',gamesIntro:'Kurdish, puzzle and competitive games with friends — all in one place.',allVideos:'All videos in one feed',forYou:'For You',following:'Following',navFeed:'Videos',navGames:'Games',navUpload:'Upload',navAccount:'Account'},
- ar:{tagline:"من كردستان إلى العالم أجمع",languageLabel:"اللغة",accountTitle:"👤 حساب المستخدم",firstName:"الاسم",fatherName:"اسم الأب",grandfatherName:"اسم الجد",gender:"الجنس",chooseGender:"اختر الجنس",male:"ذكر",female:"أنثى",intersex:"ثنائي الجنس",email:"البريد الإلكتروني",mobile:"رقم الهاتف",password:"كلمة المرور",confirmPassword:"تأكيد كلمة المرور",signup:"📝 إنشاء حساب",signin:"تسجيل الدخول",forgot:"نسيت كلمة المرور؟",logout:"تسجيل الخروج",myProfile:"🪪 ملفي الشخصي",choosePhoto:"اختر صورة من معرض الهاتف",smsNote:"تم حفظ الرقم، لكن تأكيد SMS غير مفعّل حالياً.",saveProfile:"💾 حفظ التغييرات",newPasswordTitle:"🔐 كلمة مرور جديدة",changePassword:"تغيير كلمة المرور",uploadTitle:"📹 نشر فيديو",chooseVideo:"اختر فيديو من معرض الهاتف",uploadButton:"⬆️ رفع الفيديو",videoLimit:"يجب ألا يتجاوز حجم الفيديو 50 ميغابايت.",feedTitle:"🌍 فيديوهات KURD STAR",refresh:"🔄 تحديث",liveTitle:"🔴 الانضمام للبث المباشر",liveDescription:"تواصل مباشر مع الناس حول العالم",ageConfirm:"عمري 18 سنة أو أكثر",joinLive:"▶ الانضمام للبث",leaveLive:"خروج",yourVideo:"📹 الفيديو الخاص بك",participants:"🌍 المشاركون بالبث",switchCamera:"🔄 تبديل الكاميرا",camera:"📷 الكاميرا",microphone:"🎤 الميكروفون",gamesTitle:'🎮 ألعاب KURDORA',gamesIntro:'ألعاب كردية وذهنية وتنافسية مع الأصدقاء؛ كلها في مكان واحد.',allVideos:'كل الفيديوهات في موجز واحد',forYou:'لك',following:'المتابَعون',navFeed:'فيديو',navGames:'الألعاب',navUpload:'نشر',navAccount:'الحساب'},
- tr:{tagline:"Kürdistan'dan bütün dünyaya",languageLabel:"Dil",accountTitle:"👤 Kullanıcı hesabı",firstName:"Ad",fatherName:"Baba adı",grandfatherName:"Dede adı",gender:"Cinsiyet",chooseGender:"Cinsiyet seçin",male:"Erkek",female:"Kadın",intersex:"İnterseks",email:"E-posta",mobile:"Cep telefonu",password:"Şifre",confirmPassword:"Şifreyi tekrar girin",signup:"📝 Kayıt ol",signin:"Giriş yap",forgot:"Şifremi unuttum",logout:"Çıkış yap",myProfile:"🪪 Profilim",choosePhoto:"Galeriden profil fotoğrafı seçin",smsNote:"Telefon numarası kaydedilir; SMS doğrulaması henüz etkin değil.",saveProfile:"💾 Değişiklikleri kaydet",newPasswordTitle:"🔐 Yeni şifre",changePassword:"Şifreyi değiştir",uploadTitle:"📹 Video paylaş",chooseVideo:"Galeriden video seçin",uploadButton:"⬆️ Video yükle",videoLimit:"Video boyutu 50 MB'ı geçmemelidir.",feedTitle:"🌍 KURD STAR videoları",refresh:"🔄 Yenile",liveTitle:"🔴 Canlı yayına katıl",liveDescription:"Dünyanın her yerinden insanlarla canlı bağlantı",ageConfirm:"18 yaşında veya daha büyüğüm",joinLive:"▶ Canlı yayına katıl",leaveLive:"Ayrıl",yourVideo:"📹 Videonuz",participants:"🌍 Canlı katılımcılar",switchCamera:"🔄 Kamerayı değiştir",camera:"📷 Kamera",microphone:"🎤 Mikrofon",gamesTitle:'🎮 KURDORA Oyunları',gamesIntro:'Arkadaşlarınla Kürtçe, zeka ve rekabet oyunları; hepsi tek yerde.',allVideos:'Tüm videolar tek akışta',forYou:'Sana özel',following:'Takip edilenler',navFeed:'Videolar',navGames:'Oyunlar',navUpload:'Paylaş',navAccount:'Hesap'},
- fr:{tagline:"Du Kurdistan au monde entier",languageLabel:"Langue",accountTitle:"👤 Compte utilisateur",firstName:"Prénom",fatherName:"Nom du père",grandfatherName:"Nom du grand-père",gender:"Genre",chooseGender:"Choisir le genre",male:"Homme",female:"Femme",intersex:"Intersexe",email:"E-mail",mobile:"Numéro de mobile",password:"Mot de passe",confirmPassword:"Confirmer le mot de passe",signup:"📝 S'inscrire",signin:"Se connecter",forgot:"Mot de passe oublié ?",logout:"Se déconnecter",myProfile:"🪪 Mon profil",choosePhoto:"Choisissez une photo dans votre galerie",smsNote:"Le numéro est enregistré, mais la vérification SMS n'est pas encore configurée.",saveProfile:"💾 Enregistrer",newPasswordTitle:"🔐 Nouveau mot de passe",changePassword:"Changer le mot de passe",uploadTitle:"📹 Publier une vidéo",chooseVideo:"Choisissez une vidéo dans la galerie",uploadButton:"⬆️ Envoyer la vidéo",videoLimit:"La vidéo ne doit pas dépasser 50 Mo.",feedTitle:"🌍 Vidéos KURD STAR",refresh:"🔄 Actualiser",liveTitle:"🔴 Rejoindre le direct",liveDescription:"Connexion en direct avec le monde entier",ageConfirm:"J'ai 18 ans ou plus",joinLive:"▶ Rejoindre le direct",leaveLive:"Quitter",yourVideo:"📹 Votre vidéo",participants:"🌍 Participants en direct",switchCamera:"🔄 Changer de caméra",camera:"📷 Caméra",microphone:"🎤 Microphone",gamesTitle:'🎮 Jeux KURDORA',gamesIntro:'Jeux kurdes, de réflexion et de compétition entre amis, réunis au même endroit.',allVideos:'Toutes les vidéos dans un seul fil',forYou:'Pour vous',following:'Abonnements',navFeed:'Vidéos',navGames:'Jeux',navUpload:'Publier',navAccount:'Compte'},
- de:{tagline:"Von Kurdistan in die ganze Welt",languageLabel:"Sprache",accountTitle:"👤 Benutzerkonto",firstName:"Vorname",fatherName:"Name des Vaters",grandfatherName:"Name des Großvaters",gender:"Geschlecht",chooseGender:"Geschlecht auswählen",male:"Männlich",female:"Weiblich",intersex:"Intergeschlechtlich",email:"E-Mail",mobile:"Handynummer",password:"Passwort",confirmPassword:"Passwort bestätigen",signup:"📝 Registrieren",signin:"Anmelden",forgot:"Passwort vergessen?",logout:"Abmelden",myProfile:"🪪 Mein Profil",choosePhoto:"Profilfoto aus der Galerie auswählen",smsNote:"Die Telefonnummer wird gespeichert; SMS-Bestätigung ist noch nicht eingerichtet.",saveProfile:"💾 Änderungen speichern",newPasswordTitle:"🔐 Neues Passwort",changePassword:"Passwort ändern",uploadTitle:"📹 Video veröffentlichen",chooseVideo:"Video aus der Galerie auswählen",uploadButton:"⬆️ Video hochladen",videoLimit:"Das Video darf höchstens 50 MB groß sein.",feedTitle:"🌍 KURD STAR Videos",refresh:"🔄 Aktualisieren",liveTitle:"🔴 Live beitreten",liveDescription:"Live-Verbindung mit Menschen weltweit",ageConfirm:"Ich bin mindestens 18 Jahre alt",joinLive:"▶ Live beitreten",leaveLive:"Verlassen",yourVideo:"📹 Dein Video",participants:"🌍 Live-Teilnehmer",switchCamera:"🔄 Kamera wechseln",camera:"📷 Kamera",microphone:"🎤 Mikrofon",gamesTitle:'🎮 KURDORA Spiele',gamesIntro:'Kurdische, Denk- und Wettbewerbsspiele mit Freunden – alles an einem Ort.',allVideos:'Alle Videos in einem Feed',forYou:'Für dich',following:'Gefolgt',navFeed:'Videos',navGames:'Spiele',navUpload:'Hochladen',navAccount:'Konto'}
+ ku:{tagline:"لە کوردستانەوە بۆ هەموو جیهان",languageLabel:"زمان",accountTitle:"👤 هەژماری بەکارهێنەر",firstName:"ناو",fatherName:"ناوی باوک",grandfatherName:"ناوی باپیر",gender:"ڕەگەز",chooseGender:"ڕەگەز هەڵبژێرە",male:"نێر",female:"مێ",intersex:"دووڕەگەز",email:"ئیمەیڵ",mobile:"ژمارەی مۆبایل",password:"وشەی نهێنی",confirmPassword:"دووبارە وشەی نهێنی",signup:"📝 خۆتۆمارکردن",signin:"چوونەژوورەوە",forgot:"وشەی نهێنیم لەبیرچووە؟",logout:"دەرچوون لە هەژمار",myProfile:"🪪 پرۆفایلی من",choosePhoto:"وێنەی پرۆفایل لە گەلەری مۆبایلەکەت هەڵبژێرە",smsNote:"ژمارەی تەلەفون تۆمار دەکرێت، بەڵام پشتڕاستکردنەوەی SMS هێشتا چالاک نییە و پێویستی بە ڕێکخستنی دابینکەری SMS هەیە.",saveProfile:"💾 پاشەکەوتکردنی گۆڕانکارییەکان",newPasswordTitle:"🔐 وشەی نهێنی نوێ",changePassword:"گۆڕینی وشەی نهێنی",uploadTitle:"📹 بڵاوکردنەوەی ڤیدیۆ",chooseVideo:"ڤیدیۆیەک لە گەلەری مۆبایلەکەت هەڵبژێرە",uploadButton:"⬆️ بارکردنی ڤیدیۆ",videoLimit:"قەبارەی ڤیدیۆ نابێت لە 50MB زیاتر بێت.",feedTitle:"🌍 ڤیدیۆکانی کورد هەڵۆ",refresh:"🔄 نوێکردنەوە",liveTitle:"🔴 بەشداری لایڤ",liveDescription:"جیهانی لایڤ و پەیوەندی لەگەڵ خەڵکی جیهان",joinLive:"▶ بەشداری لایڤ",leaveLive:"دەرچوون",yourVideo:"📹 ڤیدیۆی تۆ",participants:"🌍 بەشداربووانی لایڤ",switchCamera:"🔄 گۆڕینی کامێرا",camera:"📷 کامێرا",microphone:"🎤 مایکرۆفۆن",allVideos:'هەموو ڤیدیۆکان لە یەک فیددا',forYou:'بۆ تۆ',following:'شوێنکەوتووان',navFeed:'فیدیۆ',navUpload:'بڵاوکردنەوە',navAccount:'هەژمار'},
+ fa:{tagline:"از کردستان به تمام جهان",languageLabel:"زبان",accountTitle:"👤 حساب کاربری",firstName:"نام",fatherName:"نام پدر",grandfatherName:"نام پدربزرگ",gender:"جنسیت",chooseGender:"جنسیت را انتخاب کنید",male:"مرد",female:"زن",intersex:"بیناجنس",email:"ایمیل",mobile:"شماره موبایل",password:"رمز عبور",confirmPassword:"تکرار رمز عبور",signup:"📝 ثبت نام",signin:"ورود",forgot:"رمز عبور را فراموش کرده‌اید؟",logout:"خروج از حساب",myProfile:"🪪 پروفایل من",choosePhoto:"عکس پروفایل را از گالری انتخاب کنید",smsNote:"شماره ثبت می‌شود، اما تأیید پیامکی هنوز فعال نیست.",saveProfile:"💾 ذخیره تغییرات",newPasswordTitle:"🔐 رمز عبور جدید",changePassword:"تغییر رمز عبور",uploadTitle:"📹 انتشار ویدیو",chooseVideo:"یک ویدیو از گالری انتخاب کنید",uploadButton:"⬆️ بارگذاری ویدیو",videoLimit:"حجم ویدیو نباید بیشتر از 50 مگابایت باشد.",feedTitle:"🌍 ویدیوهای KURD STAR",refresh:"🔄 تازه‌سازی",liveTitle:"🔴 پیوستن به پخش زنده",liveDescription:"ارتباط زنده با مردم جهان",joinLive:"▶ پیوستن به پخش زنده",leaveLive:"خروج",yourVideo:"📹 ویدیوی شما",participants:"🌍 شرکت‌کنندگان زنده",switchCamera:"🔄 تغییر دوربین",camera:"📷 دوربین",microphone:"🎤 میکروفون",allVideos:'همه ویدیوها در یک فید',forYou:'برای شما',following:'دنبال\u200cشده\u200cها',navFeed:'ویدیو',navUpload:'انتشار',navAccount:'حساب'},
+ en:{tagline:"From Kurdistan to the whole world",languageLabel:"Language",accountTitle:"👤 User account",firstName:"First name",fatherName:"Father's name",grandfatherName:"Grandfather's name",gender:"Gender",chooseGender:"Choose gender",male:"Male",female:"Female",intersex:"Intersex",email:"Email",mobile:"Mobile number",password:"Password",confirmPassword:"Confirm password",signup:"📝 Sign up",signin:"Log in",forgot:"Forgot password?",logout:"Log out",myProfile:"🪪 My profile",choosePhoto:"Choose a profile photo from your gallery",smsNote:"Your phone number is saved, but SMS verification is not configured yet.",saveProfile:"💾 Save changes",newPasswordTitle:"🔐 New password",changePassword:"Change password",uploadTitle:"📹 Upload a video",chooseVideo:"Choose a video from your phone gallery",uploadButton:"⬆️ Upload video",videoLimit:"Video size must not exceed 50MB.",feedTitle:"🌍 KURD STAR videos",refresh:"🔄 Refresh",liveTitle:"🔴 Join live",liveDescription:"Live connections with people around the world",joinLive:"▶ Join live",leaveLive:"Leave",yourVideo:"📹 Your video",participants:"🌍 Live participants",switchCamera:"🔄 Switch camera",camera:"📷 Camera",microphone:"🎤 Microphone",allVideos:'All videos in one feed',forYou:'For You',following:'Following',navFeed:'Videos',navUpload:'Upload',navAccount:'Account'},
+ ar:{tagline:"من كردستان إلى العالم أجمع",languageLabel:"اللغة",accountTitle:"👤 حساب المستخدم",firstName:"الاسم",fatherName:"اسم الأب",grandfatherName:"اسم الجد",gender:"الجنس",chooseGender:"اختر الجنس",male:"ذكر",female:"أنثى",intersex:"ثنائي الجنس",email:"البريد الإلكتروني",mobile:"رقم الهاتف",password:"كلمة المرور",confirmPassword:"تأكيد كلمة المرور",signup:"📝 إنشاء حساب",signin:"تسجيل الدخول",forgot:"نسيت كلمة المرور؟",logout:"تسجيل الخروج",myProfile:"🪪 ملفي الشخصي",choosePhoto:"اختر صورة من معرض الهاتف",smsNote:"تم حفظ الرقم، لكن تأكيد SMS غير مفعّل حالياً.",saveProfile:"💾 حفظ التغييرات",newPasswordTitle:"🔐 كلمة مرور جديدة",changePassword:"تغيير كلمة المرور",uploadTitle:"📹 نشر فيديو",chooseVideo:"اختر فيديو من معرض الهاتف",uploadButton:"⬆️ رفع الفيديو",videoLimit:"يجب ألا يتجاوز حجم الفيديو 50 ميغابايت.",feedTitle:"🌍 فيديوهات KURD STAR",refresh:"🔄 تحديث",liveTitle:"🔴 الانضمام للبث المباشر",liveDescription:"تواصل مباشر مع الناس حول العالم",joinLive:"▶ الانضمام للبث",leaveLive:"خروج",yourVideo:"📹 الفيديو الخاص بك",participants:"🌍 المشاركون بالبث",switchCamera:"🔄 تبديل الكاميرا",camera:"📷 الكاميرا",microphone:"🎤 الميكروفون",allVideos:'كل الفيديوهات في موجز واحد',forYou:'لك',following:'المتابَعون',navFeed:'فيديو',navUpload:'نشر',navAccount:'الحساب'},
+ tr:{tagline:"Kürdistan'dan bütün dünyaya",languageLabel:"Dil",accountTitle:"👤 Kullanıcı hesabı",firstName:"Ad",fatherName:"Baba adı",grandfatherName:"Dede adı",gender:"Cinsiyet",chooseGender:"Cinsiyet seçin",male:"Erkek",female:"Kadın",intersex:"İnterseks",email:"E-posta",mobile:"Cep telefonu",password:"Şifre",confirmPassword:"Şifreyi tekrar girin",signup:"📝 Kayıt ol",signin:"Giriş yap",forgot:"Şifremi unuttum",logout:"Çıkış yap",myProfile:"🪪 Profilim",choosePhoto:"Galeriden profil fotoğrafı seçin",smsNote:"Telefon numarası kaydedilir; SMS doğrulaması henüz etkin değil.",saveProfile:"💾 Değişiklikleri kaydet",newPasswordTitle:"🔐 Yeni şifre",changePassword:"Şifreyi değiştir",uploadTitle:"📹 Video paylaş",chooseVideo:"Galeriden video seçin",uploadButton:"⬆️ Video yükle",videoLimit:"Video boyutu 50 MB'ı geçmemelidir.",feedTitle:"🌍 KURD STAR videoları",refresh:"🔄 Yenile",liveTitle:"🔴 Canlı yayına katıl",liveDescription:"Dünyanın her yerinden insanlarla canlı bağlantı",joinLive:"▶ Canlı yayına katıl",leaveLive:"Ayrıl",yourVideo:"📹 Videonuz",participants:"🌍 Canlı katılımcılar",switchCamera:"🔄 Kamerayı değiştir",camera:"📷 Kamera",microphone:"🎤 Mikrofon",allVideos:'Tüm videolar tek akışta',forYou:'Sana özel',following:'Takip edilenler',navFeed:'Videolar',navUpload:'Paylaş',navAccount:'Hesap'},
+ fr:{tagline:"Du Kurdistan au monde entier",languageLabel:"Langue",accountTitle:"👤 Compte utilisateur",firstName:"Prénom",fatherName:"Nom du père",grandfatherName:"Nom du grand-père",gender:"Genre",chooseGender:"Choisir le genre",male:"Homme",female:"Femme",intersex:"Intersexe",email:"E-mail",mobile:"Numéro de mobile",password:"Mot de passe",confirmPassword:"Confirmer le mot de passe",signup:"📝 S'inscrire",signin:"Se connecter",forgot:"Mot de passe oublié ?",logout:"Se déconnecter",myProfile:"🪪 Mon profil",choosePhoto:"Choisissez une photo dans votre galerie",smsNote:"Le numéro est enregistré, mais la vérification SMS n'est pas encore configurée.",saveProfile:"💾 Enregistrer",newPasswordTitle:"🔐 Nouveau mot de passe",changePassword:"Changer le mot de passe",uploadTitle:"📹 Publier une vidéo",chooseVideo:"Choisissez une vidéo dans la galerie",uploadButton:"⬆️ Envoyer la vidéo",videoLimit:"La vidéo ne doit pas dépasser 50 Mo.",feedTitle:"🌍 Vidéos KURD STAR",refresh:"🔄 Actualiser",liveTitle:"🔴 Rejoindre le direct",liveDescription:"Connexion en direct avec le monde entier",joinLive:"▶ Rejoindre le direct",leaveLive:"Quitter",yourVideo:"📹 Votre vidéo",participants:"🌍 Participants en direct",switchCamera:"🔄 Changer de caméra",camera:"📷 Caméra",microphone:"🎤 Microphone",allVideos:'Toutes les vidéos dans un seul fil',forYou:'Pour vous',following:'Abonnements',navFeed:'Vidéos',navUpload:'Publier',navAccount:'Compte'},
+ de:{tagline:"Von Kurdistan in die ganze Welt",languageLabel:"Sprache",accountTitle:"👤 Benutzerkonto",firstName:"Vorname",fatherName:"Name des Vaters",grandfatherName:"Name des Großvaters",gender:"Geschlecht",chooseGender:"Geschlecht auswählen",male:"Männlich",female:"Weiblich",intersex:"Intergeschlechtlich",email:"E-Mail",mobile:"Handynummer",password:"Passwort",confirmPassword:"Passwort bestätigen",signup:"📝 Registrieren",signin:"Anmelden",forgot:"Passwort vergessen?",logout:"Abmelden",myProfile:"🪪 Mein Profil",choosePhoto:"Profilfoto aus der Galerie auswählen",smsNote:"Die Telefonnummer wird gespeichert; SMS-Bestätigung ist noch nicht eingerichtet.",saveProfile:"💾 Änderungen speichern",newPasswordTitle:"🔐 Neues Passwort",changePassword:"Passwort ändern",uploadTitle:"📹 Video veröffentlichen",chooseVideo:"Video aus der Galerie auswählen",uploadButton:"⬆️ Video hochladen",videoLimit:"Das Video darf höchstens 50 MB groß sein.",feedTitle:"🌍 KURD STAR Videos",refresh:"🔄 Aktualisieren",liveTitle:"🔴 Live beitreten",liveDescription:"Live-Verbindung mit Menschen weltweit",joinLive:"▶ Live beitreten",leaveLive:"Verlassen",yourVideo:"📹 Dein Video",participants:"🌍 Live-Teilnehmer",switchCamera:"🔄 Kamera wechseln",camera:"📷 Kamera",microphone:"🎤 Mikrofon",allVideos:'Alle Videos in einem Feed',forYou:'Für dich',following:'Gefolgt',navFeed:'Videos',navUpload:'Hochladen',navAccount:'Konto'}
 };
 const haloCoreTranslations={"ku":{"navHome":"سەرەکی","navFriends":"هاوڕێکان","navCreate":"دروستکردن","navInbox":"پەیامەکان","navProfile":"پرۆفایل","searchPlaceholder":"گەڕان بەدوای ناوی بەکارهێنەر...","searchButton":"🔍 گەڕان","forYouTab":"بۆ تۆ","followingTab":"شوێنکەوتووان","savedTab":"پاشەکەوتکراو","liveButton":"🔴 لایڤ","inboxTitle":"✉️ پەیامەکان","refreshInbox":"↻ نوێکردنەوە","inboxEmptyContacts":"هاوڕێکان و گفتوگۆکان لێرە دەردەکەون.","chooseConversation":"گفتوگۆیەک هەڵبژێرە","chooseFriend":"هاوڕێیەک هەڵبژێرە بۆ دەستپێکردنی گفتوگۆ.","sendVideoGallery":"ناردنی ڤیدیۆ لە گەلەری","messagePlaceholder":"نامەکەت بنووسە...","sendMessage":"ناردن","feedForYou":"بۆ تۆ","feedFollowing":"شوێنکەوتووان","feedSaved":"پاشەکەوتکراو"},"fa":{"navHome":"خانه","navFriends":"دوستان","navCreate":"ایجاد","navInbox":"پیام‌ها","navProfile":"پروفایل","searchPlaceholder":"جستجو بر اساس نام کاربری...","searchButton":"🔍 جستجو","forYouTab":"برای شما","followingTab":"دنبال‌شده‌ها","savedTab":"ذخیره‌شده","liveButton":"🔴 زنده","inboxTitle":"✉️ پیام‌ها","refreshInbox":"↻ تازه‌سازی","inboxEmptyContacts":"دوستان و گفتگوها اینجا نمایش داده می‌شوند.","chooseConversation":"یک گفتگو انتخاب کنید","chooseFriend":"برای شروع گفتگو یک دوست انتخاب کنید.","sendVideoGallery":"ارسال ویدیو از گالری","messagePlaceholder":"پیام خود را بنویسید...","sendMessage":"ارسال","feedForYou":"برای شما","feedFollowing":"دنبال‌شده‌ها","feedSaved":"ذخیره‌شده"},"en":{"navHome":"Home","navFriends":"Friends","navCreate":"Create","navInbox":"Messages","navProfile":"Profile","searchPlaceholder":"Search by username...","searchButton":"🔍 Search","forYouTab":"For You","followingTab":"Following","savedTab":"Saved","liveButton":"🔴 Live","inboxTitle":"✉️ Messages","refreshInbox":"↻ Refresh","inboxEmptyContacts":"Your friends and conversations will appear here.","chooseConversation":"Choose a conversation","chooseFriend":"Choose a friend to start a conversation.","sendVideoGallery":"Send a video from gallery","messagePlaceholder":"Write your message...","sendMessage":"Send","feedForYou":"For You","feedFollowing":"Following","feedSaved":"Saved"},"ar":{"navHome":"الرئيسية","navFriends":"الأصدقاء","navCreate":"إنشاء","navInbox":"الرسائل","navProfile":"الملف الشخصي","searchPlaceholder":"ابحث باسم المستخدم...","searchButton":"🔍 بحث","forYouTab":"لك","followingTab":"المتابَعون","savedTab":"المحفوظات","liveButton":"🔴 مباشر","inboxTitle":"✉️ الرسائل","refreshInbox":"↻ تحديث","inboxEmptyContacts":"سيظهر أصدقاؤك ومحادثاتك هنا.","chooseConversation":"اختر محادثة","chooseFriend":"اختر صديقاً لبدء محادثة.","sendVideoGallery":"إرسال فيديو من المعرض","messagePlaceholder":"اكتب رسالتك...","sendMessage":"إرسال","feedForYou":"لك","feedFollowing":"المتابَعون","feedSaved":"المحفوظات"},"tr":{"navHome":"Ana Sayfa","navFriends":"Arkadaşlar","navCreate":"Oluştur","navInbox":"Mesajlar","navProfile":"Profil","searchPlaceholder":"Kullanıcı adına göre ara...","searchButton":"🔍 Ara","forYouTab":"Senin için","followingTab":"Takip edilenler","savedTab":"Kaydedilenler","liveButton":"🔴 Canlı","inboxTitle":"✉️ Mesajlar","refreshInbox":"↻ Yenile","inboxEmptyContacts":"Arkadaşların ve konuşmaların burada görünecek.","chooseConversation":"Bir konuşma seç","chooseFriend":"Sohbeti başlatmak için bir arkadaş seç.","sendVideoGallery":"Galeriden video gönder","messagePlaceholder":"Mesajını yaz...","sendMessage":"Gönder","feedForYou":"Senin için","feedFollowing":"Takip edilenler","feedSaved":"Kaydedilenler"},"fr":{"navHome":"Accueil","navFriends":"Amis","navCreate":"Créer","navInbox":"Messages","navProfile":"Profil","searchPlaceholder":"Rechercher par nom d’utilisateur...","searchButton":"🔍 Rechercher","forYouTab":"Pour vous","followingTab":"Abonnements","savedTab":"Enregistrés","liveButton":"🔴 En direct","inboxTitle":"✉️ Messages","refreshInbox":"↻ Actualiser","inboxEmptyContacts":"Vos amis et conversations apparaîtront ici.","chooseConversation":"Choisir une conversation","chooseFriend":"Choisissez un ami pour commencer une conversation.","sendVideoGallery":"Envoyer une vidéo depuis la galerie","messagePlaceholder":"Écrivez votre message...","sendMessage":"Envoyer","feedForYou":"Pour vous","feedFollowing":"Abonnements","feedSaved":"Enregistrés"},"de":{"navHome":"Startseite","navFriends":"Freunde","navCreate":"Erstellen","navInbox":"Nachrichten","navProfile":"Profil","searchPlaceholder":"Nach Benutzernamen suchen...","searchButton":"🔍 Suchen","forYouTab":"Für dich","followingTab":"Gefolgt","savedTab":"Gespeichert","liveButton":"🔴 Live","inboxTitle":"✉️ Nachrichten","refreshInbox":"↻ Aktualisieren","inboxEmptyContacts":"Deine Freunde und Unterhaltungen erscheinen hier.","chooseConversation":"Unterhaltung auswählen","chooseFriend":"Wähle einen Freund, um eine Unterhaltung zu beginnen.","sendVideoGallery":"Video aus Galerie senden","messagePlaceholder":"Nachricht schreiben...","sendMessage":"Senden","feedForYou":"Für dich","feedFollowing":"Gefolgt","feedSaved":"Gespeichert"}};
 Object.keys(haloCoreTranslations).forEach(lang=>Object.assign(translations[lang],haloCoreTranslations[lang]));
@@ -2245,23 +2274,52 @@ async function loadVideos(){
  
 // PRIVATE DIRECT MESSAGES + PHONE GALLERY VIDEO SHARING
 function dmStatus(message){const el=document.getElementById('inboxStatus');if(el)el.textContent=message||'';}
+let inboxSearchVersion=0;
+async function searchInboxUsers(){
+ const version=++inboxSearchVersion;const input=document.getElementById('inboxUserSearchInput');const results=document.getElementById('inboxUserSearchResults');if(!results)return;
+ if(!currentUser){results.textContent='بۆ گەڕانی هاوڕێکان سەرەتا بچۆ ژوورەوە.';openAccount();return;}
+ const term=(input?.value||'').trim().replace(/\s+/g,' ');if(term.length<2){results.textContent='لانیکەم دوو پیت بنووسە بۆ گەڕان.';return;}
+ results.textContent='گەڕان دەکرێت...';
+ try{
+  const escaped=term.replace(/[\\%_]/g,'\\$&');
+  const {data,error}=await db.from('profiles').select('id,display_name,avatar_url').ilike('display_name','%'+escaped+'%').neq('id',currentUser.id).limit(20);
+  if(error)throw error;if(version!==inboxSearchVersion)return;results.replaceChildren();
+  if(!data?.length){results.textContent='هیچ بەکارهێنەرێک بەو ناوە نەدۆزرایەوە.';return;}
+  data.forEach(profile=>{
+   const row=document.createElement('div');row.className='inbox-user-search-result';const identity=document.createElement('div');identity.className='inbox-user-identity';
+   if(profile.avatar_url){const img=document.createElement('img');img.src=profile.avatar_url;img.alt='';identity.append(img);}else{const avatar=document.createElement('span');avatar.className='inbox-avatar';avatar.textContent='👤';identity.append(avatar);}
+   const name=document.createElement('strong');name.textContent=profile.display_name||('User '+profile.id.slice(0,8));identity.append(name);
+   const action=document.createElement('button');action.type='button';action.className='dark';action.textContent=pendingSharedVideoId?'🎬 هەڵبژاردنی وەرگر':'💬 پەیام';action.addEventListener('click',()=>startDmWithUser(profile.id,true));row.append(identity,action);results.append(row);
+  });
+ }catch(e){if(version===inboxSearchVersion)results.textContent='گەڕان سەرکەوتوو نەبوو: '+String(e.message||e);}
+}
 const DM_VIDEO_MAX_BYTES=100*1024*1024;
 const DM_VIDEO_MIMES=new Set(['video/mp4','video/quicktime','video/webm','video/3gpp','video/x-m4v','video/3gpp2']);
+const DM_VIDEO_EXT_MIME={mp4:'video/mp4',mov:'video/quicktime',webm:'video/webm','3gp':'video/3gpp',m4v:'video/x-m4v','3g2':'video/3gpp2'};
+async function validateDmGalleryVideo(file){
+ if(!file||!Number.isFinite(file.size)||file.size<1)throw new Error('فایلی ڤیدیۆکە بەتاڵە.');
+ if(file.size>DM_VIDEO_MAX_BYTES)throw new Error('قەبارەی ڤیدیۆ نابێت لە 100MB زیاتر بێت.');
+ const ext=(file.name.split('.').pop()||'').toLowerCase();const mime=DM_VIDEO_EXT_MIME[ext];if(!mime)throw new Error('فۆرماتی ڤیدیۆ پشتگیری ناکرێت.');
+ const supplied=(file.type||'').toLowerCase().split(';')[0].trim();if(supplied&&supplied!=='application/octet-stream'&&!DM_VIDEO_MIMES.has(supplied))throw new Error('ناوەڕۆکی فایل ڤیدیۆی پشتگیریکراو نییە.');
+ const bytes=new Uint8Array(await file.slice(0,16).arrayBuffer());
+ const isWebm=ext==='webm'&&bytes.length>=4&&bytes[0]===0x1a&&bytes[1]===0x45&&bytes[2]===0xdf&&bytes[3]===0xa3;
+ const isIsoBmff=ext!=='webm'&&bytes.length>=8&&String.fromCharCode(bytes[4],bytes[5],bytes[6],bytes[7])==='ftyp';
+ if(!isWebm&&!isIsoBmff)throw new Error('ناوەڕۆکی فایل وەک ڤیدیۆی پشتگیریکراو ناسرایەوە نییە.');
+ return {ext,mime};
+}
 const dmVideoPicker=document.getElementById('dmVideoFile');
-if(dmVideoPicker){dmVideoPicker.addEventListener('change',()=>{const file=dmVideoPicker.files&&dmVideoPicker.files[0];if(!file){dmStatus('');return;}const ext=(file.name.split('.').pop()||'').toLowerCase();const allowedExt=['mp4','mov','webm','3gp','m4v','3g2'];if(!(file.type.startsWith('video/')||allowedExt.includes(ext))){dmVideoPicker.value='';dmStatus('تکایە فایلێکی ڤیدیۆ هەڵبژێرە.');return;}if(file.size>DM_VIDEO_MAX_BYTES){dmVideoPicker.value='';dmStatus('قەبارەی ڤیدیۆ نابێت لە 100MB زیاتر بێت.');return;}pendingSharedVideoId=null;dmStatus('ڤیدیۆ هەڵبژێردرا: '+file.name+' — ئامادەی ناردنە.');});}
-function startDmWithUser(userId){if(!currentUser){openAccount();return;}activeDmUser=userId;pendingSharedVideoId=null;const picker=document.getElementById('dmVideoFile');if(picker)picker.value='';switchAppTab('inbox');}
+if(dmVideoPicker){dmVideoPicker.addEventListener('change',async()=>{const file=dmVideoPicker.files&&dmVideoPicker.files[0];if(!file){dmStatus('');return;}try{await validateDmGalleryVideo(file);pendingSharedVideoId=null;dmStatus('ڤیدیۆ هەڵبژێردرا: '+file.name+' — ئامادەی ناردنە.');}catch(e){dmVideoPicker.value='';dmStatus(String(e.message||e));}});}
+function startDmWithUser(userId,preservePendingShare=false){if(!currentUser){openAccount();return;}activeDmUser=userId;if(!preservePendingShare)pendingSharedVideoId=null;const picker=document.getElementById('dmVideoFile');if(picker)picker.value='';switchAppTab('inbox');}
 async function ensureDmRealtime(){
  if(!currentUser||!db)return;
  if(dmRealtimeChannel&&dmRealtimeUserId===currentUser.id)return;
  if(dmRealtimeChannel){try{await db.removeChannel(dmRealtimeChannel);}catch(_){}dmRealtimeChannel=null;}
  dmRealtimeUserId=currentUser.id;
+ const refreshForParticipant=payload=>{const m=payload.new;if(!m||!currentUser)return;if(m.sender_id!==currentUser.id&&m.recipient_id!==currentUser.id)return;loadInbox();if(activeDmUser&&(m.sender_id===activeDmUser||m.recipient_id===activeDmUser))loadDmMessages();};
  dmRealtimeChannel=db.channel('kurd-halo-dm-'+currentUser.id)
-  .on('postgres_changes',{event:'INSERT',schema:'public',table:'dm_messages'},payload=>{
-   const m=payload.new;if(!m||!currentUser)return;
-   if(m.sender_id!==currentUser.id&&m.recipient_id!==currentUser.id)return;
-   loadInbox();
-   if(activeDmUser&&(m.sender_id===activeDmUser||m.recipient_id===activeDmUser))loadDmMessages();
-  }).subscribe();
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'dm_messages'},refreshForParticipant)
+  .on('postgres_changes',{event:'UPDATE',schema:'public',table:'dm_messages'},refreshForParticipant)
+  .subscribe();
 }
 async function loadInbox(){
  const contacts=document.getElementById('inboxContacts');if(!contacts)return;
@@ -2277,7 +2335,7 @@ async function loadInbox(){
   const messages=messagesResult.data||[];const ids=new Set((followingResult.data||[]).map(x=>x.following_id));
   (followerResult.data||[]).forEach(x=>ids.add(x.follower_id));
   messages.forEach(m=>ids.add(m.sender_id===currentUser.id?m.recipient_id:m.sender_id));if(activeDmUser)ids.add(activeDmUser);ids.delete(currentUser.id);
-  if(!ids.size){contacts.innerHTML='<div class="inbox-empty">هێشتا گفتوگۆت نییە. لە Friends/Search هاوڕێ بدۆزەرەوە و فۆڵۆی بکە، پاشان بگەڕێوە بۆ Inbox.</div>';return;}
+  if(!ids.size){contacts.innerHTML='<div class="inbox-empty">هێشتا گفتوگۆت نییە. لە گەڕانی سەرەوەی Inbox هاوڕێ بدۆزەرەوە و گفتوگۆ دەست پێ بکە.</div>';return;}
   const profileResult=await db.from('profiles').select('id,display_name,avatar_url').in('id',[...ids]);if(profileResult.error)throw profileResult.error;
   const profiles=new Map((profileResult.data||[]).map(p=>[p.id,p]));const latest=new Map();
   messages.forEach(m=>{const other=m.sender_id===currentUser.id?m.recipient_id:m.sender_id;if(!latest.has(other))latest.set(other,m);});
@@ -2289,7 +2347,7 @@ async function loadInbox(){
   });
   if(activeDmUser&&!ids.has(activeDmUser))activeDmUser=null;
   if(activeDmUser&&ids.has(activeDmUser))await openDmConversation(activeDmUser);else if(!pendingSharedVideoId&&ordered.length)await openDmConversation(ordered[0]);
- }catch(e){contacts.innerHTML='<div class="inbox-empty">Inbox ئامادە نییە. SQL ـی Inbox جێبەجێ بکە. '+String(e.message||e)+'</div>';}
+ }catch(e){contacts.replaceChildren();const message=document.createElement('div');message.className='inbox-empty';message.textContent='Inbox ئامادە نییە. SQL ـی Inbox جێبەجێ بکە. '+String(e.message||e);contacts.append(message);}
 }
 async function openDmConversation(userId){
  if(!currentUser)return;activeDmUser=userId;
@@ -2303,18 +2361,18 @@ async function appendDmVideo(bubble,videoUrl,caption){const link=document.create
 async function loadDmMessages(){
  if(!activeDmUser||!currentUser)return;const box=document.getElementById('inboxMessages');box.innerHTML='<div class="inbox-empty">چاوەڕێ بکە...</div>';
  try{
-  const {data,error}=await db.from('dm_messages').select('id,sender_id,recipient_id,content,video_id,media_path,created_at').or('and(sender_id.eq.'+currentUser.id+',recipient_id.eq.'+activeDmUser+'),and(sender_id.eq.'+activeDmUser+',recipient_id.eq.'+currentUser.id+')').order('created_at',{ascending:true}).limit(200);
+  const {data,error}=await db.from('dm_messages').select('id,sender_id,recipient_id,content,video_id,media_path,created_at,read_at').or('and(sender_id.eq.'+currentUser.id+',recipient_id.eq.'+activeDmUser+'),and(sender_id.eq.'+activeDmUser+',recipient_id.eq.'+currentUser.id+')').order('created_at',{ascending:true}).limit(200);
   if(error)throw error;box.innerHTML='';
   for(const m of(data||[])){
    const bubble=document.createElement('div');bubble.className='dm-bubble'+(m.sender_id===currentUser.id?' mine':'');
    if(m.content){const text=document.createElement('div');text.textContent=m.content;bubble.append(text);}
    if(m.video_id){const {data:v,error:videoError}=await db.from('videos').select('storage_path,caption').eq('id',m.video_id).maybeSingle();if(!videoError&&v){const url=db.storage.from('videos').getPublicUrl(v.storage_path).data.publicUrl;await appendDmVideo(bubble,url,v.caption||'ڤیدیۆی KURD HALO');}else{const fallback=document.createElement('span');fallback.textContent='🎞 ڤیدیۆی هاوبەشکراو';bubble.append(fallback);}}
    if(m.media_path){const {data:urlData,error:urlError}=await db.storage.from('dm-videos').createSignedUrl(m.media_path,3600);if(!urlError&&urlData?.signedUrl){await appendDmVideo(bubble,urlData.signedUrl,'ڤیدیۆی نێردراو لە گەلەری');}else{const unavailable=document.createElement('span');unavailable.textContent='🎬 ڤیدیۆ هەیە، بەڵام نەتوانرا باربکرێت.';bubble.append(unavailable);}}
-   const time=document.createElement('small');time.className='dm-time';time.textContent=new Date(m.created_at).toLocaleString();bubble.append(time);box.append(bubble);
+   const meta=document.createElement('div');meta.className='dm-meta';const time=document.createElement('small');time.className='dm-time';time.textContent=new Date(m.created_at).toLocaleString();meta.append(time);if(m.sender_id===currentUser.id){const receipt=document.createElement('small');receipt.className='dm-receipt';receipt.textContent=m.read_at?'✓✓ خوێندراوە':'✓ نێردراو';meta.append(receipt);}bubble.append(meta);box.append(bubble);
   }
   if(!data||!data.length)box.innerHTML='<div class="inbox-empty">ئەمە یەکەم گفتوگۆی ئێوەیە. سڵاوێک بنێرە 👋</div>';box.scrollTop=box.scrollHeight;
    const {error:readError}=await db.rpc('mark_dm_read',{p_sender_id:activeDmUser});if(readError)console.warn('DM read receipt:',readError.message);
- }catch(e){box.innerHTML='<div class="inbox-empty">هەڵە لە بارکردنی نامەکان: '+String(e.message||e)+'</div>';}
+ }catch(e){box.replaceChildren();const message=document.createElement('div');message.className='inbox-empty';message.textContent='هەڵە لە بارکردنی نامەکان: '+String(e.message||e);box.append(message);}
 }
 async function sendDirectMessage(event){
  event.preventDefault();if(!currentUser||!activeDmUser){dmStatus('سەرەتا هاوڕێیەک هەڵبژێرە.');return;}
@@ -2325,10 +2383,9 @@ async function sendDirectMessage(event){
  try{
   const payload={sender_id:currentUser.id,recipient_id:activeDmUser,content:textValue||null,video_id:videoId||null,media_path:null,media_mime_type:null,media_size_bytes:null};
   if(file){
-   if(file.size>DM_VIDEO_MAX_BYTES)throw new Error('قەبارەی ڤیدیۆ نابێت لە 100MB زیاتر بێت.');
-   const ext=(file.name.split('.').pop()||'mp4').toLowerCase();const allowed=['mp4','mov','webm','3gp','m4v','3g2'];if(!allowed.includes(ext))throw new Error('فۆرماتی ئەم ڤیدیۆیە پشتگیری ناکرێت.');
-   const mime=file.type||({mp4:'video/mp4',mov:'video/quicktime',webm:'video/webm', '3gp':'video/3gpp',m4v:'video/x-m4v','3g2':'video/3gpp2'}[ext]);if(!DM_VIDEO_MIMES.has(mime))throw new Error('فۆرماتی ڤیدیۆکە ڕێگەپێدراو نییە.');
-   const token=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);uploadedPath=currentUser.id+'/'+token+'.'+ext;
+   const {ext,mime}=await validateDmGalleryVideo(file);
+   const token=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+   uploadedPath=currentUser.id+'/'+token+'.'+ext;
    dmStatus('ڤیدیۆکە بە شێوەی تایبەتی بار دەکرێت...');
    const {error:uploadError}=await db.storage.from('dm-videos').upload(uploadedPath,file,{cacheControl:'3600',upsert:false,contentType:mime});if(uploadError)throw uploadError;
    payload.media_path=uploadedPath;payload.media_mime_type=mime;payload.media_size_bytes=file.size;
@@ -3531,7 +3588,6 @@ function openLive(){
   const profile=document.getElementById('profilePage');
   const sound=document.getElementById('soundHub');
   const live=document.getElementById('liveHub');
-  const quiz=document.getElementById('khQuizPage');
   const feature=document.getElementById('profileFeatureModal');
   const search=home?.querySelector('.user-search-panel');
   const drawer=document.getElementById('uploadDrawer');
@@ -3544,7 +3600,6 @@ function openLive(){
    profile?.classList.add('hidden');
    inbox?.classList.remove('active');
    sound?.classList.add('hidden');
-   quiz?.classList.add('hidden');
    feature?.classList.add('hidden');
    document.getElementById('profileDrawer')?.classList.add('hidden');
    document.getElementById('profileMenuBackdrop')?.classList.add('hidden');
@@ -3556,27 +3611,7 @@ function openLive(){
    return;
   }
 
-  if(tab==='quiz'){
-   document.body.classList.remove('halo-search-open');
-   if(search)search.hidden=true;
-   home?.classList.add('hidden');
-   inbox?.classList.remove('active');
-   profile?.classList.add('hidden');
-   sound?.classList.add('hidden');
-   quiz?.classList.remove('hidden');
-   feature?.classList.add('hidden');
-   setActiveNav('navHome');
-   window.scrollTo({top:0,behavior:'instant'});
-   return;
-  }
-
-  if(tab==='klawen'){
-   alert('بەشی کڵاوێن هێشتا پەڕەی تایبەتیی ئامادە نییە.');
-   return;
-  }
-
   if(tab==='friends'){
-   quiz?.classList.add('hidden');
    sound?.classList.add('hidden');
    profile?.classList.add('hidden');
    inbox?.classList.remove('active');
@@ -3591,7 +3626,6 @@ function openLive(){
   }
 
   if(tab==='inbox'){
-   quiz?.classList.add('hidden');
    sound?.classList.add('hidden');
    profile?.classList.add('hidden');
    if(search)search.hidden=true;
@@ -3604,7 +3638,6 @@ function openLive(){
   }
 
   if(tab==='profile'){
-   quiz?.classList.add('hidden');
    sound?.classList.add('hidden');
    openMyProfile();
    return;
@@ -3642,6 +3675,5 @@ if ('serviceWorker' in navigator) {
     }
   });
 </script>
-<script src="js/quiz-competition.js"></script>
 </body>
 </html>
