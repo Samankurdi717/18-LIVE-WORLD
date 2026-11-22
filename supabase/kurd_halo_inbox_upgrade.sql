@@ -125,6 +125,10 @@ create index if not exists dm_messages_recipient_created_idx on public.dm_messag
 create index if not exists dm_messages_unread_recipient_idx on public.dm_messages(recipient_id,created_at desc) where read_at is null;
 create index if not exists dm_messages_media_path_idx on public.dm_messages(media_path) where media_path is not null;
 
+-- Include complete old/new rows in Realtime UPDATE payloads so read receipts
+-- can identify the sender and recipient on every subscribed client.
+alter table public.dm_messages replica identity full;
+
 alter table public.dm_messages enable row level security;
 revoke all on public.dm_messages from public,anon,authenticated;
 grant select,insert on public.dm_messages to authenticated;
@@ -153,7 +157,7 @@ create policy "users can send direct messages"
         and cardinality(storage.foldername(media_path))=1
         and media_mime_type is not null and media_size_bytes is not null
         and media_mime_type in ('video/mp4','video/quicktime','video/webm','video/3gpp','video/x-m4v','video/3gpp2')
-        and media_size_bytes between 1 and 104857600
+        and media_size_bytes between 1 and 52428800
         and lower(media_path) ~ '^[0-9a-f-]{36}/[a-z0-9-]+\.(mp4|mov|webm|3gp|m4v|3g2)$'
       )
     )
@@ -176,7 +180,7 @@ create policy "dm sender only guard"
       media_path like auth.uid()::text||'/%'
       and cardinality(storage.foldername(media_path))=1
       and media_mime_type is not null
-      and media_size_bytes between 1 and 104857600
+      and media_size_bytes between 1 and 52428800
     ))
   );
 
@@ -204,10 +208,12 @@ revoke all on function public.mark_dm_read(uuid) from public,anon;
 grant execute on function public.mark_dm_read(uuid) to authenticated;
 
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
-values('dm-videos','dm-videos',false,104857600,
+values('dm-videos','dm-videos',false,52428800,
   array['video/mp4','video/quicktime','video/webm','video/3gpp','video/x-m4v','video/3gpp2']::text[])
 on conflict(id) do update set name=excluded.name,public=false,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 
+-- New gallery uploads are capped at 50 MiB to match the existing feed bucket.
+-- The table constraint keeps legacy messages up to 100 MiB readable.
 -- Supabase Storage already manages RLS on storage.objects; do not alter the table itself.
 drop policy if exists "dm videos participants can read" on storage.objects;
 create policy "dm videos participants can read" on storage.objects for select to authenticated
