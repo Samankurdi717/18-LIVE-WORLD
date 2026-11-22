@@ -2293,19 +2293,28 @@ async function searchInboxUsers(){
   });
  }catch(e){if(version===inboxSearchVersion)results.textContent='گەڕان سەرکەوتوو نەبوو: '+String(e.message||e);}
 }
-const DM_VIDEO_MAX_BYTES=100*1024*1024;
+const DM_VIDEO_MAX_BYTES=50*1024*1024;
 const DM_VIDEO_MIMES=new Set(['video/mp4','video/quicktime','video/webm','video/3gpp','video/x-m4v','video/3gpp2']);
 const DM_VIDEO_EXT_MIME={mp4:'video/mp4',mov:'video/quicktime',webm:'video/webm','3gp':'video/3gpp',m4v:'video/x-m4v','3g2':'video/3gpp2'};
 async function validateDmGalleryVideo(file){
  if(!file||!Number.isFinite(file.size)||file.size<1)throw new Error('فایلی ڤیدیۆکە بەتاڵە.');
- if(file.size>DM_VIDEO_MAX_BYTES)throw new Error('قەبارەی ڤیدیۆ نابێت لە 100MB زیاتر بێت.');
+ if(file.size>DM_VIDEO_MAX_BYTES)throw new Error('قەبارەی ڤیدیۆ نابێت لە 50MB زیاتر بێت.');
  const ext=(file.name.split('.').pop()||'').toLowerCase();const mime=DM_VIDEO_EXT_MIME[ext];if(!mime)throw new Error('فۆرماتی ڤیدیۆ پشتگیری ناکرێت.');
- const supplied=(file.type||'').toLowerCase().split(';')[0].trim();if(supplied&&supplied!=='application/octet-stream'&&!DM_VIDEO_MIMES.has(supplied))throw new Error('ناوەڕۆکی فایل ڤیدیۆی پشتگیریکراو نییە.');
+ const supplied=(file.type||'').toLowerCase().split(';')[0].trim();if(supplied&&supplied!=='application/octet-stream'&&(!DM_VIDEO_MIMES.has(supplied)||supplied!==mime))throw new Error('فۆرماتی فایل لەگەڵ پاشگری ناگونجێت.');
  const bytes=new Uint8Array(await file.slice(0,16).arrayBuffer());
  const isWebm=ext==='webm'&&bytes.length>=4&&bytes[0]===0x1a&&bytes[1]===0x45&&bytes[2]===0xdf&&bytes[3]===0xa3;
  const isIsoBmff=ext!=='webm'&&bytes.length>=8&&String.fromCharCode(bytes[4],bytes[5],bytes[6],bytes[7])==='ftyp';
  if(!isWebm&&!isIsoBmff)throw new Error('ناوەڕۆکی فایل وەک ڤیدیۆی پشتگیریکراو ناسرایەوە نییە.');
  return {ext,mime};
+}
+function makeDmUploadId(){
+ if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();
+ const bytes=new Uint8Array(16);
+ if(window.crypto&&typeof window.crypto.getRandomValues==='function')window.crypto.getRandomValues(bytes);
+ else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
+ bytes[6]=(bytes[6]&0x0f)|0x40;bytes[8]=(bytes[8]&0x3f)|0x80;
+ const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+ return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
 }
 const dmVideoPicker=document.getElementById('dmVideoFile');
 if(dmVideoPicker){dmVideoPicker.addEventListener('change',async()=>{const file=dmVideoPicker.files&&dmVideoPicker.files[0];if(!file){dmStatus('');return;}try{await validateDmGalleryVideo(file);pendingSharedVideoId=null;dmStatus('ڤیدیۆ هەڵبژێردرا: '+file.name+' — ئامادەی ناردنە.');}catch(e){dmVideoPicker.value='';dmStatus(String(e.message||e));}});}
@@ -2357,7 +2366,7 @@ async function openDmConversation(userId){
  document.getElementById('dmText').disabled=false;document.getElementById('dmSendButton').disabled=false;document.getElementById('dmVideoFile').disabled=false;
  await ensureDmRealtime();await loadDmMessages();if(pendingSharedVideoId)dmStatus('ئێستا دەتوانیت ڤیدیۆکە بۆ '+title.textContent+' بنێریت.');
 }
-async function appendDmVideo(bubble,videoUrl,caption){const link=document.createElement('a');link.className='dm-video';link.href=videoUrl;link.target='_blank';link.rel='noopener noreferrer';const video=document.createElement('video');video.src=videoUrl;video.controls=true;video.playsInline=true;video.preload='metadata';video.setAttribute('controlsList','nodownload');const label=document.createElement('span');label.className='dm-video-caption';label.textContent=caption||'KURD HALO video';link.append(video,label);bubble.append(link);}
+function appendDmVideo(bubble,videoUrl,caption){const card=document.createElement('div');card.className='dm-video';const video=document.createElement('video');video.src=videoUrl;video.controls=true;video.playsInline=true;video.preload='metadata';video.referrerPolicy='no-referrer';video.setAttribute('controlsList','nodownload');const label=document.createElement('span');label.className='dm-video-caption';label.textContent=caption||'KURD HALO video';card.append(video,label);bubble.append(card);}
 async function loadDmMessages(){
  if(!activeDmUser||!currentUser)return;const box=document.getElementById('inboxMessages');box.innerHTML='<div class="inbox-empty">چاوەڕێ بکە...</div>';
  try{
@@ -2384,7 +2393,7 @@ async function sendDirectMessage(event){
   const payload={sender_id:currentUser.id,recipient_id:activeDmUser,content:textValue||null,video_id:videoId||null,media_path:null,media_mime_type:null,media_size_bytes:null};
   if(file){
    const {ext,mime}=await validateDmGalleryVideo(file);
-   const token=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+   const token=makeDmUploadId();
    uploadedPath=currentUser.id+'/'+token+'.'+ext;
    dmStatus('ڤیدیۆکە بە شێوەی تایبەتی بار دەکرێت...');
    const {error:uploadError}=await db.storage.from('dm-videos').upload(uploadedPath,file,{cacheControl:'3600',upsert:false,contentType:mime});if(uploadError)throw uploadError;
