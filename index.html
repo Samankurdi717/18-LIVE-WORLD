@@ -2309,9 +2309,8 @@ async function validateDmGalleryVideo(file){
 }
 function makeDmUploadId(){
  if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();
- const bytes=new Uint8Array(16);
- if(window.crypto&&typeof window.crypto.getRandomValues==='function')window.crypto.getRandomValues(bytes);
- else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
+ if(!window.crypto||typeof window.crypto.getRandomValues!=='function')throw new Error('ئەم وێبگەڕە ژمارەی نهێنی پارێزراو پشتگیری ناکات. تکایە Chrome ـی نوێ لەسەر HTTPS بەکاربهێنە.');
+ const bytes=new Uint8Array(16);window.crypto.getRandomValues(bytes);
  bytes[6]=(bytes[6]&0x0f)|0x40;bytes[8]=(bytes[8]&0x3f)|0x80;
  const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
  return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
@@ -2324,7 +2323,13 @@ async function ensureDmRealtime(){
  if(dmRealtimeChannel&&dmRealtimeUserId===currentUser.id)return;
  if(dmRealtimeChannel){try{await db.removeChannel(dmRealtimeChannel);}catch(_){}dmRealtimeChannel=null;}
  dmRealtimeUserId=currentUser.id;
- const refreshForParticipant=payload=>{const m=payload.new;if(!m||!currentUser)return;if(m.sender_id!==currentUser.id&&m.recipient_id!==currentUser.id)return;loadInbox();if(activeDmUser&&(m.sender_id===activeDmUser||m.recipient_id===activeDmUser))loadDmMessages();};
+ const refreshForParticipant=payload=>{
+  const m=payload.new;if(!m||!currentUser)return;
+  if(m.sender_id!==currentUser.id&&m.recipient_id!==currentUser.id)return;
+  refreshInboxUnreadBadge();
+  const inbox=document.getElementById('inboxHub');
+  if(inbox?.classList.contains('active'))loadInbox();
+ };
  dmRealtimeChannel=db.channel('kurd-halo-dm-'+currentUser.id)
   .on('postgres_changes',{event:'INSERT',schema:'public',table:'dm_messages'},refreshForParticipant)
   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'dm_messages'},refreshForParticipant)
@@ -2333,6 +2338,7 @@ async function ensureDmRealtime(){
 async function loadInbox(){
  const contacts=document.getElementById('inboxContacts');if(!contacts)return;
  if(!currentUser){contacts.innerHTML='<div class="inbox-empty">بۆ بەکارهێنانی Inbox بچۆ ژوورەوە.</div>';return;}
+ await ensureDmRealtime();
  contacts.innerHTML='<div class="inbox-empty">چاوەڕێ بکە...</div>';
  try{
   const [messagesResult,followingResult,followerResult]=await Promise.all([
