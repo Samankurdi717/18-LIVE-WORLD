@@ -177,6 +177,8 @@ button:disabled{opacity:.5}
 }
 .bottom-nav button{margin:0;padding:8px 3px;border-radius:13px;background:transparent;color:#85879f;box-shadow:none;font-size:11px}
 .bottom-nav button .nav-icon{display:block;font-size:20px;margin-bottom:3px}
+.nav-unread-badge{position:absolute;top:2px;right:calc(50% - 22px);min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#e5484d;color:#fff;font-size:10px;line-height:16px;font-weight:800;text-align:center;box-shadow:0 0 0 2px rgba(9,10,22,.94)}
+.nav-unread-badge[hidden]{display:none!important}
 .bottom-nav button.active{color:#fff;background:linear-gradient(145deg,rgba(139,92,246,.25),rgba(57,213,232,.10));border:1px solid rgba(139,92,246,.25)}
 .bottom-nav button.upload-main{color:#fff}
 .account-modal{
@@ -1001,7 +1003,7 @@ body.auth-required .bottom-nav{display:none!important}
  <button id="navHome" class="active" type="button" onclick="switchAppTab('home')"><span class="nav-icon">⌂</span><span>سەرەکی</span></button>
  <button id="navFriends" type="button" onclick="switchAppTab('friends')"><span class="nav-icon">👥</span><span>هاوڕێکان</span></button>
  <button id="navCreate" type="button" onclick="openCreateMenu()"><span class="nav-icon">＋</span><span>دروستکردن</span></button>
- <button id="navInbox" type="button" onclick="switchAppTab('inbox')"><span class="nav-icon">✉</span><span>پەیامەکان</span></button>
+ <button id="navInbox" type="button" onclick="switchAppTab('inbox')"><span class="nav-icon">✉</span><span>پەیامەکان</span><span id="navInboxBadge" class="nav-unread-badge" hidden></span></button>
  <button id="navProfile" type="button" onclick="openMyProfile()"><span class="nav-icon">👤</span><span>پرۆفایل</span></button>
 </nav>
 
@@ -1295,6 +1297,7 @@ function finishPasswordRecovery(){
 // SHOW USER AND PROFILE
 function showUser(user){
  currentUser=user;
+ refreshInboxUnreadBadge();
  const logout=document.getElementById("logoutBtn");
  const info=document.getElementById("userInfo");
  const profileBox=document.getElementById("profileBox");
@@ -2274,6 +2277,15 @@ async function loadVideos(){
  
 // PRIVATE DIRECT MESSAGES + PHONE GALLERY VIDEO SHARING
 function dmStatus(message){const el=document.getElementById('inboxStatus');if(el)el.textContent=message||'';}
+async function refreshInboxUnreadBadge(){
+ const badge=document.getElementById('navInboxBadge');if(!badge)return;
+ if(!currentUser||!db){badge.hidden=true;badge.textContent='';return;}
+ try{
+  const {count,error}=await db.from('dm_messages').select('id',{count:'exact',head:true}).eq('recipient_id',currentUser.id).is('read_at',null);
+  if(error)throw error;
+  const unread=Number(count||0);badge.textContent=unread>99?'99+':String(unread);badge.hidden=unread<1;
+ }catch(e){console.warn('KURD HALO Inbox unread badge:',e.message||e);}
+}
 let inboxSearchVersion=0;
 async function searchInboxUsers(){
  const version=++inboxSearchVersion;const input=document.getElementById('inboxUserSearchInput');const results=document.getElementById('inboxUserSearchResults');if(!results)return;
@@ -2347,7 +2359,7 @@ async function loadInbox(){
    db.from('user_follows').select('follower_id').eq('following_id',currentUser.id).limit(200)
   ]);
   if(messagesResult.error)throw messagesResult.error;if(followingResult.error)throw followingResult.error;if(followerResult.error)throw followerResult.error;
-  const messages=messagesResult.data||[];const ids=new Set((followingResult.data||[]).map(x=>x.following_id));
+  const messages=messagesResult.data||[];refreshInboxUnreadBadge();const ids=new Set((followingResult.data||[]).map(x=>x.following_id));
   (followerResult.data||[]).forEach(x=>ids.add(x.follower_id));
   messages.forEach(m=>ids.add(m.sender_id===currentUser.id?m.recipient_id:m.sender_id));if(activeDmUser)ids.add(activeDmUser);ids.delete(currentUser.id);
   if(!ids.size){contacts.innerHTML='<div class="inbox-empty">هێشتا گفتوگۆت نییە. لە گەڕانی سەرەوەی Inbox هاوڕێ بدۆزەرەوە و گفتوگۆ دەست پێ بکە.</div>';return;}
@@ -2386,7 +2398,7 @@ async function loadDmMessages(){
    const meta=document.createElement('div');meta.className='dm-meta';const time=document.createElement('small');time.className='dm-time';time.textContent=new Date(m.created_at).toLocaleString();meta.append(time);if(m.sender_id===currentUser.id){const receipt=document.createElement('small');receipt.className='dm-receipt';receipt.textContent=m.read_at?'✓✓ خوێندراوە':'✓ نێردراو';meta.append(receipt);}bubble.append(meta);box.append(bubble);
   }
   if(!data||!data.length)box.innerHTML='<div class="inbox-empty">ئەمە یەکەم گفتوگۆی ئێوەیە. سڵاوێک بنێرە 👋</div>';box.scrollTop=box.scrollHeight;
-   const {error:readError}=await db.rpc('mark_dm_read',{p_sender_id:activeDmUser});if(readError)console.warn('DM read receipt:',readError.message);
+   const {error:readError}=await db.rpc('mark_dm_read',{p_sender_id:activeDmUser});if(readError)console.warn('DM read receipt:',readError.message);refreshInboxUnreadBadge();
  }catch(e){box.replaceChildren();const message=document.createElement('div');message.className='inbox-empty';message.textContent='هەڵە لە بارکردنی نامەکان: '+String(e.message||e);box.append(message);}
 }
 async function sendDirectMessage(event){
