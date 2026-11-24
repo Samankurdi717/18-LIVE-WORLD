@@ -1017,6 +1017,10 @@ let activeDmUser=null;
 let pendingSharedVideoId=null;
 let dmRealtimeChannel=null;
 let dmRealtimeUserId=null;
+// Ignore stale Inbox/network responses when the user switches tabs or conversations.
+let inboxLoadVersion=0;
+let dmConversationVersion=0;
+let dmMessagesLoadVersion=0;
 function toggleHaloSearch(){
  const inbox=document.getElementById('inboxHub');const profile=document.getElementById('profilePage');const home=document.getElementById('unifiedHub');
  if(inbox?.classList.contains('active')||(profile&&!profile.classList.contains('hidden'))||home?.classList.contains('hidden')){if(typeof window.switchAppTab==='function')window.switchAppTab('home');}
@@ -2348,9 +2352,11 @@ async function ensureDmRealtime(){
   .subscribe();
 }
 async function loadInbox(){
+ const loadVersion=++inboxLoadVersion;const userId=currentUser?.id||null;
  const contacts=document.getElementById('inboxContacts');if(!contacts)return;
- if(!currentUser){contacts.innerHTML='<div class="inbox-empty">بۆ بەکارهێنانی Inbox بچۆ ژوورەوە.</div>';return;}
+ if(!userId){contacts.innerHTML='<div class="inbox-empty">بۆ بەکارهێنانی Inbox بچۆ ژوورەوە.</div>';return;}
  await ensureDmRealtime();
+ if(loadVersion!==inboxLoadVersion||currentUser?.id!==userId)return;
  contacts.innerHTML='<div class="inbox-empty">چاوەڕێ بکە...</div>';
  try{
   const [messagesResult,followingResult,followerResult]=await Promise.all([
@@ -2358,12 +2364,15 @@ async function loadInbox(){
    db.from('user_follows').select('following_id').eq('follower_id',currentUser.id).limit(200),
    db.from('user_follows').select('follower_id').eq('following_id',currentUser.id).limit(200)
   ]);
+  if(loadVersion!==inboxLoadVersion||currentUser?.id!==userId)return;
   if(messagesResult.error)throw messagesResult.error;if(followingResult.error)throw followingResult.error;if(followerResult.error)throw followerResult.error;
   const messages=messagesResult.data||[];refreshInboxUnreadBadge();const ids=new Set((followingResult.data||[]).map(x=>x.following_id));
   (followerResult.data||[]).forEach(x=>ids.add(x.follower_id));
   messages.forEach(m=>ids.add(m.sender_id===currentUser.id?m.recipient_id:m.sender_id));if(activeDmUser)ids.add(activeDmUser);ids.delete(currentUser.id);
   if(!ids.size){contacts.innerHTML='<div class="inbox-empty">هێشتا گفتوگۆت نییە. لە گەڕانی سەرەوەی Inbox هاوڕێ بدۆزەرەوە و گفتوگۆ دەست پێ بکە.</div>';return;}
-  const profileResult=await db.from('profiles').select('id,display_name,avatar_url').in('id',[...ids]);if(profileResult.error)throw profileResult.error;
+  const profileResult=await db.from('profiles').select('id,display_name,avatar_url').in('id',[...ids]);
+  if(loadVersion!==inboxLoadVersion||currentUser?.id!==userId)return;
+  if(profileResult.error)throw profileResult.error;
   const profiles=new Map((profileResult.data||[]).map(p=>[p.id,p]));const latest=new Map();
   messages.forEach(m=>{const other=m.sender_id===currentUser.id?m.recipient_id:m.sender_id;if(!latest.has(other))latest.set(other,m);});
   const ordered=[...ids].sort((a,b)=>(new Date(latest.get(b)?.created_at||0))-(new Date(latest.get(a)?.created_at||0)));
@@ -2374,32 +2383,43 @@ async function loadInbox(){
   });
   if(activeDmUser&&!ids.has(activeDmUser))activeDmUser=null;
   if(activeDmUser&&ids.has(activeDmUser))await openDmConversation(activeDmUser);else if(!pendingSharedVideoId&&ordered.length)await openDmConversation(ordered[0]);
- }catch(e){contacts.replaceChildren();const message=document.createElement('div');message.className='inbox-empty';message.textContent='Inbox ئامادە نییە. SQL ـی Inbox جێبەجێ بکە. '+String(e.message||e);contacts.append(message);}
+ }catch(e){if(loadVersion!==inboxLoadVersion||currentUser?.id!==userId)return;contacts.replaceChildren();const message=document.createElement('div');message.className='inbox-empty';message.textContent='Inbox ئامادە نییە. SQL ـی Inbox جێبەجێ بکە. '+String(e.message||e);contacts.append(message);}
 }
 async function openDmConversation(userId){
- if(!currentUser)return;activeDmUser=userId;
+ if(!currentUser)return;const conversationVersion=++dmConversationVersion;activeDmUser=userId;
  const contacts=document.getElementById('inboxContacts');contacts.querySelectorAll('.inbox-contact').forEach(b=>b.classList.toggle('active',b.dataset.userId===userId));
- const {data:p,error}=await db.from('profiles').select('display_name,avatar_url').eq('id',userId).maybeSingle();if(error){dmStatus('هەڵە لە بارکردنی پرۆفایلی هاوڕێ: '+error.message);return;}
+ const {data:p,error}=await db.from('profiles').select('display_name,avatar_url').eq('id',userId).maybeSingle();
+ if(conversationVersion!==dmConversationVersion||activeDmUser!==userId||!currentUser)return;
+ if(error){dmStatus('هەڵە لە بارکردنی پرۆفایلی هاوڕێ: '+error.message);return;}
  const head=document.getElementById('inboxChatHead');head.replaceChildren();const avatar=p?.avatar_url?document.createElement('img'):document.createElement('span');if(p?.avatar_url){avatar.src=p.avatar_url;avatar.className='inbox-avatar';avatar.alt='';}else{avatar.className='inbox-avatar';avatar.textContent='👤';}const title=document.createElement('span');title.textContent=p?.display_name||('User '+userId.slice(0,8));head.append(avatar,title);
  document.getElementById('dmText').disabled=false;document.getElementById('dmSendButton').disabled=false;document.getElementById('dmVideoFile').disabled=false;
- await ensureDmRealtime();await loadDmMessages();if(pendingSharedVideoId)dmStatus('ئێستا دەتوانیت ڤیدیۆکە بۆ '+title.textContent+' بنێریت.');
+ await ensureDmRealtime();
+ if(conversationVersion!==dmConversationVersion||activeDmUser!==userId||!currentUser)return;
+ await loadDmMessages();if(conversationVersion===dmConversationVersion&&pendingSharedVideoId)dmStatus('ئێستا دەتوانیت ڤیدیۆکە بۆ '+title.textContent+' بنێریت.');
 }
 function appendDmVideo(bubble,videoUrl,caption){const card=document.createElement('div');card.className='dm-video';const video=document.createElement('video');video.src=videoUrl;video.controls=true;video.playsInline=true;video.preload='metadata';video.referrerPolicy='no-referrer';video.setAttribute('controlsList','nodownload');const label=document.createElement('span');label.className='dm-video-caption';label.textContent=caption||'KURD HALO video';card.append(video,label);bubble.append(card);}
 async function loadDmMessages(){
- if(!activeDmUser||!currentUser)return;const box=document.getElementById('inboxMessages');box.innerHTML='<div class="inbox-empty">چاوەڕێ بکە...</div>';
+ if(!activeDmUser||!currentUser)return;
+ const loadVersion=++dmMessagesLoadVersion;const conversationUserId=activeDmUser;const authUserId=currentUser.id;
+ const box=document.getElementById('inboxMessages');box.innerHTML='<div class="inbox-empty">چاوەڕێ بکە...</div>';
  try{
   const {data,error}=await db.from('dm_messages').select('id,sender_id,recipient_id,content,video_id,media_path,created_at,read_at').or('and(sender_id.eq.'+currentUser.id+',recipient_id.eq.'+activeDmUser+'),and(sender_id.eq.'+activeDmUser+',recipient_id.eq.'+currentUser.id+')').order('created_at',{ascending:true}).limit(200);
+  if(loadVersion!==dmMessagesLoadVersion||activeDmUser!==conversationUserId||currentUser?.id!==authUserId)return;
   if(error)throw error;box.innerHTML='';
   for(const m of(data||[])){
+   if(loadVersion!==dmMessagesLoadVersion||activeDmUser!==conversationUserId||currentUser?.id!==authUserId)return;
    const bubble=document.createElement('div');bubble.className='dm-bubble'+(m.sender_id===currentUser.id?' mine':'');
    if(m.content){const text=document.createElement('div');text.textContent=m.content;bubble.append(text);}
-   if(m.video_id){const {data:v,error:videoError}=await db.from('videos').select('storage_path,caption').eq('id',m.video_id).maybeSingle();if(!videoError&&v){const url=db.storage.from('videos').getPublicUrl(v.storage_path).data.publicUrl;await appendDmVideo(bubble,url,v.caption||'ڤیدیۆی KURD HALO');}else{const fallback=document.createElement('span');fallback.textContent='🎞 ڤیدیۆی هاوبەشکراو';bubble.append(fallback);}}
-   if(m.media_path){const {data:urlData,error:urlError}=await db.storage.from('dm-videos').createSignedUrl(m.media_path,3600);if(!urlError&&urlData?.signedUrl){await appendDmVideo(bubble,urlData.signedUrl,'ڤیدیۆی نێردراو لە گەلەری');}else{const unavailable=document.createElement('span');unavailable.textContent='🎬 ڤیدیۆ هەیە، بەڵام نەتوانرا باربکرێت.';bubble.append(unavailable);}}
+   if(m.video_id){const {data:v,error:videoError}=await db.from('videos').select('storage_path,caption').eq('id',m.video_id).maybeSingle();if(loadVersion!==dmMessagesLoadVersion||activeDmUser!==conversationUserId||currentUser?.id!==authUserId)return;if(!videoError&&v){const url=db.storage.from('videos').getPublicUrl(v.storage_path).data.publicUrl;await appendDmVideo(bubble,url,v.caption||'ڤیدیۆی KURD HALO');}else{const fallback=document.createElement('span');fallback.textContent='🎞 ڤیدیۆی هاوبەشکراو';bubble.append(fallback);}}
+   if(m.media_path){const {data:urlData,error:urlError}=await db.storage.from('dm-videos').createSignedUrl(m.media_path,3600);if(loadVersion!==dmMessagesLoadVersion||activeDmUser!==conversationUserId||currentUser?.id!==authUserId)return;if(!urlError&&urlData?.signedUrl){await appendDmVideo(bubble,urlData.signedUrl,'ڤیدیۆی نێردراو لە گەلەری');}else{const unavailable=document.createElement('span');unavailable.textContent='🎬 ڤیدیۆ هەیە، بەڵام نەتوانرا باربکرێت.';bubble.append(unavailable);}}
    const meta=document.createElement('div');meta.className='dm-meta';const time=document.createElement('small');time.className='dm-time';time.textContent=new Date(m.created_at).toLocaleString();meta.append(time);if(m.sender_id===currentUser.id){const receipt=document.createElement('small');receipt.className='dm-receipt';receipt.textContent=m.read_at?'✓✓ خوێندراوە':'✓ نێردراو';meta.append(receipt);}bubble.append(meta);box.append(bubble);
   }
   if(!data||!data.length)box.innerHTML='<div class="inbox-empty">ئەمە یەکەم گفتوگۆی ئێوەیە. سڵاوێک بنێرە 👋</div>';box.scrollTop=box.scrollHeight;
-   const {error:readError}=await db.rpc('mark_dm_read',{p_sender_id:activeDmUser});if(readError)console.warn('DM read receipt:',readError.message);refreshInboxUnreadBadge();
- }catch(e){box.replaceChildren();const message=document.createElement('div');message.className='inbox-empty';message.textContent='هەڵە لە بارکردنی نامەکان: '+String(e.message||e);box.append(message);}
+   if(loadVersion!==dmMessagesLoadVersion||activeDmUser!==conversationUserId||currentUser?.id!==authUserId)return;
+  const {error:readError}=await db.rpc('mark_dm_read',{p_sender_id:conversationUserId});
+  if(loadVersion!==dmMessagesLoadVersion||activeDmUser!==conversationUserId||currentUser?.id!==authUserId)return;
+  if(readError)console.warn('DM read receipt:',readError.message);refreshInboxUnreadBadge();
+ }catch(e){if(loadVersion!==dmMessagesLoadVersion||activeDmUser!==conversationUserId||currentUser?.id!==authUserId)return;box.replaceChildren();const message=document.createElement('div');message.className='inbox-empty';message.textContent='هەڵە لە بارکردنی نامەکان: '+String(e.message||e);box.append(message);}
 }
 async function sendDirectMessage(event){
  event.preventDefault();if(!currentUser||!activeDmUser){dmStatus('سەرەتا هاوڕێیەک هەڵبژێرە.');return;}
@@ -3610,6 +3630,7 @@ function openLive(){
 (function(){
  const previousSwitch=window.switchAppTab;
  window.switchAppTab=function(tab){
+  if(tab!=='inbox'){inboxLoadVersion++;dmConversationVersion++;dmMessagesLoadVersion++;}
   const home=document.getElementById('unifiedHub');
   const inbox=document.getElementById('inboxHub');
   const profile=document.getElementById('profilePage');
