@@ -51,6 +51,61 @@ async function requireSupabaseUser(req, res, next) {
   }
 }
 
+// WORLDLINK one-to-one calls use a separate Supabase Auth project.
+// Keep the existing KURD HALO token route and credentials unchanged.
+async function requireWorldlinkUser(req, res, next) {
+  const header = String(req.headers.authorization || "");
+  const match = header.match(/^Bearer\\s+(.+)$/i);
+  if (!match) return res.status(401).json({ error: "Sign-in required" });
+
+  const supabaseUrl = process.env.WORLDLINK_SUPABASE_URL;
+  const anonKey = process.env.WORLDLINK_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) {
+    return res.status(500).json({ error: "WORLDLINK authentication settings missing" });
+  }
+
+  try {
+    const client = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: "Bearer " + match[1] } }
+    });
+    const { data, error } = await client.auth.getUser(match[1]);
+    if (error || !data.user) {
+      return res.status(401).json({ error: "Invalid or expired WORLDLINK session" });
+    }
+    req.worldlinkUser = data.user;
+    next();
+  } catch (_) {
+    return res.status(401).json({ error: "WORLDLINK authentication failed" });
+  }
+}
+
+// Authenticated WORLDLINK members may obtain a short-lived Agora token for
+// their private call channel. The client must use a stable, unique numeric UID.
+app.get("/worldlink-token", requireWorldlinkUser, (req, res) => {
+  const appId = process.env.AGORA_APP_ID;
+  const certificate = process.env.AGORA_APP_CERTIFICATE;
+  const channel = String(req.query.channel || "").trim();
+  const uid = Number(req.query.uid);
+
+  if (!appId || !certificate) {
+    return res.status(500).json({ error: "Agora server settings missing" });
+  }
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(channel) ||
+      !Number.isSafeInteger(uid) || uid < 1 || uid > 2147483647) {
+    return res.status(400).json({ error: "Invalid channel or uid" });
+  }
+
+  try {
+    const token = RtcTokenBuilder.buildTokenWithUid(
+      appId, certificate, channel, uid, RtcRole.PUBLISHER, 3600, 3600
+    );
+    return res.json({ token, appId, uid, channel, expiresIn: 3600 });
+  } catch (_) {
+    return res.status(500).json({ error: "WORLDLINK token generation failed" });
+  }
+});
+
 // Agora token: viewers receive subscriber tokens; only live hosts and
 // approved guests may request publisher tokens.
 app.get("/token", requireSupabaseUser, async (req, res) => {
