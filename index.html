@@ -2333,7 +2333,7 @@ function makeDmUploadId(){
 }
 const dmVideoPicker=document.getElementById('dmVideoFile');
 if(dmVideoPicker){dmVideoPicker.addEventListener('change',async()=>{const file=dmVideoPicker.files&&dmVideoPicker.files[0];if(!file){dmStatus('');return;}try{await validateDmGalleryVideo(file);pendingSharedVideoId=null;dmStatus('ڤیدیۆ هەڵبژێردرا: '+file.name+' — ئامادەی ناردنە.');}catch(e){dmVideoPicker.value='';dmStatus(String(e.message||e));}});}
-function startDmWithUser(userId,preservePendingShare=false){if(!currentUser){openAccount();return;}activeDmUser=userId;if(!preservePendingShare)pendingSharedVideoId=null;const picker=document.getElementById('dmVideoFile');if(picker)picker.value='';switchAppTab('inbox');}
+function startDmWithUser(userId,preservePendingShare=false){if(!currentUser){openAccount();return;}if(typeof userId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)){dmStatus('ناسنامەی بەکارهێنەر دروست نییە.');return;}if(userId===currentUser.id){dmStatus('ناتوانیت گفتوگۆ لەگەڵ هەژماری خۆت دەست پێ بکەیت.');return;}activeDmUser=userId;if(!preservePendingShare)pendingSharedVideoId=null;const picker=document.getElementById('dmVideoFile');if(picker)picker.value='';switchAppTab('inbox');}
 async function ensureDmRealtime(){
  if(!currentUser||!db)return;
  if(dmRealtimeChannel&&dmRealtimeUserId===currentUser.id)return;
@@ -2386,7 +2386,7 @@ async function loadInbox(){
  }catch(e){if(loadVersion!==inboxLoadVersion||currentUser?.id!==userId)return;contacts.replaceChildren();const message=document.createElement('div');message.className='inbox-empty';message.textContent='Inbox ئامادە نییە. SQL ـی Inbox جێبەجێ بکە. '+String(e.message||e);contacts.append(message);}
 }
 async function openDmConversation(userId){
- if(!currentUser)return;const conversationVersion=++dmConversationVersion;activeDmUser=userId;
+ if(!currentUser)return;if(typeof userId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)||userId===currentUser.id){dmStatus('ناسنامەی گفتوگۆ دروست نییە.');return;}const conversationVersion=++dmConversationVersion;activeDmUser=userId;
  const contacts=document.getElementById('inboxContacts');contacts.querySelectorAll('.inbox-contact').forEach(b=>b.classList.toggle('active',b.dataset.userId===userId));
  const {data:p,error}=await db.from('profiles').select('display_name,avatar_url').eq('id',userId).maybeSingle();
  if(conversationVersion!==dmConversationVersion||activeDmUser!==userId||!currentUser)return;
