@@ -55,7 +55,7 @@ async function requireSupabaseUser(req, res, next) {
 // Keep the existing KURD HALO token route and credentials unchanged.
 async function requireWorldlinkUser(req, res, next) {
   const header = String(req.headers.authorization || "");
-  const match = header.match(/^Bearer\\s+(.+)$/i);
+  const match = header.match(/^Bearer\s+(.+)$/i);
   if (!match) return res.status(401).json({ error: "Sign-in required" });
 
   const supabaseUrl = process.env.WORLDLINK_SUPABASE_URL;
