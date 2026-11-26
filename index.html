@@ -1015,6 +1015,7 @@ body.auth-required .bottom-nav{display:none!important}
 // KURD HALO — approved five-tab navigation
 let activeDmUser=null;
 let pendingSharedVideoId=null;
+let dmSendInProgress=false;
 let dmRealtimeChannel=null;
 let dmRealtimeUserId=null;
 // Ignore stale Inbox/network responses when the user switches tabs or conversations.
@@ -2422,25 +2423,49 @@ async function loadDmMessages(){
  }catch(e){if(loadVersion!==dmMessagesLoadVersion||activeDmUser!==conversationUserId||currentUser?.id!==authUserId)return;box.replaceChildren();const message=document.createElement('div');message.className='inbox-empty';message.textContent='هەڵە لە بارکردنی نامەکان: '+String(e.message||e);box.append(message);}
 }
 async function sendDirectMessage(event){
- event.preventDefault();if(!currentUser||!activeDmUser){dmStatus('سەرەتا هاوڕێیەک هەڵبژێرە.');return;}
- const textValue=document.getElementById('dmText').value.trim();const picker=document.getElementById('dmVideoFile');const file=picker.files&&picker.files[0];const videoId=pendingSharedVideoId;
- if(!textValue&&!file&&!videoId)return;if(file&&videoId){dmStatus('تکایە تەنها یەک ڤیدیۆ لە هەر نامەیەکدا بنێرە.');return;}
- const button=document.getElementById('dmSendButton');const attach=document.querySelector('.dm-attach');button.disabled=true;if(attach)attach.disabled=true;
+ event.preventDefault();
+ if(dmSendInProgress){dmStatus('نامەیەک لە ناردندایە، تکایە چاوەڕێ بکە.');return;}
+ const authUserId=currentUser?.id||null;
+ const recipientId=activeDmUser;
+ const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+ if(!authUserId||!recipientId){dmStatus('سەرەتا هاوڕێیەک هەڵبژێرە.');return;}
+ if(!uuidPattern.test(recipientId)||recipientId===authUserId){dmStatus('ناسنامەی وەرگر دروست نییە.');return;}
+ const textInput=document.getElementById('dmText');
+ const picker=document.getElementById('dmVideoFile');
+ const file=picker.files&&picker.files[0]||null;
+ const textValue=textInput.value.trim();
+ const videoId=pendingSharedVideoId;
+ if(!textValue&&!file&&!videoId)return;
+ if(file&&videoId){dmStatus('تکایە تەنها یەک ڤیدیۆ لە هەر نامەیەکدا بنێرە.');return;}
+ const button=document.getElementById('dmSendButton');
+ const attach=document.querySelector('.dm-attach');
+ dmSendInProgress=true;button.disabled=true;if(attach)attach.disabled=true;
  let uploadedPath=null;
  try{
-  const payload={sender_id:currentUser.id,recipient_id:activeDmUser,content:textValue||null,video_id:videoId||null,media_path:null,media_mime_type:null,media_size_bytes:null};
+  const payload={sender_id:authUserId,recipient_id:recipientId,content:textValue||null,video_id:videoId||null,media_path:null,media_mime_type:null,media_size_bytes:null};
   if(file){
    const {ext,mime}=await validateDmGalleryVideo(file);
    const token=makeDmUploadId();
-   uploadedPath=currentUser.id+'/'+token+'.'+ext;
+   uploadedPath=authUserId+'/'+token+'.'+ext;
    dmStatus('ڤیدیۆکە بە شێوەی تایبەتی بار دەکرێت...');
    const {error:uploadError}=await db.storage.from('dm-videos').upload(uploadedPath,file,{cacheControl:'3600',upsert:false,contentType:mime});if(uploadError)throw uploadError;
    payload.media_path=uploadedPath;payload.media_mime_type=mime;payload.media_size_bytes=file.size;
   }
   const {error}=await db.from('dm_messages').insert(payload);if(error)throw error;
-  document.getElementById('dmText').value='';picker.value='';pendingSharedVideoId=null;dmStatus('نامەکەت بە سەرکەوتوویی نێردرا.');await loadDmMessages();await loadInbox();
- }catch(e){if(uploadedPath){try{await db.storage.from('dm-videos').remove([uploadedPath]);}catch(_){}}dmStatus('ناردنی نامە سەرکەوتوو نەبوو: '+String(e.message||e));}
- finally{button.disabled=false;if(attach)attach.disabled=false;}
+  if(textInput.value.trim()===textValue)textInput.value='';
+  if(file&&picker.files&&picker.files[0]===file)picker.value='';
+  if(videoId&&pendingSharedVideoId===videoId)pendingSharedVideoId=null;
+  dmStatus('نامەکەت بە سەرکەوتوویی نێردرا.');
+  if(currentUser?.id===authUserId&&activeDmUser===recipientId)await loadDmMessages();
+  if(currentUser?.id===authUserId)await loadInbox();
+ }catch(e){
+  if(uploadedPath){try{await db.storage.from('dm-videos').remove([uploadedPath]);}catch(_){}}
+  dmStatus('ناردنی نامە سەرکەوتوو نەبوو: '+String(e.message||e));
+ }finally{
+  dmSendInProgress=false;
+  button.disabled=!(currentUser&&activeDmUser);
+  if(attach)attach.disabled=!(currentUser&&activeDmUser);
+ }
 }
  
 // KURD HALO LIVE CHAT + REACTIONS
