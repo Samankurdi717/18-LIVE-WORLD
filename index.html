@@ -684,6 +684,12 @@ body.auth-required .bottom-nav{display:none!important}
 .app-header .header-actions{flex:0 0 auto!important;display:flex!important;align-items:center;gap:5px!important}
 .app-header .header-search{width:34px;height:34px;min-width:34px;margin:0;padding:3px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.08);color:#fff;box-shadow:none;font-size:15px}
 @media(max-width:700px){.inbox-directory-row button{padding:9px 10px;font-size:11px}.inbox-user-search-results{max-height:22svh}}
+
+/* KURD HALO: persistent search affordance at the video screen's top-right */
+.feed-search-toggle{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:1200;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(12,12,12,.92);color:#f2c14e;border:1px solid #c89a2c;box-shadow:0 4px 16px rgba(0,0,0,.35);font-size:20px;cursor:pointer}
+.feed-search-toggle:focus-visible{outline:2px solid #f2c14e;outline-offset:3px}
+.user-search-panel[hidden]{display:none!important}
+.user-search-panel{position:sticky;top:8px;z-index:1100}
 </style>
 
 <script>self.ModelViewerElement=self.ModelViewerElement||{};self.ModelViewerElement.meshoptDecoderLocation='https://cdn.jsdelivr.net/npm/meshoptimizer/meshopt_decoder.js';</script>
@@ -877,6 +883,7 @@ body.auth-required .bottom-nav{display:none!important}
  
 <!-- ONE UNIFIED TIKTOK-STYLE VIDEO + LIVE HUB -->
 <section class="app-page unified-hub" id="unifiedHub">
+ <button id="feedSearchToggle" class="feed-search-toggle" type="button" onclick="toggleFeedSearch()" aria-label="گەڕان" aria-expanded="false" title="گەڕان">🔍</button>
 
  
  <div class="user-search-panel"><input id="userSearchInput" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()" data-i18n="searchButton">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
@@ -2334,6 +2341,17 @@ function makeDmUploadId(){
 }
 const dmVideoPicker=document.getElementById('dmVideoFile');
 if(dmVideoPicker){dmVideoPicker.addEventListener('change',async()=>{const file=dmVideoPicker.files&&dmVideoPicker.files[0];if(!file){dmStatus('');return;}try{await validateDmGalleryVideo(file);pendingSharedVideoId=null;dmStatus('ڤیدیۆ هەڵبژێردرا: '+file.name+' — ئامادەی ناردنە.');}catch(e){dmVideoPicker.value='';dmStatus(String(e.message||e));}});}
+
+function toggleFeedSearch(forceOpen){
+ const panel=document.querySelector('#unifiedHub .user-search-panel');
+ const button=document.getElementById('feedSearchToggle');
+ if(!panel)return;
+ const show=typeof forceOpen==='boolean'?forceOpen:panel.hidden;
+ panel.hidden=!show;
+ document.body.classList.toggle('halo-search-open',show);
+ if(button)button.setAttribute('aria-expanded',show?'true':'false');
+ if(show){const input=document.getElementById('userSearchInput');input?.scrollIntoView({behavior:'smooth',block:'nearest'});setTimeout(()=>input?.focus(),120);}
+}
 function startDmWithUser(userId,preservePendingShare=false){if(!currentUser){openAccount();return;}if(typeof userId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)){dmStatus('ناسنامەی بەکارهێنەر دروست نییە.');return;}if(userId===currentUser.id){dmStatus('ناتوانیت گفتوگۆ لەگەڵ هەژماری خۆت دەست پێ بکەیت.');return;}activeDmUser=userId;if(!preservePendingShare)pendingSharedVideoId=null;const picker=document.getElementById('dmVideoFile');if(picker)picker.value='';switchAppTab('inbox');}
 async function ensureDmRealtime(){
  if(!currentUser||!db)return;
