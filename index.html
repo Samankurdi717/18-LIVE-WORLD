@@ -886,7 +886,7 @@ body.auth-required .bottom-nav{display:none!important}
  <button id="feedSearchToggle" class="feed-search-toggle" type="button" onclick="toggleFeedSearch()" aria-label="گەڕان" aria-expanded="false" title="گەڕان">🔍</button>
 
  
- <div class="user-search-panel"><input id="userSearchInput" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()" data-i18n="searchButton">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
+ <div class="user-search-panel" hidden><input id="userSearchInput" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="گەڕان بەدوای ناوی بەکارهێنەر..." autocomplete="off"><button type="button" onclick="searchUsers()" data-i18n="searchButton">🔍 گەڕان</button><div id="userSearchResults" class="user-search-results" aria-live="polite"></div></div>
 
  <div class="feed-toolbar">
   <h3 data-i18n="feedTitle">🌍 ڤیدیۆکانی کورد هەڵۆ</h3>
@@ -3687,7 +3687,7 @@ function openLive(){
 
   if(tab==='home'){
    document.body.classList.remove('halo-search-open');
-   if(search)search.hidden=true;
+   if(search){search.hidden=true;document.getElementById('feedSearchToggle')?.setAttribute('aria-expanded','false');}
    profile?.classList.add('hidden');
    inbox?.classList.remove('active');
    sound?.classList.add('hidden');
@@ -3707,7 +3707,7 @@ function openLive(){
    profile?.classList.add('hidden');
    inbox?.classList.remove('active');
    home?.classList.remove('hidden');
-   if(search)search.hidden=false;
+   if(search){search.hidden=false;document.getElementById('feedSearchToggle')?.setAttribute('aria-expanded','true');}
    document.body.classList.add('halo-search-open');
    setActiveNav('navFriends');
    const input=document.getElementById('userSearchInput');
@@ -3719,7 +3719,7 @@ function openLive(){
   if(tab==='inbox'){
    sound?.classList.add('hidden');
    profile?.classList.add('hidden');
-   if(search)search.hidden=true;
+   if(search){search.hidden=true;document.getElementById('feedSearchToggle')?.setAttribute('aria-expanded','false');}
    document.body.classList.remove('halo-search-open');
    home?.classList.add('hidden');
    inbox?.classList.add('active');
