@@ -213,7 +213,7 @@ values('dm-videos','dm-videos',false,52428800,
 on conflict(id) do update set name=excluded.name,public=false,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 
 -- New gallery uploads are capped at 50 MiB to match the existing feed bucket.
--- The table constraint keeps legacy messages up to 100 MiB readable.
+-- Existing gallery messages up to 50 MiB remain readable; records larger than this fail preflight and need manual review.
 -- Supabase Storage already manages RLS on storage.objects; do not alter the table itself.
 drop policy if exists "dm videos participants can read" on storage.objects;
 create policy "dm videos participants can read" on storage.objects for select to authenticated
