@@ -2461,14 +2461,20 @@ async function sendDirectMessage(event){
  let uploadedPath=null;
  try{
   const payload={sender_id:authUserId,recipient_id:recipientId,content:textValue||null,video_id:videoId||null,media_path:null,media_mime_type:null,media_size_bytes:null};
+  // Re-check the authenticated account before touching private storage. The recipient
+  // is intentionally captured at send-start, so changing chats won't retarget a draft.
+  if(!currentUser||currentUser.id!==authUserId)throw new Error('هەژمارەکەت گۆڕاوە؛ تکایە دووبارە بچۆ ژوورەوە.');
   if(file){
    const {ext,mime}=await validateDmGalleryVideo(file);
    const token=makeDmUploadId();
    uploadedPath=authUserId+'/'+token+'.'+ext;
+   if(!currentUser||currentUser.id!==authUserId)throw new Error('هەژمارەکەت پێش بارکردن گۆڕاوە.');
    dmStatus('ڤیدیۆکە بە شێوەی تایبەتی بار دەکرێت...');
    const {error:uploadError}=await db.storage.from('dm-videos').upload(uploadedPath,file,{cacheControl:'3600',upsert:false,contentType:mime});if(uploadError)throw uploadError;
    payload.media_path=uploadedPath;payload.media_mime_type=mime;payload.media_size_bytes=file.size;
   }
+  // Never write a message under an account that changed while the upload was in flight.
+  if(!currentUser||currentUser.id!==authUserId)throw new Error('هەژمارەکەت لە کاتی ناردندا گۆڕاوە؛ پەیام نەنێردرا.');
   const {error}=await db.from('dm_messages').insert(payload);if(error)throw error;
   if(textInput.value.trim()===textValue)textInput.value='';
   if(file&&picker.files&&picker.files[0]===file)picker.value='';
